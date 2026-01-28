@@ -28,7 +28,7 @@ st.markdown(f"""
     }}
     .product-card {{
         background: white; border-radius: 15px; padding: 15px;
-        text-align: center; border: 1px solid #EAEAEA; height: 180px;
+        text-align: center; border: 1px solid #EAEAEA; min-height: 150px;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -64,7 +64,6 @@ with st.container():
             with st.spinner("Nuestro agrónomo digital está analizando..."):
                 try:
                     img_pil = Image.open(img_input)
-                    # PROMPT CORREGIDO Y CERRADO CORRECTAMENTE
                     instruccion = f"Como experto agrónomo en República Dominicana, analiza la imagen de este cultivo de {cultivo_sel}. Identifica plagas o deficiencias y recomienda soluciones de Grupo Multiagro."
                     response = model.generate_content([instruccion, img_pil])
                     
@@ -83,18 +82,6 @@ items = [
     {"n": "Herbicida Total", "p": "RD$ 1,200"},
     {"n": "Potasio Soluble", "p": "RD$ 1,950"}
 ]
+
 cols = st.columns(4)
 for idx, col in enumerate(cols):
-    with col:
-        st.markdown(f"<div class='product-card'><b>{items[idx]['n']}</b><br><span style='color:{VERDE_VIVO}'>{items[idx]['p']}</span></div>", unsafe_allow_html=True)
-        st.button(f"Cotizar {idx}", key=f"btn_{idx}")
-
-# --- PIE DE PÁGINA (LOGOS) ---
-st.markdown("---")
-st.markdown("<h4 style='text-align:center; color:#888;'>NUESTRAS EMPRESAS</h4>", unsafe_allow_html=True)
-
-listado_logos = [
-    "Logo Mundo Agricola.jpg", 
-    "Logo Multisemillas.jpg", 
-    "IMG-20251217-WA0012.jpg", 
-    "Logo-Fortius.png",
