@@ -107,13 +107,13 @@ if prods:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
 
-# 8. PIE DE PÁGINA (Escáner Inteligente para Agroservicios)
+# 8. PIE DE PÁGINA (Escáner de Precisión para Logos PNG)
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-# Lista de búsqueda optimizada
-l_ids = ["mundo", "semillas", "riegos", "fortius", "servicios"] 
+# Palabras clave únicas para cada marca
+l_ids = ["mundoagricola", "multisemillas", "multiriegos", "fortius", "agroservicios"] 
 l_cols = st.columns(len(l_ids))
 
 archivos_en_carpeta = os.listdir(".")
@@ -122,28 +122,22 @@ for i, palabra in enumerate(l_ids):
     with l_cols[i]:
         encontrado = False
         for f in archivos_en_carpeta:
-            nombre_f = f.lower()
+            # Comparamos todo en minúsculas para que 'LogoAgroservicios' coincida con 'agroservicios'
+            nombre_f_min = f.lower()
             
-            # Condición especial para el quinto logo (Agroservicios)
-            if i == 4:
-                # Si es el 5to logo, buscamos 'servicios' O 'agro' (que no sea el logo principal)
-                if (palabra in nombre_f or "agro" in nombre_f) and nombre_f.endswith(".png") and "grupo_multiagro" not in nombre_f:
-                    encontrado = True
-            else:
-                # Para los demás logos (Mundo, Semillas, Riegos, Fortius)
-                if palabra in nombre_f and nombre_f.endswith(".png") and "grupo_multiagro" not in nombre_f:
-                    encontrado = True
-            
-            if encontrado:
+            if palabra in nombre_f_min and nombre_f_min.endswith(".png") and "grupo_multiagro" not in nombre_f_min:
                 try:
+                    # Abrimos el archivo con su nombre real (f) para mantener la ruta correcta
                     img_logo = Image.open(f)
                     ratio = 60 / float(img_logo.size[1])
                     new_size = (int(img_logo.size[0] * ratio), 60)
                     st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
+                    encontrado = True
                     break
                 except: pass
         
         if not encontrado:
-            st.caption(f"Verificar: {palabra}")
+            # Esto solo se verá si el archivo realmente no existe en la carpeta
+            st.caption(f"Revisar: {palabra}")
 
-st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
