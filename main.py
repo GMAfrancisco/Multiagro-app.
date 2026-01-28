@@ -3,14 +3,22 @@ import google.generativeai as genai
 from PIL import Image
 import urllib.parse
 
-# --- CONFIGURACIÓN DE MARCA ---
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Multiagro App", page_icon="🌱", layout="wide")
 
 # Colores Corporativos
 VERDE_OSCURO = "#1B5E20"
 VERDE_VIVO = "#388E3C"
 
-# Estilos CSS
+# --- CONFIGURACIÓN IA ---
+try:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=API_KEY)
+    model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
+except:
+    st.error("⚠️ Error en API Key. Verifique los Secrets en Streamlit.")
+
+# --- DISEÑO ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: #F8FAF8; }}
@@ -20,44 +28,73 @@ st.markdown(f"""
     }}
     .product-card {{
         background: white; border-radius: 15px; padding: 15px;
-        text-align: center; border: 1px solid #EAEAEA;
+        text-align: center; border: 1px solid #EAEAEA; height: 180px;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- CONFIGURACIÓN IA ---
-try:
-    API_KEY = st.secrets["GEMINI_API_KEY"]
-    genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
-except:
-    st.warning("⚠️ El sistema de IA está en mantenimiento (API Key).")
-
 # --- CABECERA ---
-st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=300)
-st.markdown(f"<h1 style='color:{VERDE_OSCURO}; text-align:center;'>Asistente Inteligente Multiagro</h1>", unsafe_allow_html=True)
+try:
+    st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=300)
+except:
+    st.title("GRUPO MULTIAGRO")
+
+st.markdown(f"<h1 style='color:{VERDE_OSCURO}; text-align:center;'>Consultor AgTech Multiagro</h1>", unsafe_allow_html=True)
 
 # --- MÓDULO DE DIAGNÓSTICO ---
 with st.container():
     st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-    st.subheader("🔍 Diagnóstico con IA")
+    st.subheader("🔍 Diagnóstico de Cultivos")
     
     c1, c2 = st.columns(2)
     with c1:
-        cultivo = st.selectbox("Tipo de Cultivo", ["Arroz", "Banano / Plátano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"])
+        cultivo_sel = st.selectbox("Seleccione su Cultivo", ["Arroz", "Banano / Plátano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"])
     with c2:
-        modo = st.radio("Método de captura:", ["Subir Archivo", "Cámara en vivo"], horizontal=True)
+        modo_captura = st.radio("Método:", ["Subir Archivo", "Cámara en vivo"], horizontal=True)
 
     img_input = None
-    if modo == "Cámara en vivo":
+    if modo_captura == "Cámara en vivo":
         img_input = st.camera_input("Capturar síntoma")
     else:
         img_input = st.file_uploader("Subir foto de la galería", type=['jpg', 'png', 'jpeg'])
 
     if img_input:
         st.image(img_input, width=320)
-        if st.button("🚀 INICIAR DIAGNÓSTICO PROFESIONAL"):
-            with st.spinner("Analizando..."):
+        if st.button("🚀 INICIAR ANÁLISIS"):
+            with st.spinner("Nuestro agrónomo digital está analizando..."):
                 try:
                     img_pil = Image.open(img_input)
-                    prompt = f"Como agrónomo experto
+                    # PROMPT CORREGIDO Y CERRADO CORRECTAMENTE
+                    instruccion = f"Como experto agrónomo en República Dominicana, analiza la imagen de este cultivo de {cultivo_sel}. Identifica plagas o deficiencias y recomienda soluciones de Grupo Multiagro."
+                    response = model.generate_content([instruccion, img_pil])
+                    
+                    st.success("Diagnóstico Completado")
+                    st.markdown("### 📋 Resultados:")
+                    st.write(response.text)
+                except Exception as e:
+                    st.error(f"Error al conectar con la IA: {e}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# --- CATÁLOGO ---
+st.markdown("<br><h3>🛒 Productos Destacados</h3>", unsafe_allow_html=True)
+items = [
+    {"n": "Fungicida Elite", "p": "RD$ 2,800"},
+    {"n": "Bio-Estimulante", "p": "RD$ 3,450"},
+    {"n": "Herbicida Total", "p": "RD$ 1,200"},
+    {"n": "Potasio Soluble", "p": "RD$ 1,950"}
+]
+cols = st.columns(4)
+for idx, col in enumerate(cols):
+    with col:
+        st.markdown(f"<div class='product-card'><b>{items[idx]['n']}</b><br><span style='color:{VERDE_VIVO}'>{items[idx]['p']}</span></div>", unsafe_allow_html=True)
+        st.button(f"Cotizar {idx}", key=f"btn_{idx}")
+
+# --- PIE DE PÁGINA (LOGOS) ---
+st.markdown("---")
+st.markdown("<h4 style='text-align:center; color:#888;'>NUESTRAS EMPRESAS</h4>", unsafe_allow_html=True)
+
+listado_logos = [
+    "Logo Mundo Agricola.jpg", 
+    "Logo Multisemillas.jpg", 
+    "IMG-20251217-WA0012.jpg", 
+    "Logo-Fortius.png",
