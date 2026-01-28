@@ -6,12 +6,12 @@ import urllib.parse
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
 
-# --- CONEXIÓN IA (MODELO COMPATIBLE) ---
+# --- CONEXIÓN IA (MODO ULTRA-COMPATIBLE) ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    # Cambiamos a 'gemini-pro-vision', el estándar de oro para fotos
-    model = genai.GenerativeModel('gemini-pro-vision')
+    # Usamos gemini-1.5-flash que es el modelo actual de producción
+    model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
     st.error(f"⚠️ Error de configuración: {e}")
 
@@ -23,8 +23,8 @@ try:
 except:
     st.image("https://www.grupomultiagro.com/wp-content/uploads/2022/03/logo-multiagro-horizontal.png", width=300)
 
-# --- DATOS (PROVINCIAS Y CULTIVOS) ---
-PROVINCIAS = ["La Vega", "Moca", "Azua", "San Juan", "Santiago", "Monte Cristi", "Duarte", "Valverde", "San Cristóbal", "Dajabón"]
+# --- DATOS ---
+PROVINCIAS = ["Azua", "Baoruco", "Barahona", "Dajabón", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Valverde", "Santo Domingo"]
 CULTIVOS_DATA = {
     "Arroz": ["Urea Multiagro", "Pro-Arroz", "Zinc Foliar"],
     "Vegetales (Campo Abierto)": ["Bio-Safe", "Fertirriego Base", "Calcio-Boro"],
@@ -55,28 +55,26 @@ with tab1:
         st.image(img_view, width=350, caption="Imagen seleccionada")
         
         if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
-            with st.spinner("Analizando cultivo..."):
+            with st.spinner("Diagnosticando..."):
                 try:
-                    # El prompt debe ser directo para este modelo
-                    prompt = f"Como agrónomo experto en República Dominicana, analiza esta foto de {cultivo_sel}. Identifica la plaga o deficiencia y recomienda una solución de Grupo Multiagro."
+                    # Prompt optimizado para la nueva versión del modelo
+                    prompt = f"Actúa como agrónomo experto de Multiagro en RD. Analiza esta foto de {cultivo_sel} en {prov_sel}. Identifica la plaga o deficiencia y recomienda una solución."
                     
-                    # Ejecución del diagnóstico
+                    # Generación de contenido con el modelo flash
                     response = model.generate_content([prompt, img_view])
                     
                     st.markdown("### 📋 Diagnóstico Sugerido")
-                    st.write(response.text)
+                    diagnostico_texto = response.text
+                    st.write(diagnostico_texto)
                     
                     st.markdown("---")
-                    st.subheader("🛒 Soluciones Disponibles")
+                    st.subheader("🛒 Soluciones Multiagro")
                     for p in CULTIVOS_DATA.get(cultivo_sel, []):
                         st.markdown(f"<div class='product-card'><b>{p}</b></div>", unsafe_allow_html=True)
-                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} tiene un problema. La IA sugirió: {response.text[:60]}... Me interesa: {p}")
+                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} tiene un problema. La IA sugirió: {diagnostico_texto[:60]}... Me interesa: {p}")
                         st.markdown(f"[💬 Consultar por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
                 except Exception as e:
-                    # Si falla, te mostramos qué modelos TIENE tu cuenta exactamente
-                    st.error(f"Error: {e}")
-                    if "404" in str(e):
-                        st.warning("Estamos probando una ruta alternativa. Intenta de nuevo en 10 segundos.")
+                    st.error(f"Error técnico: {e}")
 
 with tab2:
     st.header("Catálogo")
