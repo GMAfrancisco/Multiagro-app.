@@ -24,25 +24,63 @@ def get_odoo_prods():
     except:
         return None
 
-# 3. ESTILOS CSS
+# 3. ESTILOS CSS AVANZADOS (CONTRASTE Y MOVIL)
 st.markdown("""
     <style>
-    .stApp {background-color: #F4F7F4;}
-    .main-card {background: white; padding: 25px; border-radius: 15px; border-top: 8px solid #1B5E20; box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
-    .product-card {background:white; padding:15px; border-radius:10px; border:1px solid #e0e0e0; text-align:center;}
+    /* Fondo general */
+    .stApp {background-color: #F0F2F0;}
+    
+    /* Forzar color de texto para legibilidad */
+    h1, h2, h3, p, span, label {
+        color: #1A1A1A !important;
+    }
+    
+    /* Tarjeta de Diagnóstico */
+    .main-card {
+        background: white; 
+        padding: 20px; 
+        border-radius: 15px; 
+        border-left: 10px solid #1B5E20; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    /* Eslogan en cursiva con mejor contraste */
     .eslogan {
         text-align: center;
         font-family: 'Georgia', serif;
         font-style: italic;
-        color: #1B5E20;
+        color: #1B5E20 !important;
         font-size: 1.1rem;
-        margin-top: -15px;
-        margin-bottom: 25px;
+        margin-top: -10px;
+        padding-bottom: 20px;
+    }
+
+    /* Tarjetas de Producto optimizadas */
+    .product-card {
+        background: #FFFFFF; 
+        padding: 15px; 
+        border-radius: 12px; 
+        border: 2px solid #1B5E20; 
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .price-tag {
+        color: #1B5E20 !important;
+        font-size: 20px;
+        font-weight: bold;
+        display: block;
+    }
+    
+    /* Ajuste para que los logos no se vean gigantes en movil */
+    img {
+        max-width: 100%;
+        height: auto;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 4. ENCABEZADO (Logo + Eslogan)
+# 4. ENCABEZADO
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in os.listdir("."):
@@ -52,7 +90,7 @@ with mid:
 
 # 5. BLOQUE 1: DIAGNOSTICO DE CULTIVOS
 st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-st.markdown("### 🔍 Diagnóstico de Cultivos")
+st.markdown("<h3 style='margin-top:0;'>🔍 Diagnóstico de Cultivos</h3>", unsafe_allow_html=True)
 metodo = st.radio("Seleccione método:", ["📂 Galería", "📸 Cámara"], horizontal=True)
 
 if metodo == "📂 Galería":
@@ -68,7 +106,7 @@ if img:
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 prompt = "Analiza esta planta, identifica plagas y sugiere productos de Soluciones Multiagro."
                 res = model.generate_content([prompt, Image.open(img)])
-                st.success("✅ Diagnóstico Completado")
+                st.markdown("#### ✅ Resultado del Análisis")
                 st.write(res.text)
             except:
                 st.error("Error al procesar la imagen.")
@@ -79,33 +117,40 @@ st.divider()
 # 6. BLOQUE 2: SOLUCIONES MULTIAGRO
 st.markdown("### 🛒 Soluciones Multiagro")
 prods = get_odoo_prods()
-if prods:
-    cols = st.columns(len(prods))
-    for i, p in enumerate(prods):
-        with cols[i]:
-            st.markdown(f"<div class='product-card'><b>{p['name']}</b><br><span style='color:#1B5E20; font-size:18px;'>RD$ {p['list_price']:,.2f}</span></div>", unsafe_allow_html=True)
-            st.markdown(f"[💬 WhatsApp](https://wa.me/18095551234?text=Info:{p['name']})")
-else:
-    c1, c2, c3, c4 = st.columns(4)
-    for col, t in zip([c1,c2,c3,c4], ["Fungicida", "Herbicida", "Fertilizante", "Insecticida"]):
-        col.info(f"**{t}**\n\nConsultar precio")
 
-# 7. BLOQUE 3: LOGOS DE EMPRESAS
+if prods:
+    # En movil, st.columns se apilan. Usamos un contenedor con diseño limpio.
+    for p in prods:
+        st.markdown(f"""
+            <div class="product-card">
+                <span style="font-weight:bold; font-size:16px;">{p['name']}</span><br>
+                <span class="price-tag">RD$ {p['list_price']:,.2f}</span>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown(f"[💬 Cotizar por WhatsApp](https://wa.me/18095551234?text=Me%20interesa%20{p['name']})")
+        st.write("---")
+else:
+    st.info("Sincronizando productos real-time...")
+
+# 7. BLOQUE 3: LOGOS DE EMPRESAS (Pie de Página con Columnas Ajustadas)
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.divider()
-st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
+
+# Para evitar que se apilen uno encima de otro de forma fea, usamos columnas más pequeñas
 l_cols = st.columns(5)
 l_ids = ["LogoMundoAgricola", "LogoMultisemillas", "LogoMultiriegos", "LogoFortius", "LogoAgroservicios"]
 
 for i, lid in enumerate(l_ids):
-    with l_cols[i]:
+    with l_cols[i % 5]: # Distribuye en 5 columnas
         for f in os.listdir("."):
             if f.lower().startswith(lid.lower()):
                 try:
                     img_l = Image.open(f)
-                    ratio = 80 / float(img_l.size[1])
-                    st.image(img_l.resize((int(img_l.size[0]*ratio), 80), Image.Resampling.LANCZOS))
+                    # Forzamos un tamaño más pequeño para que quepan mejor en fila
+                    img_l.thumbnail((150, 60)) 
+                    st.image(img_l)
                 except: pass
                 break
 
-st.markdown("<p style='text-align:center; font-size:12px; color:#aaa; margin-top:20px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
