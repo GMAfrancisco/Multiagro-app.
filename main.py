@@ -4,7 +4,7 @@ import google.generativeai as genai
 from PIL import Image
 import os
 
-# 1. CONFIGURACIÓN DE PÁGINA
+# 1. SETUP DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
 # 2. FUNCIONES ODOO
@@ -35,7 +35,7 @@ def registrar_cliente_odoo(nombre, email, telefono):
             }])
     except: return None
 
-# 3. ESTILOS CSS (Contraste y Transparencias)
+# 3. ESTILOS CSS
 st.markdown("""
     <style>
     .stApp {background-color: #F0F2F0;}
@@ -53,10 +53,6 @@ st.markdown("""
     }
     [data-testid="stFileUploadDropzone"] div div span { color: white !important; }
     [data-testid="stFileUploadDropzone"] small { color: #cccccc !important; }
-    .eslogan {
-        text-align: center; font-family: 'Georgia', serif; font-style: italic;
-        color: #1B5E20 !important; font-size: 1.1rem; margin-top: -10px; margin-bottom: 25px;
-    }
     .product-card {
         background: #FFFFFF; padding: 15px; border-radius: 12px; 
         border: 2px solid #1B5E20; text-align: center;
@@ -64,14 +60,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 4. ENCABEZADO
+# 4. ENCABEZADO (Solo Logo Principal)
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
-    # Busca el logo principal en PNG
     for f in os.listdir("."):
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
-    st.markdown('<p class="eslogan">"Expertos en soluciones agrícolas"</p>', unsafe_allow_html=True)
 
 # 5. BLOQUE 1: DIAGNÓSTICO
 st.markdown("<div class='main-card'>", unsafe_allow_html=True)
@@ -113,22 +107,23 @@ if prods:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
 
-# 8. PIE DE PÁGINA (LOGOS PNG FILTRADOS)
+# 8. PIE DE PÁGINA (5 Logos PNG Incluyendo Agroservicios)
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-l_cols = st.columns(5)
+# Lista completa de los 5 logos
 l_ids = ["LogoMundoAgricola", "LogoMultisemillas", "LogoMultiriegos", "LogoFortius", "LogoAgroservicios"]
+l_cols = st.columns(len(l_ids))
 
 for i, lid in enumerate(l_ids):
     with l_cols[i]:
+        # Buscamos el archivo PNG que corresponda
         for f in os.listdir("."):
-            # Filtra solo archivos que empiecen con el ID y sean .png
             if f.lower().startswith(lid.lower()) and f.lower().endswith(".png"):
                 try:
                     img_logo = Image.open(f)
-                    # Forzamos altura uniforme para alineación perfecta
+                    # Altura fija de 60px para alineación
                     ratio = 60 / float(img_logo.size[1])
                     new_size = (int(img_logo.size[0] * ratio), 60)
                     st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
