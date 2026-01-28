@@ -107,12 +107,12 @@ if prods:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
 
-# 8. PIE DE PÁGINA (Escáner de Logos PNG con distinción)
+# 8. PIE DE PÁGINA (Escáner Inteligente para Agroservicios)
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-# Palabras clave ÚNICAS para cada logo (servicios en lugar de agro)
+# Lista de búsqueda optimizada
 l_ids = ["mundo", "semillas", "riegos", "fortius", "servicios"] 
 l_cols = st.columns(len(l_ids))
 
@@ -122,19 +122,28 @@ for i, palabra in enumerate(l_ids):
     with l_cols[i]:
         encontrado = False
         for f in archivos_en_carpeta:
-            # IMPORTANTE: Ignoramos el logo principal "grupo_multiagro" para que no se repita abajo
             nombre_f = f.lower()
-            if palabra in nombre_f and nombre_f.endswith(".png") and "grupo_multiagro" not in nombre_f:
+            
+            # Condición especial para el quinto logo (Agroservicios)
+            if i == 4:
+                # Si es el 5to logo, buscamos 'servicios' O 'agro' (que no sea el logo principal)
+                if (palabra in nombre_f or "agro" in nombre_f) and nombre_f.endswith(".png") and "grupo_multiagro" not in nombre_f:
+                    encontrado = True
+            else:
+                # Para los demás logos (Mundo, Semillas, Riegos, Fortius)
+                if palabra in nombre_f and nombre_f.endswith(".png") and "grupo_multiagro" not in nombre_f:
+                    encontrado = True
+            
+            if encontrado:
                 try:
                     img_logo = Image.open(f)
                     ratio = 60 / float(img_logo.size[1])
                     new_size = (int(img_logo.size[0] * ratio), 60)
                     st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
-                    encontrado = True
                     break
                 except: pass
         
         if not encontrado:
-            st.caption(f"Pendiente: {palabra}")
+            st.caption(f"Verificar: {palabra}")
 
 st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
