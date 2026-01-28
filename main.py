@@ -60,15 +60,3 @@ else:
 if img_input:
     if st.button("🚀 ANALIZAR AHORA"):
         with st.spinner("Analizando..."):
-            try:
-                pil_img = Image.open(img_input)
-                prompt = f"Agrónomo RD: analiza este cultivo de {cultivo} e identifica problemas."
-                res = model.generate_content([prompt, pil_img])
-                st.success("✅ Diagnóstico listo")
-                st.write(res.text)
-            except Exception as e:
-                st.error(f"Error: {e}")
-st.markdown("</div>", unsafe_allow_html=True)
-
-# --- 6. PRODUCTOS ---
-st.markdown(f"<h3 style='margin-top:30px; color:{V_OSCURO};'>🛒 Catálogo</h3>", unsafe_allow_html=True
