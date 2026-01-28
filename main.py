@@ -10,7 +10,7 @@ st.set_page_config(page_title="Multiagro App", page_icon="🌱", layout="wide")
 VERDE_OSCURO = "#1B5E20"
 VERDE_VIVO = "#388E3C"
 
-# Estilos CSS Avanzados
+# Estilos CSS
 st.markdown(f"""
     <style>
     .stApp {{ background-color: #F8FAF8; }}
@@ -20,16 +20,8 @@ st.markdown(f"""
     }}
     .product-card {{
         background: white; border-radius: 15px; padding: 15px;
-        text-align: center; border: 1px solid #EAEAEA; transition: 0.3s;
+        text-align: center; border: 1px solid #EAEAEA;
     }}
-    .product-card:hover {{ transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }}
-    .footer-logos {{
-        display: flex; justify-content: center; align-items: center; 
-        gap: 30px; flex-wrap: wrap; padding: 30px; background: white;
-        border-radius: 20px; margin-top: 50px;
-    }}
-    .footer-logos img {{ filter: grayscale(20%); transition: 0.3s; }}
-    .footer-logos img:hover {{ filter: grayscale(0%); transform: scale(1.1); }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -39,4 +31,33 @@ try:
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
 except:
-    st.warning("⚠️ El sistema de IA está en mantenimiento (API Key).
+    st.warning("⚠️ El sistema de IA está en mantenimiento (API Key).")
+
+# --- CABECERA ---
+st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=300)
+st.markdown(f"<h1 style='color:{VERDE_OSCURO}; text-align:center;'>Asistente Inteligente Multiagro</h1>", unsafe_allow_html=True)
+
+# --- MÓDULO DE DIAGNÓSTICO ---
+with st.container():
+    st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+    st.subheader("🔍 Diagnóstico con IA")
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        cultivo = st.selectbox("Tipo de Cultivo", ["Arroz", "Banano / Plátano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"])
+    with c2:
+        modo = st.radio("Método de captura:", ["Subir Archivo", "Cámara en vivo"], horizontal=True)
+
+    img_input = None
+    if modo == "Cámara en vivo":
+        img_input = st.camera_input("Capturar síntoma")
+    else:
+        img_input = st.file_uploader("Subir foto de la galería", type=['jpg', 'png', 'jpeg'])
+
+    if img_input:
+        st.image(img_input, width=320)
+        if st.button("🚀 INICIAR DIAGNÓSTICO PROFESIONAL"):
+            with st.spinner("Analizando..."):
+                try:
+                    img_pil = Image.open(img_input)
+                    prompt = f"Como agrónomo experto
