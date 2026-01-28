@@ -9,10 +9,10 @@ st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    # CAMBIO CLAVE: Usamos la versión estable del modelo
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-except:
-    st.error("⚠️ Configure su API Key en los Secrets de Streamlit.")
+    # Cambiamos a la versión más genérica que acepta la mayoría de las cuentas
+    model = genai.GenerativeModel('models/gemini-1.5-flash')
+except Exception as e:
+    st.error(f"⚠️ Error de configuración: {e}")
 
 # --- DISEÑO ---
 st.markdown("<style>.stApp { background: #f0f4f0; } .product-card { background: white; padding: 15px; border-radius: 12px; border-left: 5px solid #1b5e20; margin-bottom: 10px; }</style>", unsafe_allow_html=True)
@@ -22,8 +22,8 @@ try:
 except:
     st.image("https://www.grupomultiagro.com/wp-content/uploads/2022/03/logo-multiagro-horizontal.png", width=300)
 
-# --- DATOS ---
-PROVINCIAS = ["Azua", "Baoruco", "Barahona", "Dajabón", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Valverde", "Santo Domingo"]
+# --- DATOS (Reducidos para estabilidad) ---
+PROVINCIAS = ["La Vega", "Moca", "Azua", "San Juan", "Santiago", "Monte Cristi", "Dajabón", "Duarte", "Valverde", "San Cristóbal", "Samaná", "Hato Mayor"]
 CULTIVOS_DATA = {
     "Arroz": ["Urea Multiagro", "Pro-Arroz", "Zinc Foliar"],
     "Vegetales (Campo Abierto)": ["Bio-Safe", "Fertirriego Base", "Calcio-Boro"],
@@ -54,22 +54,22 @@ with tab1:
         st.image(img_view, width=350, caption="Imagen seleccionada")
         
         if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
-            with st.spinner("Analizando cultivo..."):
+            with st.spinner("Analizando cultivo con IA..."):
                 try:
-                    # Instrucción clara para la IA
-                    prompt = f"Como agrónomo experto de Multiagro en RD, identifica el problema en este cultivo de {cultivo_sel} en {prov_sel} y sugiere una solución."
+                    # PROMPT PROFESIONAL
+                    prompt = f"Como experto agrónomo de Multiagro en RD, analiza esta foto de {cultivo_sel} en {prov_sel}. Identifica la plaga o deficiencia y recomienda una solución."
                     
-                    # Llamada corregida
+                    # Llamada con el nombre de modelo corregido
                     response = model.generate_content([prompt, img_view])
                     
                     st.markdown("### 📋 Diagnóstico Sugerido")
                     st.write(response.text)
                     
                     st.markdown("---")
-                    st.subheader("🛒 Productos Multiagro")
+                    st.subheader("🛒 Soluciones Sugeridas")
                     for p in CULTIVOS_DATA.get(cultivo_sel, []):
                         st.markdown(f"<div class='product-card'><b>{p}</b></div>", unsafe_allow_html=True)
-                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} tiene un problema. La IA sugirió: {response.text[:60]}... Me interesa: {p}")
+                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} tiene un problema. La IA sugirió: {response.text[:50]}... Me interesa: {p}")
                         st.markdown(f"[💬 Consultar por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
                 except Exception as e:
                     st.error(f"Error en el motor de IA: {e}")
