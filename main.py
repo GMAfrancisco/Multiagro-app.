@@ -107,27 +107,35 @@ if prods:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
 
-# 8. PIE DE PÁGINA (5 Logos PNG Incluyendo Agroservicios)
+# 8. PIE DE PÁGINA (Escáner de Logos PNG Mejorado)
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-# Lista completa de los 5 logos
-l_ids = ["LogoMundoAgricola", "LogoMultisemillas", "LogoMultiriegos", "LogoFortius", "LogoAgroservicios"]
+# Lista de palabras clave para buscar los logos
+l_ids = ["mundoagricola", "multisemillas", "multiriegos", "fortius", "agroservicios"]
 l_cols = st.columns(len(l_ids))
 
-for i, lid in enumerate(l_ids):
+# Obtenemos todos los archivos en la carpeta una sola vez para ir más rápido
+archivos_en_carpeta = os.listdir(".")
+
+for i, palabra_clave in enumerate(l_ids):
     with l_cols[i]:
-        # Buscamos el archivo PNG que corresponda
-        for f in os.listdir("."):
-            if f.lower().startswith(lid.lower()) and f.lower().endswith(".png"):
+        encontrado = False
+        for f in archivos_en_carpeta:
+            # Buscamos archivos que CONTENGAN la palabra y sean .png
+            if palabra_clave in f.lower() and f.lower().endswith(".png"):
                 try:
                     img_logo = Image.open(f)
-                    # Altura fija de 60px para alineación
                     ratio = 60 / float(img_logo.size[1])
                     new_size = (int(img_logo.size[0] * ratio), 60)
                     st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
+                    encontrado = True
+                    break
                 except: pass
-                break
+        
+        # Si NO aparece, te pondrá un aviso discreto para saber qué nombre tiene el archivo
+        if not encontrado:
+            st.caption(f"No hallado: {palabra_clave}")
 
-st.markdown("<p style='text-align:center; font-size:12px; color:#555;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
