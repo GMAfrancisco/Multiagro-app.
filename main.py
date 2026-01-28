@@ -1,99 +1,120 @@
 import streamlit as st
 
-# --- CONFIGURACIÓN ESTÉTICA ---
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
 
-# Estilo CSS para mejorar la apariencia (Bordes, Colores y Sombras)
+# --- DISEÑO DE COLORES Y ESTILOS (VIVO) ---
 st.markdown("""
     <style>
-    .stApp { background-color: #f8f9fa; }
+    /* Fondo general */
+    .stApp {
+        background: linear-gradient(to bottom, #f0f4f0, #ffffff);
+    }
+    /* Tarjetas de productos */
     .product-card {
-        background-color: white; padding: 20px; border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
-        border-top: 5px solid #2e7d32;
+        background-color: white;
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        border-left: 8px solid #2e7d32;
+        transition: transform 0.3s;
     }
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(46, 125, 50, 0.1);
+    }
+    /* Títulos y texto */
+    h1 { color: #1b5e20; font-family: 'Helvetica', sans-serif; font-weight: 800; }
+    h3 { color: #2e7d32; }
+    /* Botones */
     .stButton>button {
-        background-color: #2e7d32; color: white; border-radius: 8px;
-        width: 100%; font-weight: bold;
+        background: linear-gradient(90deg, #2e7d32 0%, #4caf50 100%);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    .main-title { color: #1a5d1a; text-align: center; font-weight: 800; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGO Y ENCABEZADO ---
-# Usamos una imagen de respaldo si el logo principal falla
-LOGO_URL = "https://www.grupomultiagro.com/wp-content/uploads/2022/03/logo-multiagro-horizontal.png"
-st.image(LOGO_URL, width=250)
-st.markdown("<h1 class='main-title'>Asistente Agrícola Inteligente</h1>", unsafe_allow_html=True)
+# --- ENCABEZADO CON LOGO ---
+# Intentamos forzar la carga del logo desde tu web
+st.image("https://www.grupomultiagro.com/wp-content/uploads/2022/03/logo-multiagro-horizontal.png", width=300)
+st.markdown("<h1 style='text-align: center;'>Consultor Agrícola Inteligente</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #666;'>Potenciando el campo en República Dominicana 🇩🇴</p>", unsafe_allow_html=True)
 
-# --- BASE DE DATOS DE RECOMENDACIONES (Lógica Multiagro) ---
-# Aquí vinculamos plagas con tus insumos reales
-CATALOGO = {
-    "Arroz": [
-        {"nombre": "Herbicida Pro-Arroz", "precio": "RD$ 1,450", "uso": "Control de malezas"},
-        {"nombre": "Urea Multiagro", "precio": "RD$ 2,100", "uso": "Crecimiento"}
-    ],
-    "Banano": [
-        {"nombre": "Fungicida Sigatoka-Stop", "precio": "RD$ 3,200", "uso": "Control de hongos"},
-        {"nombre": "Potasio Foliar", "precio": "RD$ 1,100", "uso": "Llenado de fruto"}
-    ],
-    "Vegetales": [
-        {"nombre": "Insecticida Bio-Safe", "precio": "RD$ 950", "uso": "Control de áfidos"},
-        {"nombre": "Calcio Boro", "precio": "RD$ 1,800", "uso": "Fortalecimiento"}
-    ]
+# --- BASE DE DATOS AMPLIADA (RD) ---
+PROVINCIAS = [
+    "La Vega", "Moca (Espaillat)", "Santiago", "Azua", "San Juan de la Maguana", 
+    "Monte Cristi", "Valverde (Mao)", "Dajabón", "Duarte (SFM)", "Hermanas Mirabal",
+    "Puerto Plata", "Bani (Peravia)", "Barahona", "Hato Mayor", "San Cristóbal"
+]
+
+CULTIVOS_DATA = {
+    "Arroz": ["Herbicida Pro-Arroz", "Urea Multiagro 46%", "Zinc Foliar"],
+    "Banano / Plátano": ["Control Sigatoka Elite", "Potasio Soluble", "Bolsas Protectoras"],
+    "Cacao": ["Fungicida de Cobre", "Fertilizante Floración", "Podadoras Profesionales"],
+    "Café": ["Control de Roya", "Abono Orgánico", "Mallas de Secado"],
+    "Aguacate": ["Fungicida Fitóptora", "Reguladores de Crecimiento", "Injertos"],
+    "Vegetales (Invernadero)": ["Insecticida Bio", "Sistemas de Goteo Netafim", "Calcio-Boro"],
+    "Tabaco": ["Control de Moho Azul", "Fertilizante Especial Tabaco", "Hilos de Amarre"],
+    "Jardinería": ["Tierra Negra Abonada", "Gramas", "Mangueras y Riego"]
 }
 
-# --- NAVEGACIÓN POR PESTAÑAS ---
-tab1, tab2 = st.tabs(["🔍 Diagnóstico IA", "🛒 Catálogo de Compras"])
+# --- NAVEGACIÓN ---
+menu = st.tabs(["🔍 Diagnóstico con IA", "🛒 Tienda Multiagro", "👨‍💼 Mi Asesor"])
 
-# --- TAB 1: DIAGNÓSTICO ---
-with tab1:
-    st.header("Análisis de Cultivo")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        cultivo_sel = st.selectbox("¿Qué cultivo estás revisando?", list(CATALOGO.keys()))
-    with col_b:
-        zona = st.selectbox("Ubicación", ["La Vega", "Moca", "Azua", "San Juan", "Dajabón"])
+# --- PESTAÑA 1: DIAGNÓSTICO ---
+with menu[0]:
+    st.markdown("### 📸 Análisis Instantáneo")
+    col1, col2 = st.columns(2)
+    with col1:
+        cultivo_sel = st.selectbox("Seleccione su Cultivo", list(CULTIVOS_DATA.keys()))
+    with col2:
+        prov_sel = st.selectbox("Provincia", PROVINCIAS)
 
-    foto = st.camera_input("Capturar síntoma")
+    foto = st.camera_input("Capturar síntoma de la planta")
 
     if foto:
-        st.success("✅ Imagen capturada con éxito")
-        with st.expander("Ver Diagnóstico y Sugerencias de Compra", expanded=True):
-            st.info(f"Análisis preliminar para **{cultivo_sel}**: Posible estrés biótico detectado.")
-            st.write("### Productos recomendados por Multiagro:")
-            
-            # Aquí mostramos las recomendaciones inteligentes basadas en el cultivo
-            recs = CATALOGO.get(cultivo_sel, [])
-            for item in recs:
+        st.success("✅ Imagen recibida correctamente.")
+        st.info(f"**Análisis de IA en curso para {cultivo_sel} en {prov_sel}...**")
+        
+        st.markdown("### 💡 Recomendación de Expertos")
+        recs = CULTIVOS_DATA.get(cultivo_sel, ["Consulte con un técnico"])
+        
+        c_prod1, c_prod2 = st.columns(2)
+        for i, prod in enumerate(recs):
+            with (c_prod1 if i % 2 == 0 else c_prod2):
                 st.markdown(f"""
                 <div class="product-card">
-                    <h4>{item['nombre']}</h4>
-                    <p><b>Acción:</b> {item['uso']}</p>
-                    <p style='color: #2e7d32; font-size: 20px;'>{item['precio']}</p>
+                    <h4 style='margin:0;'>{prod}</h4>
+                    <p style='color:#2e7d32; font-weight:bold; font-size:18px;'>Disponible</p>
+                    <p style='font-size:13px; color:#777;'>Solución recomendada para {cultivo_sel}</p>
                 </div>
                 """, unsafe_allow_html=True)
-                if st.button(f"Comprar {item['nombre']}", key=item['nombre']):
-                    st.success(f"Añadido al carrito: {item['nombre']}")
+                st.button(f"🛒 Comprar {prod}", key=f"btn_{prod}")
 
-# --- TAB 2: CATÁLOGO COMPLETO ---
-with tab2:
-    st.header("Todos los Insumos")
-    busqueda = st.text_input("Buscar por nombre, plaga o ingrediente activo...")
+# --- PESTAÑA 2: TIENDA ---
+with menu[1]:
+    st.header("Explorar Catálogo de Insumos")
+    st.text_input("Buscar por plaga, cultivo o producto...", placeholder="Ej: Control de maleza en arroz")
     
-    # Simulación de cuadrícula de productos
-    col1, col2 = st.columns(2)
-    todos_productos = [p for sublist in CATALOGO.values() for p in sublist]
-    
-    for i, p in enumerate(todos_productos):
-        with (col1 if i % 2 == 0 else col2):
-            st.markdown(f"""
-            <div class="product-card">
-                <h5>{p['nombre']}</h5>
-                <p>{p['precio']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            st.button("Ver ficha técnica", key=f"full_{i}")
+    st.markdown("#### Categorías Principales")
+    st.columns(4)[0].button("Nutrición")
+    st.columns(4)[1].button("Protección")
+    st.columns(4)[2].button("Riego")
+    st.columns(4)[3].button("Semillas")
+
+# --- PESTAÑA 3: ASESOR ---
+with menu[2]:
+    st.header("Contacto Directo")
+    st.write("¿Prefieres hablar con un técnico de tu zona?")
+    st.button("📲 Contactar por WhatsApp")
+    st.button("📞 Llamar a Oficina Central")
 
 st.sidebar.markdown("---")
-st.sidebar.write("🌐 [Ir a grupomultiagro.com](https://www.grupomultiagro.com)")
+st.sidebar.write(f"🌐 [Web Oficial Grupo Multiagro](https://www.grupomultiagro.com)")
