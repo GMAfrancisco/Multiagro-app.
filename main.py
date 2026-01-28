@@ -56,39 +56,50 @@ with mid:
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
 
-# --- SECCIÓN 1: DIAGNÓSTICO DE IA ---
+# --- SECCIÓN 1: DIAGNÓSTICO DE IA (Diseño táctil) ---
 st.markdown("<div class='card'>", unsafe_allow_html=True)
-st.subheader("🔍 Diagnóstico de Cultivos")
-img = st.camera_input("Capturar muestra") if st.toggle("Usar Cámara") else st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'])
+st.markdown("<h2 style='text-align:center;'>📸 Capturar Diagnóstico</h2>", unsafe_allow_html=True)
 
-if img and st.button("🚀 ANALIZAR AHORA"):
-    with st.spinner("Realizando análisis técnico profundo..."):
-        try:
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            
-            # PROMPT AVANZADO PARA ASESORÍA TÉCNICA
-            instruccion = """
-            Eres el Asesor Agronómico experto de Grupo Multiagro en República Dominicana.
-            Analiza la imagen detalladamente y estructura tu respuesta así:
-            
-            1. **DIAGNÓSTICO**: Nombre técnico y común del problema (plaga, hongo o carencia).
-            2. **ANÁLISIS DE DAÑO**: Qué le está pasando a la planta y qué pasará si no se trata.
-            3. **TÉCNICAS DE CONTROL**: 
-               - Control Cultural/Preventivo (podas, riego, etc.).
-               - Control Biológico si aplica.
-            4. **RECOMENDACIÓN MULTIAGRO**: Indica el producto específico de nuestro catálogo 
-               (insecticida, fungicida, etc.) y la dosis sugerida por aplicación.
-            5. **DATO CURIOSO/TIPS**: Un consejo extra para el productor dominicano.
-            
-            Responde de forma estructurada, usando negritas y con un tono profesional pero cercano.
-            """
-            
-            res = model.generate_content([instruccion, Image.open(img)])
-            st.success("✅ Análisis Técnico Completado")
-            st.markdown(res.text) # Usamos markdown para que las negritas y listas se vean bien
-        except Exception as e:
-            st.error(f"Error en el análisis: {str(e)}")
+# Creamos pestañas grandes y fáciles de tocar
+tab_cam, tab_gal = st.tabs(["📷 USAR CÁMARA EN VIVO", "📁 SUBIR DE GALERÍA"])
+
+with tab_cam:
+    st.markdown("<p style='font-size: 0.9rem; color: #555;'>Apunta directamente a la hoja o fruto afectado:</p>", unsafe_allow_html=True)
+    img_cam = st.camera_input("Capturar muestra para Grupo Multiagro")
+
+with tab_gal:
+    st.markdown("<p style='font-size: 0.9rem; color: #555;'>Selecciona una foto guardada:</p>", unsafe_allow_html=True)
+    img_gal = st.file_uploader("Seleccionar imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
+
+# Unificamos la imagen seleccionada
+img = img_cam if img_cam else img_gal
+
+if img:
+    # Mostramos un mensaje de confirmación de imagen lista
+    st.success("✅ Imagen lista para procesar")
+    if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
+        with st.spinner("Realizando análisis técnico..."):
+            try:
+                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+                model = genai.GenerativeModel('gemini-2.0-flash-lite')
+                
+                instruccion = """
+                Eres el Asesor Agronómico experto de Grupo Multiagro en República Dominicana.
+                Analiza la imagen detalladamente y estructura tu respuesta así:
+                1. DIAGNÓSTICO: Nombre técnico y común del problema.
+                2. ANÁLISIS DE DAÑO: Impacto actual y riesgo futuro.
+                3. TÉCNICAS DE CONTROL: Preventivo, Biológico y Cultural.
+                4. RECOMENDACIÓN MULTIAGRO: Producto específico y dosis.
+                5. CONSEJO TÉCNICO: Tip extra para el éxito del cultivo.
+                Responde en español profesional.
+                """
+                
+                res = model.generate_content([instruccion, Image.open(img)])
+                st.markdown("---")
+                st.markdown(res.text)
+            except Exception as e:
+                st.error("Error en el sensor de IA. Verifica tu conexión.")
+st.markdown("</div>", unsafe_allow_html=True)
 
 # --- SECCIÓN 2: SOLUCIONES (ODOO) ---
 st.divider()
