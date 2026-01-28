@@ -107,27 +107,25 @@ if prods:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
 
-# 8. PIE DE PÁGINA (Escáner de Precisión para Logos PNG)
+# 8. PIE DE PÁGINA (Escáner de Fuerza Total)
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-# Palabras clave únicas para cada marca
-l_ids = ["mundoagricola", "multisemillas", "multiriegos", "fortius", "agroservicios"] 
+# 1. Lista de nombres exactos que tú tienes
+l_ids = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"] 
 l_cols = st.columns(len(l_ids))
 
-archivos_en_carpeta = os.listdir(".")
+# 2. Obtenemos la lista real de archivos para depurar
+archivos_reales = os.listdir(".")
 
-for i, palabra in enumerate(l_ids):
+for i, nombre_buscado in enumerate(l_ids):
     with l_cols[i]:
         encontrado = False
-        for f in archivos_en_carpeta:
-            # Comparamos todo en minúsculas para que 'LogoAgroservicios' coincida con 'agroservicios'
-            nombre_f_min = f.lower()
-            
-            if palabra in nombre_f_min and nombre_f_min.endswith(".png") and "grupo_multiagro" not in nombre_f_min:
+        # Buscamos el archivo ignorando mayúsculas/minúsculas
+        for f in archivos_reales:
+            if f.lower() == nombre_buscado.lower():
                 try:
-                    # Abrimos el archivo con su nombre real (f) para mantener la ruta correcta
                     img_logo = Image.open(f)
                     ratio = 60 / float(img_logo.size[1])
                     new_size = (int(img_logo.size[0] * ratio), 60)
@@ -137,7 +135,14 @@ for i, palabra in enumerate(l_ids):
                 except: pass
         
         if not encontrado:
-            # Esto solo se verá si el archivo realmente no existe en la carpeta
-            st.caption(f"Revisar: {palabra}")
+            st.warning("⚠️")
+            # Esto nos dirá qué archivos hay realmente en la carpeta si falla
+            st.write(f"Buscando: {nombre_buscado}")
 
-st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
+# --- BLOQUE DE DEPURACIÓN (Bórralo cuando funcione) ---
+with st.expander("🛠️ Ver archivos detectados por la App"):
+    st.write("Archivos PNG en la carpeta raíz:")
+    st.write([f for f in archivos_reales if f.lower().endswith(".png")])
+# ------------------------------------------------------
+
+st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
