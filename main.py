@@ -9,7 +9,8 @@ st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # CAMBIO CLAVE: Usamos la versión estable del modelo
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
 except:
     st.error("⚠️ Configure su API Key en los Secrets de Streamlit.")
 
@@ -53,23 +54,25 @@ with tab1:
         st.image(img_view, width=350, caption="Imagen seleccionada")
         
         if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
-            with st.spinner("Analizando..."):
+            with st.spinner("Analizando cultivo..."):
                 try:
-                    prompt = f"Actúa como agrónomo experto de Multiagro en RD. Analiza este {cultivo_sel} en {prov_sel}. Identifica el problema y da una solución breve."
-                    response = model.generate_content([prompt, img_view])
-                    diagnostico = response.text
+                    # Instrucción clara para la IA
+                    prompt = f"Como agrónomo experto de Multiagro en RD, identifica el problema en este cultivo de {cultivo_sel} en {prov_sel} y sugiere una solución."
                     
-                    st.markdown("### 📋 Resultado")
-                    st.write(diagnostico)
+                    # Llamada corregida
+                    response = model.generate_content([prompt, img_view])
+                    
+                    st.markdown("### 📋 Diagnóstico Sugerido")
+                    st.write(response.text)
                     
                     st.markdown("---")
-                    st.subheader("🛒 Soluciones Multiagro")
+                    st.subheader("🛒 Productos Multiagro")
                     for p in CULTIVOS_DATA.get(cultivo_sel, []):
                         st.markdown(f"<div class='product-card'><b>{p}</b></div>", unsafe_allow_html=True)
-                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} en {prov_sel} tiene: {diagnostico[:50]}... Me interesa: {p}")
-                        st.markdown(f"[💬 Consultar {p} por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
+                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} tiene un problema. La IA sugirió: {response.text[:60]}... Me interesa: {p}")
+                        st.markdown(f"[💬 Consultar por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
                 except Exception as e:
-                    st.error(f"Error: {e}")
+                    st.error(f"Error en el motor de IA: {e}")
 
 with tab2:
     st.header("Catálogo")
