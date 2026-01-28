@@ -66,10 +66,22 @@ if img and st.button("🚀 ANALIZAR AHORA"):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            res = model.generate_content(["Analiza la salud de esta planta y sugiere soluciones Multiagro.", Image.open(img)])
+            
+            # INSTRUCCIÓN DETALLADA EN ESPAÑOL
+            instruccion = """
+            Actúa como un experto agrónomo de Grupo Multiagro en República Dominicana.
+            Analiza la imagen de la planta y:
+            1. Identifica la posible plaga, enfermedad o deficiencia nutricional.
+            2. Responde SIEMPRE en español de forma clara y profesional.
+            3. Recomienda el uso de productos específicos que vende Grupo Multiagro 
+               (insecticidas, herbicidas o fertilizantes según sea el caso).
+            """
+            
+            res = model.generate_content([instruccion, Image.open(img)])
+            st.success("✅ Diagnóstico Completado")
             st.info(res.text)
-        except: st.error("Error al procesar la imagen.")
-st.markdown("</div>", unsafe_allow_html=True)
+        except: 
+            st.error("Error al procesar la imagen con la IA.")
 
 # --- SECCIÓN 2: SOLUCIONES (ODOO) ---
 st.divider()
