@@ -19,32 +19,55 @@ try:
 except Exception as e:
     st.error("⚠️ Error en API Key. Verifique los Secrets.")
 
-# --- 3. ESTILOS CSS (Versión simplificada para evitar errores) ---
-st.markdown("<style>.main-card { background: white; padding: 20px; border-radius: 15px; border-top: 5px solid #1B5E20; box-shadow: 0 4px 10px rgba(0,0,0,0.05); } .prod-card { background: #f9f9f9; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #eee; }</style>", unsafe_allow_html=True)
+# --- 3. ESTILOS CSS (Ajustados para uniformidad) ---
+st.markdown("""
+    <style>
+    .stApp { background-color: #F8FAF8; }
+    .main-card { background: white; padding: 25px; border-radius: 15px; border-top: 8px solid #1B5E20; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .prod-card { background: white; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #eee; min-height: 110px; }
+    /* Estilo para forzar uniformidad en logos inferiores */
+    .logo-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 80px;  /* Altura fija para todos los logos */
+        margin-bottom: 10px;
+    }
+    .logo-container img {
+        max-height: 80px;
+        max-width: 100%;
+        object-fit: contain;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- 4. FUNCIÓN PARA CARGAR IMÁGENES ---
-def mostrar_imagen_segura(nombre_sin_ext, ancho=None):
+# --- 4. FUNCIÓN PARA CARGAR IMÁGENES (Con altura fija) ---
+def mostrar_logo_uniforme(nombre_sin_ext, es_footer=True):
     archivos = os.listdir(".")
-    encontrado = False
     for f in archivos:
         if f.lower().startswith(nombre_sin_ext.lower()):
             try:
-                img = Image.open(f)
-                if ancho:
-                    st.image(img, width=ancho)
+                if es_footer:
+                    # Usamos HTML para forzar el tamaño uniforme en el pie de página
+                    path = f"./{f}"
+                    st.markdown(f'<div class="logo-container"><img src="app/static/{f}"></div>', unsafe_allow_html=True)
+                    # Nota: Si el path static falla, usamos el método estándar de Streamlit con height
+                    st.image(f, height=70) 
                 else:
-                    st.image(img, use_container_width=True)
-                encontrado = True
-                break
+                    st.image(f, width=280)
+                return True
             except:
                 continue
-    if not encontrado:
-        st.info(f"📍 {nombre_sin_ext}")
+    st.info(f"📍 {nombre_sin_ext}")
+    return False
 
 # --- 5. CABECERA ---
 c1, c2, c3 = st.columns([1, 2, 1])
 with c2:
-    mostrar_imagen_segura("Grupo_Multiagro", ancho=280)
+    # Para el logo principal no forzamos altura tan pequeña
+    for f in os.listdir("."):
+        if f.lower().startswith("grupo_multiagro"):
+            st.image(f, width=300)
 
 st.markdown(f"<h1 style='text-align:center; color:{V_OSCURO};'>Consultor AgTech Multiagro</h1>", unsafe_allow_html=True)
 
@@ -77,7 +100,7 @@ if img_input:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --- 7. CATÁLOGO ---
-st.markdown(f"<h3 style='color:{V_OSCURO};'>🛒 Productos</h3>", unsafe_allow_html=True)
+st.markdown(f"<h3 style='color:{V_OSCURO}; margin-top:30px;'>🛒 Productos Destacados</h3>", unsafe_allow_html=True)
 items = [
     {"n": "Fungicida Elite", "p": "RD$ 2,800"},
     {"n": "Bio-Estimulante", "p": "RD$ 3,450"},
@@ -87,17 +110,10 @@ items = [
 p_cols = st.columns(4)
 for i in range(4):
     with p_cols[i]:
-        st.markdown(f"<div class='prod-card'><b>{items[i]['n']}</b><br>{items[i]['p']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='prod-card'><b>{items[i]['n']}</b><br><span style='color:{V_VIVO}'>{items[i]['p']}</span></div>", unsafe_allow_html=True)
         link = f"https://wa.me/18095551234?text=Interes en {items[i]['n']}"
         st.markdown(f"[💬 WhatsApp]({link})")
 
-# --- 8. LOGOS EMPRESAS ---
+# --- 8. LOGOS EMPRESAS (Altura Uniforme) ---
 st.divider()
-st.markdown("<p style='text-align:center; color:gray;'>NUESTRAS EMPRESAS</p>", unsafe_allow_html=True)
-logos_id = ["LogoMundoAgricola", "LogoMultisemillas", "LogoMultiriegos", "LogoFortius", "LogoAgroservicios"]
-l_cols = st.columns(5)
-for i in range(5):
-    with l_cols[i]:
-        mostrar_imagen_segura(logos_id[i])
-
-st.markdown("<p style='text-align:center; font-size:12px; color:#aaa; margin-top:50px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:gray; font
