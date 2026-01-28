@@ -6,7 +6,6 @@ import urllib.parse
 # --- CONFIGURACIÓN ---
 st.set_page_config(page_title="Multiagro App", page_icon="🌱", layout="wide")
 
-# Colores Corporativos
 V_OSCURO = "#1B5E20"
 V_VIVO = "#388E3C"
 
@@ -46,38 +45,4 @@ with st.container():
     
     col_a, col_b = st.columns(2)
     with col_a:
-        cultivo = st.selectbox("Cultivo:", ["Arroz", "Banano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"])
-    with col_b:
-        opcion = st.radio("Acción:", ["Subir Foto", "Usar Cámara"], horizontal=True)
-
-    img = None
-    if opcion == "Usar Cámara":
-        img = st.camera_input("Capturar")
-    else:
-        img = st.file_uploader("Galería", type=['jpg', 'png', 'jpeg'])
-
-    if img:
-        st.image(img, width=300)
-        if st.button("🚀 ANALIZAR AHORA"):
-            # AQUÍ SE CORRIGIÓ LA INDENTACIÓN (4 espacios exactos)
-            with st.spinner("Analizando..."):
-                try:
-                    pil_img = Image.open(img)
-                    prompt = f"Como agrónomo en RD, analiza este {cultivo} e identifica plagas."
-                    res = model.generate_content([prompt, pil_img])
-                    st.success("¡Diagnóstico listo!")
-                    st.write(res.text)
-                except Exception as e:
-                    st.error(f"Error técnico: {e}")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# --- PRODUCTOS ---
-st.markdown("<br><h3>🛒 Catálogo Destacado</h3>", unsafe_allow_html=True)
-items = [
-    {"n": "Fungicida Elite", "p": "RD$ 2,800"},
-    {"n": "Bio-Estimulante", "p": "RD$ 3,450"},
-    {"n": "Herbicida Total", "p": "RD$ 1,200"},
-    {"n": "Potasio Soluble", "p": "RD$ 1,950"}
-]
-c = st.columns(4)
-for i in range(len(items)):
+        cultivo = st.selectbox("Cultivo:", ["Arroz", "Banano", "Cacao", "Vegetales Campo Abierto
