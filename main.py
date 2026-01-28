@@ -7,7 +7,7 @@ import os
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# 2. FUNCIONES DE INTEGRACIÓN ODOO
+# 2. FUNCIONES ODOO
 def get_odoo_prods():
     try:
         url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
@@ -29,16 +29,13 @@ def registrar_cliente_odoo(nombre, email, telefono):
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            nuevo_id = models.execute_kw(db, uid, key, 'res.partner', 'create', [{
-                'name': nombre,
-                'email': email,
-                'phone': telefono,
+            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
+                'name': nombre, 'email': email, 'phone': telefono,
                 'comment': 'Registrado desde la App AgTech'
             }])
-            return nuevo_id
     except: return None
 
-# 3. ESTILOS CSS (Contraste y Diseño Móvil)
+# 3. ESTILOS CSS (Contraste y Transparencias)
 st.markdown("""
     <style>
     .stApp {background-color: #F0F2F0;}
@@ -62,7 +59,7 @@ st.markdown("""
     }
     .product-card {
         background: #FFFFFF; padding: 15px; border-radius: 12px; 
-        border: 2px solid #1B5E20; text-align: center; margin-bottom: 10px;
+        border: 2px solid #1B5E20; text-align: center;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -70,8 +67,9 @@ st.markdown("""
 # 4. ENCABEZADO
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
+    # Busca el logo principal en PNG
     for f in os.listdir("."):
-        if f.lower().startswith("grupo_multiagro"):
+        if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
     st.markdown('<p class="eslogan">"Expertos en soluciones agrícolas"</p>', unsafe_allow_html=True)
 
@@ -79,41 +77,33 @@ with mid:
 st.markdown("<div class='main-card'>", unsafe_allow_html=True)
 st.markdown("### 🔍 Diagnóstico de Cultivos")
 metodo = st.radio("Seleccione método:", ["📂 Galería", "📸 Cámara"], horizontal=True)
-img = st.file_uploader("Subir imagen de la planta", type=['jpg', 'jpeg', 'png']) if metodo == "📂 Galería" else st.camera_input("Capturar muestra")
+img = st.file_uploader("Subir imagen de la planta", type=['png', 'jpg', 'jpeg']) if metodo == "📂 Galería" else st.camera_input("Capturar muestra")
 
 if img and st.button("🚀 ANALIZAR AHORA"):
     with st.spinner("IA analizando..."):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            prompt = "Identifica el problema en la planta y sugiere soluciones de Grupo Multiagro."
-            res = model.generate_content([prompt, Image.open(img)])
+            res = model.generate_content(["Identifica el problema y sugiere productos Multiagro", Image.open(img)])
             st.success("✅ Diagnóstico Completado")
             st.write(res.text)
-        except: st.error("Error al conectar con la IA.")
+        except: st.error("Error en IA.")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# 6. BLOQUE 2: REGISTRO DE PRODUCTOR (DESPUÉS DEL DIAGNÓSTICO)
+# 6. BLOQUE 2: REGISTRO
 st.markdown("<div class='main-card'>", unsafe_allow_html=True)
 st.markdown("### 👤 Registro de Productor")
 if 'registro_ok' not in st.session_state:
-    st.write("Regístrese para recibir asesoría personalizada y guardar sus diagnósticos.")
-    with st.form("form_registro"):
-        nombre = st.text_input("Nombre Completo *")
-        correo = st.text_input("Correo Electrónico")
-        telefono = st.text_input("Teléfono / WhatsApp *")
+    with st.form("form_reg"):
+        n, e, t = st.text_input("Nombre *"), st.text_input("Correo"), st.text_input("WhatsApp *")
         if st.form_submit_button("✅ Registrarme"):
-            if nombre and telefono:
-                if registrar_cliente_odoo(nombre, correo, telefono):
-                    st.session_state['registro_ok'], st.session_state['user'] = True, nombre
-                    st.rerun()
-                else: st.error("Error al guardar en Odoo.")
-            else: st.warning("Por favor llene los campos obligatorios (*)")
-else:
-    st.success(f"¡Bienvenido, {st.session_state['user']}! Su perfil está activo.")
+            if n and t and registrar_cliente_odoo(n, e, t):
+                st.session_state['registro_ok'], st.session_state['user'] = True, n
+                st.rerun()
+else: st.success(f"Bienvenido, {st.session_state['user']}")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# 7. BLOQUE 3: SOLUCIONES MULTIAGRO
+# 7. BLOQUE 3: PRODUCTOS ODOO
 st.markdown("### 🛒 Soluciones Multiagro")
 prods = get_odoo_prods()
 if prods:
@@ -122,26 +112,27 @@ if prods:
         with cols[i]:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
-else: st.info("Sincronizando con inventario...")
 
-# 8. PIE DE PÁGINA (LOGOS Y CONTACTO)
+# 8. PIE DE PÁGINA (LOGOS PNG FILTRADOS)
 st.divider()
-c1, c2 = st.columns(2)
-c1.markdown(f"**📧 Contacto:** info@grupomultiagro.com")
-c2.markdown(f"**📞 WhatsApp:** (829) 562-4653")
+st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-st.markdown("<p style='text-align:center; font-weight:bold; margin-top:20px;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 l_cols = st.columns(5)
 l_ids = ["LogoMundoAgricola", "LogoMultisemillas", "LogoMultiriegos", "LogoFortius", "LogoAgroservicios"]
 
 for i, lid in enumerate(l_ids):
     with l_cols[i]:
         for f in os.listdir("."):
-            if f.lower().startswith(lid.lower()):
+            # Filtra solo archivos que empiecen con el ID y sean .png
+            if f.lower().startswith(lid.lower()) and f.lower().endswith(".png"):
                 try:
                     img_logo = Image.open(f)
+                    # Forzamos altura uniforme para alineación perfecta
                     ratio = 60 / float(img_logo.size[1])
-                    st.image(img_logo.resize((int(img_logo.size[0]*ratio), 60), Image.Resampling.LANCZOS))
+                    new_size = (int(img_logo.size[0] * ratio), 60)
+                    st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
                 except: pass
                 break
-st.markdown("<p style='text-align:center; font-size:12px; color:#555;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
+
+st.markdown("<p style='text-align:center; font-size:12px; color:#555;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
