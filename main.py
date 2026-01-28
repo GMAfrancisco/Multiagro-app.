@@ -33,7 +33,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 4. ENCABEZADO
+# 4. ENCABEZADO (Logo Principal)
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in os.listdir("."):
@@ -42,8 +42,28 @@ with mid:
 
 st.markdown("<h2 style='text-align:center; color:#1B5E20; margin-top:-20px;'>Asistente Técnico Inteligente</h2>", unsafe_allow_html=True)
 
-# 5. CATÁLOGO DE PRODUCTOS
+# --- BLOQUE 1: DIAGNÓSTICO (AHORA PRIMERO) ---
+st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+st.markdown("### 🔍 Diagnóstico de Cultivos")
+st.write("Identifique plagas o deficiencias en sus cultivos mediante Inteligencia Artificial.")
+metodo = st.radio("Seleccione método:", ["📂 Galería", "📸 Cámara"], horizontal=True)
+
+if metodo == "📂 Galería":
+    img = st.file_uploader("Subir imagen de la planta", type=['jpg', 'jpeg', 'png'])
+else:
+    img = st.camera_input("Capturar muestra")
+
+if img:
+    if st.button("🚀 ANALIZAR AHORA"):
+        with st.spinner("Analizando..."):
+            st.success("Imagen recibida. Procesando diagnóstico...")
+st.markdown("</div>", unsafe_allow_html=True)
+
+st.divider()
+
+# --- BLOQUE 2: SOLUCIONES MULTIAGRO (EN EL MEDIO) ---
 st.markdown("### 🛒 Soluciones Multiagro")
+st.write("Productos recomendados para el manejo y nutrición de sus cultivos.")
 prods = get_odoo_prods()
 if prods:
     cols = st.columns(len(prods))
@@ -56,26 +76,7 @@ else:
     for col, texto in zip([c1,c2,c3,c4], ["Fungicida", "Herbicida", "Fertilizante", "Insecticida"]):
         col.info(f"**{texto}**\n\nConsulte Precio")
 
-st.divider()
-
-# 6. MÓDULO DE DIAGNÓSTICO
-st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-st.markdown("### 🔍 Diagnóstico de Cultivos")
-metodo = st.radio("Seleccione método:", ["📂 Galería", "📸 Cámara"], horizontal=True)
-
-if metodo == "📂 Galería":
-    img = st.file_uploader("Subir imagen de la planta", type=['jpg', 'jpeg', 'png'])
-else:
-    img = st.camera_input("Capturar muestra")
-
-if img:
-    if st.button("🚀 ANALIZAR AHORA"):
-        with st.spinner("Analizando..."):
-            # Aquí se activaría la lógica de Gemini
-            st.success("Imagen recibida. Procesando diagnóstico...")
-st.markdown("</div>", unsafe_allow_html=True)
-
-# 7. PIE DE PÁGINA Y LOGOS
+# --- BLOQUE 3: PIE DE PÁGINA Y LOGOS (AL FINAL) ---
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.divider()
 st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
