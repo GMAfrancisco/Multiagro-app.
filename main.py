@@ -107,26 +107,32 @@ if prods:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
 
-# 8. PIE DE PÁGINA (Carga Automática de PNGs)
+# 8. PIE DE PÁGINA (Sincronización Automática de Marcas)
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-weight:bold; color:#333;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-# 1. Filtramos todos los PNGs de la carpeta (excluyendo el logo principal)
-archivos_png = [f for f in os.listdir(".") if f.lower().endswith(".png") and "grupo_multiagro" not in f.lower()]
+# 1. Detectar archivos PNG (excluyendo el principal)
+# Ordenamos alfabéticamente para que siempre salgan en el mismo orden
+archivos_png = sorted([f for f in os.listdir(".") if f.lower().endswith(".png") and "grupo_multiagro" not in f.lower()])
 
-# 2. Creamos 5 columnas
+# 2. Creamos 5 columnas fijas
 l_cols = st.columns(5)
 
-# 3. Metemos los logos que encontremos
-for i, f in enumerate(archivos_png[:5]): # Toma los primeros 5 encontrados
+# 3. Iteramos sobre las 5 columnas
+for i in range(5):
     with l_cols[i]:
-        try:
-            img_logo = Image.open(f)
-            ratio = 60 / float(img_logo.size[1])
-            new_size = (int(img_logo.size[0] * ratio), 60)
-            st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
-        except:
-            pass
+        if i < len(archivos_png):
+            try:
+                img_logo = Image.open(archivos_png[i])
+                # Mantenemos altura de 60px para uniformidad
+                ratio = 60 / float(img_logo.size[1])
+                new_size = (int(img_logo.size[0] * ratio), 60)
+                st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
+            except:
+                pass
+        else:
+            # Espacio reservado para cuando subas el logo faltante
+            st.empty()
 
-st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
