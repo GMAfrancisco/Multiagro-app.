@@ -113,3 +113,15 @@ st.divider()
 st.markdown("<p style='text-align:center; color:#666;'>Empresas del Grupo Multiagro</p>", unsafe_allow_html=True)
 l_cols = st.columns(5)
 # (Lógica de logos que ya tenemos para que se vean pequeños y alineados)
+💎 Mejoras estéticas y funcionales aplicadas:
+Prioridad Visual: El catálogo de productos aparece arriba. Esto ayuda a que el usuario vea soluciones antes de interactuar.
+
+Cámara Bajo Demanda: He usado un st.radio. Por defecto está seleccionada la opción "📂 Subir desde Galería". La cámara solo se encenderá si el usuario hace clic específicamente en la opción de cámara.
+
+Tarjetas de Producto: Los precios y nombres ahora tienen un diseño más limpio (blanco con borde gris) que se siente más profesional.
+
+Botones Corporativos: El botón de "Analizar" ahora es verde oscuro (#1B5E20) y ocupa todo el ancho, lo que facilita el uso en celulares.
+
+¿Qué te parece este nuevo orden? Si ya tienes el nombre de la base de datos de Iterativo, solo ponlo en tus Secrets bajo el nombre ODOO_DB y la magia empezará a suceder.
+
+¿Quieres que te ayude a configurar la parte de los logos para que queden perfectamente alineados en la parte inferior?
