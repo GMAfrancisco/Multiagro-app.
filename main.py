@@ -13,48 +13,41 @@ except: st.error("⚠️ Configurar Gemini API Key en Secrets")
 
 # 2. FUNCIÓN ODOO
 def get_odoo_prods():
-    try:
-        url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"]
-        user = st.secrets["ODOO_USER"]
-        key = st.secrets["ODOO_API_KEY"]
-        
-        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
-        uid = common.authenticate(db, user, key, {})
-        
-        if uid:
-            models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            # Buscamos productos que se puedan vender
-            ids = models.execute_kw(db, uid, key, 'product.template', 'search', 
-                                   [[['sale_ok', '=', True]]], {'limit': 4})
-            res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
-            return [(p['name'], f"RD$ {p['list_price']:,.2f}") for p in res]
-    except Exception as e:
-        # Si falla, mostramos el error técnico solo para administración
-        if "does not exist" in str(e):
-            st.error(f"❌ La base de datos '{db}' no existe en este servidor.")
-        return None
+    url = st.secrets["ODOO_URL"]
+    user = st.secrets["ODOO_USER"]
+    key = st.secrets["ODOO_API_KEY"]
+    
+    # Lista de nombres técnicos más usados en Iterativo para Multiriegos
+    posibles_dbs = ["multiriegos_prod", "multiriegos", "prod_multiriegos", "prod-multiriegos"]
+    
+    for db_test in posibles_dbs:
+        try:
+            common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
+            uid = common.authenticate(db_test, user, key, {})
+            
+            if uid:
+                models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+                # Buscamos productos que se puedan vender
+                ids = models.execute_kw(db_test, uid, key, 'product.template', 'search', 
+                                       [[['sale_ok', '=', True]]], {'limit': 4})
+                res = models.execute_kw(db_test, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
+                return [(p['name'], f"RD$ {p['list_price']:,.2f}") for p in res], db_test
+        except:
+            continue
+    return None, None
 
-# --- LÓGICA DE VISUALIZACIÓN ---
-prods = get_odoo_prods()
+# --- Lógica de Visualización en la App ---
+prods, db_conectada = get_odoo_prods()
 
 if prods:
-    st.success("✅ Conectado a Odoo de Multiriegos")
+    st.success(f"✅ Conectado exitosamente a Odoo (Base de datos: {db_conectada})")
     cols = st.columns(len(prods))
     for i, (n, p) in enumerate(prods):
         with cols[i]:
             st.info(f"**{n}**\n\n{p}")
             st.markdown(f"[💬 WhatsApp](https://wa.me/18095551234?text=Info:{n})")
 else:
-    # Catálogo de Cortesía mientras se arregla la DB
-    st.warning("🔄 Mostrando catálogo promocional (Sincronización con Odoo pendiente)")
-    nom_p = ["Fungicida Elite", "Bio-Estimulante", "Herbicida Total", "Potasio Soluble"]
-    pre_p = ["RD$ 2,800", "RD$ 3,450", "RD$ 1,200", "RD$ 1,950"]
-    cols = st.columns(4)
-    for i in range(4):
-        with cols[i]:
-            st.info(f"**{nom_p[i]}**\n\n{pre_p[i]}")
-
+    st.error("❌ No se pudo encontrar la base de datos correcta. Por favor, verifique el selector de bases de datos en Odoo.")
 # 3. DISEÑO
 st.markdown("<style>.stApp{background:#F8FAF8} .card{background:white;padding:20px;border-radius:15px;border-top:8px solid #1B5E20;box-shadow:0 4px 10px rgba(0,0,0,0.05)}</style>", unsafe_allow_html=True)
 
