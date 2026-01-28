@@ -4,124 +4,96 @@ import google.generativeai as genai
 from PIL import Image
 import os, urllib.parse
 
-# 1. SETUP DE PÁGINA (Título en la pestaña del navegador)
+# 1. SETUP PROFESIONAL
 st.set_page_config(page_title="Grupo Multiagro | Consultor AgTech", layout="wide")
 
-# 2. FUNCIÓN DE CONEXIÓN ODOO (Ya con tu nombre de DB real)
+# 2. IA Y ODOO
 def get_odoo_prods():
     try:
         url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"] # Aquí irá el nombre que te dio Iterativo
+        db = st.secrets["ODOO_DB"]
         user = st.secrets["ODOO_USER"]
         key = st.secrets["ODOO_API_KEY"]
-        
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
-        
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 4})
             res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
             return res
-        return None
     except:
         return None
 
-# 3. ESTILOS PERSONALIZADOS (Verde Multiagro)
+# 3. ESTILOS CSS
 st.markdown("""
     <style>
     .stApp {background-color: #F4F7F4;}
-    .main-card {
-        background: white;
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border-top: 10px solid #1B5E20;
-    }
-    .stButton>button {
-        background-color: #1B5E20 !important;
-        color: white !important;
-        border-radius: 10px;
-        width: 100%;
-        height: 50px;
-        font-weight: bold;
-    }
+    .main-card {background: white; padding: 25px; border-radius: 15px; border-top: 8px solid #1B5E20; box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
+    .product-card {background:white; padding:15px; border-radius:10px; border:1px solid #e0e0e0; text-align:center;}
     </style>
 """, unsafe_allow_html=True)
 
-# 4. ENCABEZADO Y LOGO
-col_a, col_b, col_c = st.columns([1, 2, 1])
-with col_b:
+# 4. ENCABEZADO
+_, mid, _ = st.columns([1, 2, 1])
+with mid:
     for f in os.listdir("."):
         if f.lower().startswith("grupo_multiagro"):
             st.image(f, use_container_width=True)
 
-st.markdown("<h2 style='text-align:center; color:#1B5E20;'>Asistente Técnico Inteligente</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center; color:#1B5E20; margin-top:-20px;'>Asistente Técnico Inteligente</h2>", unsafe_allow_html=True)
 
-# 5. SECCIÓN DE PRODUCTOS (Primero lo que vende)
-st.markdown("### 🛒 Soluciones Recomendadas")
+# 5. CATÁLOGO DE PRODUCTOS
+st.markdown("### 🛒 Soluciones Multiagro")
 prods = get_odoo_prods()
-
 if prods:
     cols = st.columns(len(prods))
     for i, p in enumerate(prods):
         with cols[i]:
-            st.markdown(f"""
-                <div style="background:white; padding:15px; border-radius:10px; border:1px solid #ddd; text-align:center;">
-                    <p style="margin:0; font-weight:bold; color:#333;">{p['name']}</p>
-                    <p style="color:#1B5E20; font-size:18px; font-weight:bold;">RD$ {p['list_price']:,.2f}</p>
-                </div>
-            """, unsafe_allow_html=True)
-            link = f"https://wa.me/18095551234?text=Hola, solicito cotización de: {p['name']}"
-            st.markdown(f"[💬 Solicitar por WhatsApp]({link})")
+            st.markdown(f"<div class='product-card'><b>{p['name']}</b><br><span style='color:#1B5E20; font-size:18px;'>RD$ {p['list_price']:,.2f}</span></div>", unsafe_allow_html=True)
+            st.markdown(f"[💬 WhatsApp](https://wa.me/18095551234?text=Info:{p['name']})")
 else:
-    # Catálogo visual de respaldo si Odoo no carga
     c1, c2, c3, c4 = st.columns(4)
-    respaldos = [("Fungicida Pro", "RD$ 2,500"), ("Herbicida Max", "RD$ 1,800"), ("Fertilizante Fol", "RD$ 3,200"), ("Insecticida Bio", "RD$ 2,100")]
-    for i, res in enumerate(respaldos):
-        with [c1, c2, c3, c4][i]:
-            st.info(f"**{res[0]}**\n\n{res[1]}")
+    for col, texto in zip([c1,c2,c3,c4], ["Fungicida", "Herbicida", "Fertilizante", "Insecticida"]):
+        col.info(f"**{texto}**\n\nConsulte Precio")
 
 st.divider()
 
-# 6. MÓDULO DE DIAGNÓSTICO (Orden corregido)
+# 6. MÓDULO DE DIAGNÓSTICO
 st.markdown("<div class='main-card'>", unsafe_allow_html=True)
 st.markdown("### 🔍 Diagnóstico de Cultivos")
-st.write("Suba una foto clara de la hoja o fruto afectado para recibir recomendaciones.")
+metodo = st.radio("Seleccione método:", ["📂 Galería", "📸 Cámara"], horizontal=True)
 
-# Selector de método: "Subir Foto" por defecto
-metodo = st.radio("Seleccione cómo enviar la imagen:", 
-                  ["📂 Subir desde Galería", "📸 Tomar Foto con Cámara"], 
-                  horizontal=True)
-
-img = None
-if "Galería" in metodo:
-    img = st.file_uploader("Elija una imagen...", type=['jpg', 'jpeg', 'png'])
+if metodo == "📂 Galería":
+    img = st.file_uploader("Subir imagen de la planta", type=['jpg', 'jpeg', 'png'])
 else:
-    img = st.camera_input("Enfoque la planta")
+    img = st.camera_input("Capturar muestra")
 
 if img:
-    # Mostramos botón de análisis solo si hay imagen
-    if st.button("🚀 ANALIZAR MUESTRA AHORA"):
-        with st.spinner("IA analizando patógenos..."):
-            # Aquí va el código de Gemini que ya tienes configurado
-            st.success("Diagnóstico completado. (IA funcionando)")
+    if st.button("🚀 ANALIZAR AHORA"):
+        with st.spinner("Analizando..."):
+            # Aquí se activaría la lógica de Gemini
+            st.success("Imagen recibida. Procesando diagnóstico...")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# 7. LOGOS DE EMPRESAS ALIADAS (Pie de página)
+# 7. PIE DE PÁGINA Y LOGOS
+st.markdown("<br><br>", unsafe_allow_html=True)
 st.divider()
-st.markdown("<p style='text-align:center; color:#666;'>Empresas del Grupo Multiagro</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
+
+l_ids = ["LogoMundoAgricola", "LogoMultisemillas", "LogoMultiriegos", "LogoFortius", "LogoAgroservicios"]
 l_cols = st.columns(5)
-# (Lógica de logos que ya tenemos para que se vean pequeños y alineados)
-💎 Mejoras estéticas y funcionales aplicadas:
-Prioridad Visual: El catálogo de productos aparece arriba. Esto ayuda a que el usuario vea soluciones antes de interactuar.
 
-Cámara Bajo Demanda: He usado un st.radio. Por defecto está seleccionada la opción "📂 Subir desde Galería". La cámara solo se encenderá si el usuario hace clic específicamente en la opción de cámara.
+for i, lid in enumerate(l_ids):
+    with l_cols[i]:
+        for f in os.listdir("."):
+            if f.lower().startswith(lid.lower()):
+                try:
+                    img_logo = Image.open(f)
+                    ratio = 80 / float(img_logo.size[1])
+                    new_size = (int(img_logo.size[0] * ratio), 80)
+                    st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
+                except:
+                    pass
+                break
 
-Tarjetas de Producto: Los precios y nombres ahora tienen un diseño más limpio (blanco con borde gris) que se siente más profesional.
-
-Botones Corporativos: El botón de "Analizar" ahora es verde oscuro (#1B5E20) y ocupa todo el ancho, lo que facilita el uso en celulares.
-
-¿Qué te parece este nuevo orden? Si ya tienes el nombre de la base de datos de Iterativo, solo ponlo en tus Secrets bajo el nombre ODOO_DB y la magia empezará a suceder.
-
-¿Quieres que te ayude a configurar la parte de los logos para que queden perfectamente alineados en la parte inferior?
+st.markdown("<p style='text-align:center; font-size:12px; color:#aaa; margin-top:20px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
