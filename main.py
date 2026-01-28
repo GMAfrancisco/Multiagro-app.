@@ -1,72 +1,82 @@
 import streamlit as st
+import xmlrpc.client
 import google.generativeai as genai
 from PIL import Image
-import urllib.parse, os, time
+import os, urllib.parse, time
 
-# 1. SETUP PROFESIONAL
-st.set_page_config(page_title="Multiagro App", layout="wide")
+# --- FUNCIÓN DE CONEXIÓN A ODOO ---
+def traer_datos_odoo():
+    try:
+        url = st.secrets["ODOO_URL"]
+        db = st.secrets["ODOO_DB"]
+        user = st.secrets["ODOO_USER"]
+        key = st.secrets["ODOO_API_KEY"]
+        
+        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
+        uid = common.authenticate(db, user, key, {})
+        
+        if not uid: return None
+        
+        models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+        # Buscamos productos activos en venta
+        ids = models.execute_kw(db, uid, key, 'product.template', 'search', 
+                               [[['sale_ok', '=', True]]], {'limit': 4})
+        
+        prods = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
+        return [(p['name'], f"RD$ {p['list_price']:,.2f}") for p in prods]
+    except:
+        return None
 
+# --- SETUP APP ---
+st.set_page_config(page_title="Multiagro AgTech", layout="wide")
+
+# IA Gemini
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Cambiamos a flash-lite temporalmente: tiene cuotas más altas en Tier 1
-    model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
-except:
-    st.error("⚠️ Error de API")
+    model = genai.GenerativeModel('models/gemini-2.0-flash')
+except: st.error("Error IA")
 
-# 2. ESTILO
-st.markdown("<style>.stApp{background:#F8FAF8} .card{background:white;padding:25px;border-radius:15px;border-top:8px solid #1B5E20;box-shadow:0 4px 10px rgba(0,0,0,0.05)}</style>", unsafe_allow_html=True)
+# Estilos
+st.markdown("<style>.stApp{background:#F8FAF8} .card{background:white;padding:20px;border-radius:15px;border-top:8px solid #1B5E20;box-shadow:0 4px 10px rgba(0,0,0,0.05)}</style>", unsafe_allow_html=True)
 
-# 3. HEADER
+# Header
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in os.listdir("."):
         if f.lower().startswith("grupo_multiagro"): st.image(f, use_container_width=True)
 
-st.markdown("<h1 style='text-align:center;color:#1B5E20;margin-top:-20px;'>Diagnóstico Inteligente</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center;color:#1B5E20;margin-top:-20px;'>Diagnóstico y Catálogo Odoo</h1>", unsafe_allow_html=True)
 
-# 4. DIAGNÓSTICO CON REINTENTOS (Solución al error 429)
-with st.container():
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    cult = c1.selectbox("Cultivo:", ["Arroz", "Banano", "Cacao", "Vegetales", "Aguacate", "Café"])
-    opc = c2.radio("Entrada:", ["Galería", "Cámara"], horizontal=True)
-    img = st.camera_input("Foto") if opc == "Cámara" else st.file_uploader("Imagen", type=['jpg','png','jpeg'])
-    
-    if img and st.button("🚀 INICIAR ANÁLISIS"):
-        with st.spinner("Procesando muestra..."):
-            intentos = 0
-            max_intentos = 3
-            exito = False
-            
-            while intentos < max_intentos and not exito:
-                try:
-                    prmt = f"Agrónomo RD: analiza este {cult}, identifica plagas y sugiere manejo técnico."
-                    res = model.generate_content([prmt, Image.open(img)])
-                    st.success("✅ Diagnóstico Completado")
-                    st.write(res.text)
-                    exito = True
-                except Exception as e:
-                    intentos += 1
-                    if "429" in str(e) or "ResourceExhausted" in str(e):
-                        if intentos < max_intentos:
-                            st.warning(f"Línea ocupada. Reintentando automáticamente en {intentos * 4} segundos...")
-                            time.sleep(intentos * 4) # Espera progresiva
-                        else:
-                            st.error("Límite de Google alcanzado. Por favor, espere 1 minuto e intente de nuevo.")
-                    else:
-                        st.error(f"Error inesperado: {e}")
-                        break
-    st.markdown("</div>", unsafe_allow_html=True)
+# --- BLOQUE DIAGNÓSTICO ---
+st.markdown("<div class='card'>", unsafe_allow_html=True)
+c1, c2 = st.columns(2)
+cult = c1.selectbox("Cultivo:", ["Arroz", "Banano", "Cacao", "Vegetales", "Aguacate", "Café"])
+opc = c2.radio("Entrada:", ["Cámara", "Galería"], horizontal=True)
+img = st.camera_input("Foto") if opc == "Cámara" else st.file_uploader("Subir", type=['jpg','png','jpeg'])
 
-# 5. PRODUCTOS Y LOGOS
-st.markdown("<h3 style='color:#1B5E20;margin-top:25px'>🛒 Soluciones Multiagro</h3>", unsafe_allow_html=True)
-nom, pre = ["Fungicida Elite", "Bio-Estimulante", "Herbicida Total", "Potasio Soluble"], ["RD$ 2,800", "RD$ 3,450", "RD$ 1,200", "RD$ 1,950"]
-cols = st.columns(4)
-for i in range(4):
-    with cols[i]:
-        st.info(f"**{nom[i]}**\n{pre[i]}")
-        st.markdown(f"[💬 WhatsApp](https://wa.me/18095551234?text=Interes:{nom[i]})")
+if img and st.button("🚀 INICIAR ANÁLISIS"):
+    with st.spinner("Analizando..."):
+        try:
+            res = model.generate_content([f"Agrónomo RD: analiza {cult}", Image.open(img)])
+            st.success("✅ Diagnóstico listo"); st.write(res.text)
+        except: st.error("Límite de cuota IA alcanzado.")
+st.markdown("</div>", unsafe_allow_html=True)
 
+# --- BLOQUE ODOO ---
+st.markdown("<h3 style='color:#1B5E20;margin-top:25px'>🛒 Inventario Real (Odoo)</h3>", unsafe_allow_html=True)
+productos = traer_datos_odoo()
+
+if productos:
+    cols = st.columns(len(productos))
+    for i, (nombre, precio) in enumerate(productos):
+        with cols[i]:
+            st.info(f"**{nombre}**\n\n{precio}")
+            link = f"https://wa.me/18095551234?text=Interés en {nombre}"
+            st.markdown(f"[💬 WhatsApp]({link})")
+else:
+    st.warning("No se pudo conectar con Odoo. Verifique los Secrets.")
+
+# Logos
 st.divider()
 l_ids = ["LogoMundoAgricola", "LogoMultisemillas", "LogoMultiriegos", "LogoFortius", "LogoAgroservicios"]
 l_cols = st.columns(5)
@@ -75,8 +85,8 @@ for i, l_id in enumerate(l_ids):
         for f in os.listdir("."):
             if f.lower().startswith(l_id.lower()):
                 im = Image.open(f)
-                rat = 80 / float(im.size[1])
-                st.image(im.resize((int(im.size[0]*rat), 80), Image.Resampling.LANCZOS))
+                ratio = 80 / float(im.size[1])
+                st.image(im.resize((int(im.size[0]*ratio), 80), Image.Resampling.LANCZOS))
                 break
 
-st.markdown("<p style='text-align:center;font-size:12px;color:#aaa;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;font-size:12px;color:#aaa;'>© 2026 GRUPO MULTIAGRO | Conectado a Iterativo.do</p>", unsafe_allow_html=True)
