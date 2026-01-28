@@ -54,27 +54,20 @@ with tab1:
         img_view = Image.open(img_file)
         st.image(img_view, width=350, caption="Imagen seleccionada")
         
-        if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
-            with st.spinner("Diagnosticando..."):
+if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
+            with st.spinner("Conectando con el cerebro de Multiagro..."):
                 try:
-                    # Prompt optimizado para la nueva versión del modelo
-                    prompt = f"Actúa como agrónomo experto de Multiagro en RD. Analiza esta foto de {cultivo_sel} en {prov_sel}. Identifica la plaga o deficiencia y recomienda una solución."
-                    
-                    # Generación de contenido con el modelo flash
+                    # Intentamos el diagnóstico
+                    prompt = f"Diagnóstico agronómico para {cultivo_sel} en {prov_sel}."
                     response = model.generate_content([prompt, img_view])
-                    
                     st.markdown("### 📋 Diagnóstico Sugerido")
-                    diagnostico_texto = response.text
-                    st.write(diagnostico_texto)
-                    
-                    st.markdown("---")
-                    st.subheader("🛒 Soluciones Multiagro")
-                    for p in CULTIVOS_DATA.get(cultivo_sel, []):
-                        st.markdown(f"<div class='product-card'><b>{p}</b></div>", unsafe_allow_html=True)
-                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} tiene un problema. La IA sugirió: {diagnostico_texto[:60]}... Me interesa: {p}")
-                        st.markdown(f"[💬 Consultar por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
+                    st.write(response.text)
                 except Exception as e:
                     st.error(f"Error técnico: {e}")
+                    # ESTO TE DIRÁ QUÉ MODELO USAR:
+                    st.write("🔍 Intentando listar modelos disponibles para tu cuenta...")
+                    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                    st.write(f"Modelos que puedes usar: {available_models}")
 
 with tab2:
     st.header("Catálogo")
