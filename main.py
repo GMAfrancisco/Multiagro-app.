@@ -107,43 +107,34 @@ if prods:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
 
-# 8. PIE DE PÁGINA (Escaneo Total)
+# 8. PIE DE PÁGINA (Nombres exactos según el servidor)
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-weight:bold; color:#333;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-# 1. Lista de búsqueda por palabras clave
-marcas = ["mundo", "semi", "riego", "fortius", "servi"] 
-cols_logos = st.columns(len(marcas))
+# Usamos exactamente los nombres que detectó tu lista
+nombres_logos = [
+    "LogoMundoAgricola.png",
+    "LogoMultisemillas.png",
+    "LogoMultiriegos.png",
+    "LogoFortius.png",
+    "LogoAgroservicios.png"
+]
 
-# 2. Escaneamos la carpeta real del servidor
-todos_los_archivos = os.listdir(".")
+l_cols = st.columns(len(nombres_logos))
 
-for i, clave in enumerate(marcas):
-    with cols_logos[i]:
-        encontrado = False
-        for f in todos_los_archivos:
-            # Buscamos coincidencias ignorando mayúsculas
-            if clave in f.lower() and f.lower().endswith(".png") and "grupo_multiagro" not in f.lower():
-                try:
-                    img_logo = Image.open(f)
-                    ratio = 60 / float(img_logo.size[1])
-                    new_size = (int(img_logo.size[0] * ratio), 60)
-                    st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
-                    encontrado = True
-                    break
-                except: pass
-        
-        if not encontrado:
-            # Si no lo encuentra, nos dirá exactamente por qué
-            st.warning(f"Falta: {clave}")
-
-# --- BLOQUE DE DEPURACIÓN CRÍTICA ---
-# Esto te dirá la verdad sobre qué archivos hay en tu servidor
-with st.expander("🔍 CLIC AQUÍ: Ver lista de archivos en el servidor"):
-    st.write("La App detecta estos archivos PNG en la carpeta principal:")
-    pngs = [f for f in todos_los_archivos if f.lower().endswith(".png")]
-    st.write(pngs)
-# ------------------------------------
+for i, nombre_archivo in enumerate(nombres_logos):
+    with l_cols[i]:
+        try:
+            # Cargamos el archivo por su nombre exacto
+            img_logo = Image.open(nombre_archivo)
+            
+            # Ajuste de tamaño uniforme
+            ratio = 60 / float(img_logo.size[1])
+            new_size = (int(img_logo.size[0] * ratio), 60)
+            
+            st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
+        except Exception as e:
+            st.caption(f"Error en {nombre_archivo}")
 
 st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
