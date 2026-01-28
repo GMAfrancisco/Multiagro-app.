@@ -28,7 +28,7 @@ st.markdown(f"""
     }}
     .product-card {{
         background: white; border-radius: 12px; padding: 12px;
-        text-align: center; border: 1px solid #EEE;
+        text-align: center; border: 1px solid #EEE; min-height: 100px;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -48,7 +48,6 @@ with st.container():
     with col_a:
         cultivo = st.selectbox("Cultivo:", ["Arroz", "Banano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"])
     with col_b:
-        # AQUÍ ESTABA EL ERROR: Texto corregido y cerrado
         opcion = st.radio("Acción:", ["Subir Foto", "Usar Cámara"], horizontal=True)
 
     img = None
@@ -60,4 +59,25 @@ with st.container():
     if img:
         st.image(img, width=300)
         if st.button("🚀 ANALIZAR AHORA"):
+            # AQUÍ SE CORRIGIÓ LA INDENTACIÓN (4 espacios exactos)
             with st.spinner("Analizando..."):
+                try:
+                    pil_img = Image.open(img)
+                    prompt = f"Como agrónomo en RD, analiza este {cultivo} e identifica plagas."
+                    res = model.generate_content([prompt, pil_img])
+                    st.success("¡Diagnóstico listo!")
+                    st.write(res.text)
+                except Exception as e:
+                    st.error(f"Error técnico: {e}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# --- PRODUCTOS ---
+st.markdown("<br><h3>🛒 Catálogo Destacado</h3>", unsafe_allow_html=True)
+items = [
+    {"n": "Fungicida Elite", "p": "RD$ 2,800"},
+    {"n": "Bio-Estimulante", "p": "RD$ 3,450"},
+    {"n": "Herbicida Total", "p": "RD$ 1,200"},
+    {"n": "Potasio Soluble", "p": "RD$ 1,950"}
+]
+c = st.columns(4)
+for i in range(len(items)):
