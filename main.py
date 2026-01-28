@@ -6,12 +6,12 @@ import urllib.parse
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
 
-# --- CONEXIÓN IA (MODO ULTRA-COMPATIBLE) ---
+# --- CONEXIÓN IA (MODELO ACTUALIZADO 2026) ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    # Usamos gemini-1.5-flash que es el modelo actual de producción
-    model = genai.GenerativeModel('gemini-pro-vision')
+    # Usamos el modelo confirmado en tu lista
+    model = genai.GenerativeModel('models/gemini-2.0-flash')
 except Exception as e:
     st.error(f"⚠️ Error de configuración: {e}")
 
@@ -23,7 +23,7 @@ try:
 except:
     st.image("https://www.grupomultiagro.com/wp-content/uploads/2022/03/logo-multiagro-horizontal.png", width=300)
 
-# --- DATOS ---
+# --- DATOS RD ---
 PROVINCIAS = ["Azua", "Baoruco", "Barahona", "Dajabón", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Valverde", "Santo Domingo"]
 CULTIVOS_DATA = {
     "Arroz": ["Urea Multiagro", "Pro-Arroz", "Zinc Foliar"],
@@ -54,21 +54,25 @@ with tab1:
         img_view = Image.open(img_file)
         st.image(img_view, width=350, caption="Imagen seleccionada")
         
-if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
-            with st.spinner("Conectando con el cerebro de Multiagro..."):
+        if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
+            with st.spinner("La IA de Multiagro está diagnosticando..."):
                 try:
-                    # Intentamos el diagnóstico
-                    prompt = f"Diagnóstico agronómico para {cultivo_sel} en {prov_sel}."
+                    prompt = f"Actúa como agrónomo experto de Multiagro en RD. Analiza esta foto de {cultivo_sel} en {prov_sel}. Identifica la plaga o deficiencia y recomienda soluciones cortas."
                     response = model.generate_content([prompt, img_view])
+                    
                     st.markdown("### 📋 Diagnóstico Sugerido")
-                    st.write(response.text)
+                    diag_text = response.text
+                    st.write(diag_text)
+                    
+                    st.markdown("---")
+                    st.subheader(f"🛒 Recomendados para {cultivo_sel}")
+                    for p in CULTIVOS_DATA.get(cultivo_sel, []):
+                        st.markdown(f"<div class='product-card'><b>{p}</b></div>", unsafe_allow_html=True)
+                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} en {prov_sel} tiene: {diag_text[:60]}... Me interesa el producto {p}")
+                        st.markdown(f"[💬 Consultar por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
                 except Exception as e:
                     st.error(f"Error técnico: {e}")
-                    # ESTO TE DIRÁ QUÉ MODELO USAR:
-                    st.write("🔍 Intentando listar modelos disponibles para tu cuenta...")
-                    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                    st.write(f"Modelos que puedes usar: {available_models}")
 
 with tab2:
     st.header("Catálogo")
-    st.write("Sincronizando con Odoo 17...")
+    st.write("Explorando 2,500+ referencias de Grupo Multiagro...")
