@@ -16,7 +16,7 @@ try:
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
 except:
-    st.error("⚠️ Error en API Key. Verifique Secrets.")
+    st.error("⚠️ Error en API Key.")
 
 # --- CSS ---
 st.markdown(f"""
@@ -34,14 +34,16 @@ st.markdown(f"""
     """, unsafe_allow_html=True)
 
 # --- HEADER ---
-# Intenta cargar el logo principal con fallback
-if os.path.exists("Grupo_Multiagro_Mesa de trabajo 1.png"):
-    st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=280)
-else:
-    st.markdown(f"<h1 style='color:{V_OSCURO};'>GRUPO MULTIAGRO</h1>", unsafe_allow_html=True)
+# Buscamos el logo principal ignorando mayúsculas/minúsculas
+def mostrar_imagen(nombre_archivo, ancho=None):
+    for file in os.listdir("."):
+        if file.lower() == nombre_archivo.lower():
+            return st.image(file, width=ancho) if ancho else st.image(file, use_container_width=True)
+    return st.write(f"⚠️ No encontrado: {nombre_archivo}")
 
-# --- LISTAS DE DATOS ---
-LISTA_CULTIVOS = ["Arroz", "Banano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"]
+st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+mostrar_imagen("Grupo_Multiagro_Mesa de trabajo 1.png", ancho=280)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # --- DIAGNÓSTICO ---
 with st.container():
@@ -50,7 +52,7 @@ with st.container():
     
     col_a, col_b = st.columns(2)
     with col_a:
-        cultivo = st.selectbox("Cultivo:", LISTA_CULTIVOS)
+        cultivo = st.selectbox("Cultivo:", ["Arroz", "Banano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"])
     with col_b:
         opcion = st.radio("Acción:", ["Subir Foto", "Usar Cámara"], horizontal=True)
 
@@ -71,31 +73,22 @@ with st.container():
                     st.success("¡Diagnóstico listo!")
                     st.write(res.text)
                 except Exception as e:
-                    st.error(f"Error técnico: {e}")
+                    st.error(f"Error: {e}")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- PRODUCTOS ---
-st.markdown("<br><h3>🛒 Catálogo Destacado</h3>", unsafe_allow_html=True)
-items = [
-    {"n": "Fungicida Elite", "p": "RD$ 2,800"},
-    {"n": "Bio-Estimulante", "p": "RD$ 3,450"},
-    {"n": "Herbicida Total", "p": "RD$ 1,200"},
-    {"n": "Potasio Soluble", "p": "RD$ 1,950"}
-]
-
-c = st.columns(4)
+st.markdown("<br><h3>🛒 Catálogo</h3>", unsafe_allow_html=True)
+items = [{"n": "Fungicida Elite", "p": "RD$ 2,800"}, {"n": "Bio-Estimulante", "p": "RD$ 3,450"}]
+c = st.columns(2)
 for i in range(len(items)):
     with c[i]:
         st.markdown(f"<div class='product-card'><b>{items[i]['n']}</b><br>{items[i]['p']}</div>", unsafe_allow_html=True)
-        txt = urllib.parse.quote(f"Me interesa: {items[i]['n']}")
-        st.markdown(f"[💬 Cotizar WhatsApp](https://wa.me/18095551234?text={txt})")
 
-# --- LOGOS (CON BUSCADOR DE ARCHIVOS) ---
+# --- LOGOS (MARCAS ALIADAS) ---
 st.markdown("---")
 st.markdown("<p style='text-align:center; color:#999; font-weight:bold;'>NUESTRAS EMPRESAS</p>", unsafe_allow_html=True)
 
-# Nombres exactos que subiste
-logos_deseados = [
+logos_ficheros = [
     "Logo Mundo Agricola.jpg", 
     "Logo Multisemillas.jpg", 
     "IMG-20251217-WA0012.jpg", 
@@ -103,15 +96,9 @@ logos_deseados = [
     "Logo-Agroservicios-Final_Mesa de trabajo 1.png"
 ]
 
-l_cols = st.columns(len(logos_deseados))
-
-for i, nombre_logo in enumerate(logos_deseados):
+l_cols = st.columns(len(logos_ficheros))
+for i, l_nombre in enumerate(logos_ficheros):
     with l_cols[i]:
-        # Verificamos si el archivo existe antes de intentar mostrarlo
-        if os.path.exists(nombre_logo):
-            st.image(nombre_logo, use_container_width=True)
-        else:
-            # Si no aparece, mostramos un aviso discreto para saber cuál falta
-            st.write(f"⚠️ {nombre_logo[:10]}...")
+        mostrar_imagen(l_nombre)
 
-st.markdown("<p style='text-align:center; font-size:12px; color:#aaa; margin-top:50px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:12px; color:#aaa; margin-top:50px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
