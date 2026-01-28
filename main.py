@@ -4,10 +4,10 @@ import google.generativeai as genai
 from PIL import Image
 import os
 
-# 1. SETUP DE PÁGINA
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# 2. FUNCIONES ODOO
+# 2. FUNCIONES DE INTEGRACIÓN ODOO
 def get_odoo_prods():
     try:
         url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
@@ -35,7 +35,7 @@ def registrar_cliente_odoo(nombre, email, telefono):
             }])
     except: return None
 
-# 3. ESTILOS CSS
+# 3. ESTILOS CSS (Contraste y Diseño Móvil)
 st.markdown("""
     <style>
     .stApp {background-color: #F0F2F0;}
@@ -55,19 +55,19 @@ st.markdown("""
     [data-testid="stFileUploadDropzone"] small { color: #cccccc !important; }
     .product-card {
         background: #FFFFFF; padding: 15px; border-radius: 12px; 
-        border: 2px solid #1B5E20; text-align: center;
+        border: 2px solid #1B5E20; text-align: center; margin-bottom: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 4. ENCABEZADO (Solo Logo Principal)
+# 4. ENCABEZADO
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in os.listdir("."):
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
 
-# 5. BLOQUE 1: DIAGNÓSTICO
+# --- BLOQUE 1: DIAGNÓSTICO ---
 st.markdown("<div class='main-card'>", unsafe_allow_html=True)
 st.markdown("### 🔍 Diagnóstico de Cultivos")
 metodo = st.radio("Seleccione método:", ["📂 Galería", "📸 Cámara"], horizontal=True)
@@ -78,26 +78,15 @@ if img and st.button("🚀 ANALIZAR AHORA"):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            res = model.generate_content(["Identifica el problema y sugiere productos Multiagro", Image.open(img)])
+            res = model.generate_content(["Identifica el problema y sugiere productos de Grupo Multiagro", Image.open(img)])
             st.success("✅ Diagnóstico Completado")
             st.write(res.text)
         except: st.error("Error en IA.")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# 6. BLOQUE 2: REGISTRO
-st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-st.markdown("### 👤 Registro de Productor")
-if 'registro_ok' not in st.session_state:
-    with st.form("form_reg"):
-        n, e, t = st.text_input("Nombre *"), st.text_input("Correo"), st.text_input("WhatsApp *")
-        if st.form_submit_button("✅ Registrarme"):
-            if n and t and registrar_cliente_odoo(n, e, t):
-                st.session_state['registro_ok'], st.session_state['user'] = True, n
-                st.rerun()
-else: st.success(f"Bienvenido, {st.session_state['user']}")
-st.markdown("</div>", unsafe_allow_html=True)
+st.divider()
 
-# 7. BLOQUE 3: PRODUCTOS ODOO
+# --- BLOQUE 2: SOLUCIONES MULTIAGRO ---
 st.markdown("### 🛒 Soluciones Multiagro")
 prods = get_odoo_prods()
 if prods:
@@ -106,43 +95,50 @@ if prods:
         with cols[i]:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
+else: st.info("Sincronizando con inventario...")
 
-# 8. PIE DE PÁGINA (Carga con Ruta Relativa Forzada)
+st.divider()
+
+# --- BLOQUE 3: REGISTRO DE PRODUCTOR (DESPUÉS DE SOLUCIONES) ---
+st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+st.markdown("### 👤 Registro de Productor")
+if 'registro_ok' not in st.session_state:
+    with st.form("form_reg"):
+        n = st.text_input("Nombre Completo *")
+        e = st.text_input("Correo Electrónico")
+        t = st.text_input("Teléfono / WhatsApp *")
+        if st.form_submit_button("✅ Registrarme"):
+            if n and t:
+                if registrar_cliente_odoo(n, e, t):
+                    st.session_state['registro_ok'], st.session_state['user'] = True, n
+                    st.rerun()
+                else: st.error("Error al conectar con Odoo.")
+            else: st.warning("Complete los campos obligatorios (*)")
+else:
+    st.success(f"¡Bienvenido, {st.session_state['user']}! Su perfil está activo.")
+st.markdown("</div>", unsafe_allow_html=True)
+
+# --- BLOQUE 4: PIE DE PÁGINA Y LOGOS ---
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-weight:bold; color:#333;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
 nombres_logos = [
-    "LogoMundoAgricola.png",
-    "LogoMultisemillas.png",
-    "LogoMultiriegos.png",
-    "LogoFortius.png",
-    "LogoAgroservicios.png"
+    "LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", 
+    "LogoFortius.png", "LogoAgroservicios.png"
 ]
-
-l_cols = st.columns(len(nombres_logos))
+l_cols = st.columns(5)
 
 for i, nombre in enumerate(nombres_logos):
     with l_cols[i]:
-        # Intentamos cargar con ruta relativa explícita './'
-        ruta_completa = os.path.join(os.getcwd(), nombre)
-        
-        if os.path.exists(ruta_completa):
+        if os.path.exists(nombre):
             try:
-                img = Image.open(ruta_completa)
-                # Convertir a RGBA para asegurar que la transparencia PNG se maneje bien
-                img = img.convert("RGBA")
-                
-                ratio = 60 / float(img.size[1])
-                new_size = (int(img.size[0] * ratio), 60)
-                st.image(img.resize(new_size, Image.Resampling.LANCZOS))
-            except Exception as e:
-                # Si falla como imagen, intentamos cargarla directamente por Streamlit
-                try:
-                    st.image(nombre, width=120)
-                except:
-                    st.caption("Cargando...")
+                img_l = Image.open(nombre).convert("RGBA")
+                ratio = 60 / float(img_l.size[1])
+                st.image(img_l.resize((int(img_l.size[0]*ratio), 60), Image.Resampling.LANCZOS))
+            except:
+                st.image(nombre, width=100) # Intento de carga nativa si falla PIL
         else:
-            st.caption("Verificar archivo")
+            st.caption("Cargando...")
 
 st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
