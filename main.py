@@ -14,17 +14,26 @@ except: st.error("⚠️ Configurar Gemini API Key en Secrets")
 # 2. FUNCIÓN ODOO
 def get_odoo_prods():
     try:
-        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
-        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        url = st.secrets["ODOO_URL"]
+        db = st.secrets["ODOO_DB"]
+        user = st.secrets["ODOO_USER"]
+        key = st.secrets["ODOO_API_KEY"]
+        
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
-        if uid:
-            models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 4})
-            res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
-            return [(p['name'], f"RD$ {p['list_price']:,.2f}") for p in res]
-    except: return None
-    return None
+        
+        if not uid:
+            st.error(f"❌ Error de Autenticación: Odoo no reconoce el usuario {user} o la API Key con la base de datos '{db}'.")
+            return None
+        
+        models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+        ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 4})
+        res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
+        return [(p['name'], f"RD$ {p['list_price']:,.2f}") for p in res]
+    except Exception as e:
+        st.warning(f"⚠️ Error de Conexión Técnica:")
+        st.code(str(e)) # Esto nos mostrará el error real sin censura
+        return None
 
 # 3. DISEÑO
 st.markdown("<style>.stApp{background:#F8FAF8} .card{background:white;padding:20px;border-radius:15px;border-top:8px solid #1B5E20;box-shadow:0 4px 10px rgba(0,0,0,0.05)}</style>", unsafe_allow_html=True)
