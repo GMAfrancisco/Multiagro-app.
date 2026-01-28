@@ -62,26 +62,33 @@ st.subheader("🔍 Diagnóstico de Cultivos")
 img = st.camera_input("Capturar muestra") if st.toggle("Usar Cámara") else st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'])
 
 if img and st.button("🚀 ANALIZAR AHORA"):
-    with st.spinner("Analizando con IA..."):
+    with st.spinner("Realizando análisis técnico profundo..."):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
             
-            # INSTRUCCIÓN DETALLADA EN ESPAÑOL
+            # PROMPT AVANZADO PARA ASESORÍA TÉCNICA
             instruccion = """
-            Actúa como un experto agrónomo de Grupo Multiagro en República Dominicana.
-            Analiza la imagen de la planta y:
-            1. Identifica la posible plaga, enfermedad o deficiencia nutricional.
-            2. Responde SIEMPRE en español de forma clara y profesional.
-            3. Recomienda el uso de productos específicos que vende Grupo Multiagro 
-               (insecticidas, herbicidas o fertilizantes según sea el caso).
+            Eres el Asesor Agronómico experto de Grupo Multiagro en República Dominicana.
+            Analiza la imagen detalladamente y estructura tu respuesta así:
+            
+            1. **DIAGNÓSTICO**: Nombre técnico y común del problema (plaga, hongo o carencia).
+            2. **ANÁLISIS DE DAÑO**: Qué le está pasando a la planta y qué pasará si no se trata.
+            3. **TÉCNICAS DE CONTROL**: 
+               - Control Cultural/Preventivo (podas, riego, etc.).
+               - Control Biológico si aplica.
+            4. **RECOMENDACIÓN MULTIAGRO**: Indica el producto específico de nuestro catálogo 
+               (insecticida, fungicida, etc.) y la dosis sugerida por aplicación.
+            5. **DATO CURIOSO/TIPS**: Un consejo extra para el productor dominicano.
+            
+            Responde de forma estructurada, usando negritas y con un tono profesional pero cercano.
             """
             
             res = model.generate_content([instruccion, Image.open(img)])
-            st.success("✅ Diagnóstico Completado")
-            st.info(res.text)
-        except: 
-            st.error("Error al procesar la imagen con la IA.")
+            st.success("✅ Análisis Técnico Completado")
+            st.markdown(res.text) # Usamos markdown para que las negritas y listas se vean bien
+        except Exception as e:
+            st.error(f"Error en el análisis: {str(e)}")
 
 # --- SECCIÓN 2: SOLUCIONES (ODOO) ---
 st.divider()
