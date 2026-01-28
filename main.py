@@ -107,12 +107,11 @@ if prods:
             st.markdown(f'<div class="product-card"><b>{p["name"]}</b><br><span style="color:#1B5E20; font-weight:bold;">RD$ {p["list_price"]:,.2f}</span></div>', unsafe_allow_html=True)
             st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Me%20interesa%20{p['name']})")
 
-# 8. PIE DE PÁGINA (Nombres exactos según el servidor)
+# 8. PIE DE PÁGINA (Carga con Ruta Relativa Forzada)
 st.divider()
 st.markdown(f"<p style='text-align:center;'>📧 info@grupomultiagro.com  |  📞 (829) 562-4653</p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-weight:bold; color:#333;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-# Usamos exactamente los nombres que detectó tu lista
 nombres_logos = [
     "LogoMundoAgricola.png",
     "LogoMultisemillas.png",
@@ -123,18 +122,27 @@ nombres_logos = [
 
 l_cols = st.columns(len(nombres_logos))
 
-for i, nombre_archivo in enumerate(nombres_logos):
+for i, nombre in enumerate(nombres_logos):
     with l_cols[i]:
-        try:
-            # Cargamos el archivo por su nombre exacto
-            img_logo = Image.open(nombre_archivo)
-            
-            # Ajuste de tamaño uniforme
-            ratio = 60 / float(img_logo.size[1])
-            new_size = (int(img_logo.size[0] * ratio), 60)
-            
-            st.image(img_logo.resize(new_size, Image.Resampling.LANCZOS))
-        except Exception as e:
-            st.caption(f"Error en {nombre_archivo}")
+        # Intentamos cargar con ruta relativa explícita './'
+        ruta_completa = os.path.join(os.getcwd(), nombre)
+        
+        if os.path.exists(ruta_completa):
+            try:
+                img = Image.open(ruta_completa)
+                # Convertir a RGBA para asegurar que la transparencia PNG se maneje bien
+                img = img.convert("RGBA")
+                
+                ratio = 60 / float(img.size[1])
+                new_size = (int(img.size[0] * ratio), 60)
+                st.image(img.resize(new_size, Image.Resampling.LANCZOS))
+            except Exception as e:
+                # Si falla como imagen, intentamos cargarla directamente por Streamlit
+                try:
+                    st.image(nombre, width=120)
+                except:
+                    st.caption("Cargando...")
+        else:
+            st.caption("Verificar archivo")
 
 st.markdown("<p style='text-align:center; font-size:12px; color:#555; margin-top:20px;'>© 2026 GRUPO MULTIAGRO</p>", unsafe_allow_html=True)
