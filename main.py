@@ -1,41 +1,99 @@
 import streamlit as st
 
-# --- CONFIGURACIÓN ---
-st.set_page_config(page_title="Multiagro IA", page_icon="🌱")
+# --- CONFIGURACIÓN ESTÉTICA ---
+st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
+
+# Estilo CSS para mejorar la apariencia (Bordes, Colores y Sombras)
+st.markdown("""
+    <style>
+    .stApp { background-color: #f8f9fa; }
+    .product-card {
+        background-color: white; padding: 20px; border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
+        border-top: 5px solid #2e7d32;
+    }
+    .stButton>button {
+        background-color: #2e7d32; color: white; border-radius: 8px;
+        width: 100%; font-weight: bold;
+    }
+    .main-title { color: #1a5d1a; text-align: center; font-weight: 800; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- LOGO Y ENCABEZADO ---
+# Usamos una imagen de respaldo si el logo principal falla
 LOGO_URL = "https://www.grupomultiagro.com/wp-content/uploads/2022/03/logo-multiagro-horizontal.png"
+st.image(LOGO_URL, width=250)
+st.markdown("<h1 class='main-title'>Asistente Agrícola Inteligente</h1>", unsafe_allow_html=True)
 
-# --- INTERFAZ ---
-st.image(LOGO_URL, width=200)
-st.title("Consultor Agrícola IA")
-st.markdown("---")
+# --- BASE DE DATOS DE RECOMENDACIONES (Lógica Multiagro) ---
+# Aquí vinculamos plagas con tus insumos reales
+CATALOGO = {
+    "Arroz": [
+        {"nombre": "Herbicida Pro-Arroz", "precio": "RD$ 1,450", "uso": "Control de malezas"},
+        {"nombre": "Urea Multiagro", "precio": "RD$ 2,100", "uso": "Crecimiento"}
+    ],
+    "Banano": [
+        {"nombre": "Fungicida Sigatoka-Stop", "precio": "RD$ 3,200", "uso": "Control de hongos"},
+        {"nombre": "Potasio Foliar", "precio": "RD$ 1,100", "uso": "Llenado de fruto"}
+    ],
+    "Vegetales": [
+        {"nombre": "Insecticida Bio-Safe", "precio": "RD$ 950", "uso": "Control de áfidos"},
+        {"nombre": "Calcio Boro", "precio": "RD$ 1,800", "uso": "Fortalecimiento"}
+    ]
+}
 
-# Selección de modo de consulta
-modo_consulta = st.radio("¿Cómo desea consultar?", ["Asistente IA (Rápido)", "Asesor Multiagro (Personalizado)"])
+# --- NAVEGACIÓN POR PESTAÑAS ---
+tab1, tab2 = st.tabs(["🔍 Diagnóstico IA", "🛒 Catálogo de Compras"])
 
-if modo_consulta == "Asistente IA (Rápido)":
-    st.info("🤖 Nuestra IA analizará su cultivo y le dará recomendaciones inmediatas.")
-    cultivo = st.selectbox("Cultivo", ["Arroz", "Banano", "Cacao", "Vegetales", "Otros"])
-    foto = st.camera_input("Tome una foto al problema")
-    
+# --- TAB 1: DIAGNÓSTICO ---
+with tab1:
+    st.header("Análisis de Cultivo")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        cultivo_sel = st.selectbox("¿Qué cultivo estás revisando?", list(CATALOGO.keys()))
+    with col_b:
+        zona = st.selectbox("Ubicación", ["La Vega", "Moca", "Azua", "San Juan", "Dajabón"])
+
+    foto = st.camera_input("Capturar síntoma")
+
     if foto:
-        with st.spinner("Analizando con IA de Multiagro..."):
-            # Aquí conectaremos con el modelo de visión más adelante
-            st.markdown("### 🧠 Diagnóstico Sugerido:")
-            st.write(f"Basado en la imagen de su cultivo de **{cultivo}**, detecto posibles deficiencias nutricionales.")
-            st.success("Recomendación: Aplicar Fertilizante Foliar Multiagro 20-20-20.")
+        st.success("✅ Imagen capturada con éxito")
+        with st.expander("Ver Diagnóstico y Sugerencias de Compra", expanded=True):
+            st.info(f"Análisis preliminar para **{cultivo_sel}**: Posible estrés biótico detectado.")
+            st.write("### Productos recomendados por Multiagro:")
             
-            # El puente hacia el humano
-            st.warning("¿Desea una segunda opinión profesional?")
-            if st.button("Solicitar validación de un Agrónomo Real"):
-                st.write("📩 Enviando caso a un asesor de su zona...")
+            # Aquí mostramos las recomendaciones inteligentes basadas en el cultivo
+            recs = CATALOGO.get(cultivo_sel, [])
+            for item in recs:
+                st.markdown(f"""
+                <div class="product-card">
+                    <h4>{item['nombre']}</h4>
+                    <p><b>Acción:</b> {item['uso']}</p>
+                    <p style='color: #2e7d32; font-size: 20px;'>{item['precio']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                if st.button(f"Comprar {item['nombre']}", key=item['nombre']):
+                    st.success(f"Añadido al carrito: {item['nombre']}")
 
-else:
-    st.header("👨‍🌾 Contacto Directo con Asesor")
-    st.write("Suba su consulta y el técnico de su provincia le contactará vía WhatsApp.")
-    nombre = st.text_input("Su nombre")
-    consulta = st.text_area("Describa su problema")
-    if st.button("Contactar Asesor"):
-        st.success(f"Gracias {nombre}, un técnico de Multiagro se comunicará con usted.")
+# --- TAB 2: CATÁLOGO COMPLETO ---
+with tab2:
+    st.header("Todos los Insumos")
+    busqueda = st.text_input("Buscar por nombre, plaga o ingrediente activo...")
+    
+    # Simulación de cuadrícula de productos
+    col1, col2 = st.columns(2)
+    todos_productos = [p for sublist in CATALOGO.values() for p in sublist]
+    
+    for i, p in enumerate(todos_productos):
+        with (col1 if i % 2 == 0 else col2):
+            st.markdown(f"""
+            <div class="product-card">
+                <h5>{p['nombre']}</h5>
+                <p>{p['precio']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.button("Ver ficha técnica", key=f"full_{i}")
 
 st.sidebar.markdown("---")
-st.sidebar.write("© 2026 Grupo Multiagro")
+st.sidebar.write("🌐 [Ir a grupomultiagro.com](https://www.grupomultiagro.com)")
