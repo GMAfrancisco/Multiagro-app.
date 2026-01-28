@@ -3,76 +3,40 @@ import google.generativeai as genai
 from PIL import Image
 import urllib.parse
 
-# --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
+# --- CONFIGURACIÓN DE MARCA ---
+st.set_page_config(page_title="Multiagro App", page_icon="🌱", layout="wide")
 
-# --- CONEXIÓN IA (MODELO ACTUALIZADO 2026) ---
+# Colores Corporativos
+VERDE_OSCURO = "#1B5E20"
+VERDE_VIVO = "#388E3C"
+
+# Estilos CSS Avanzados
+st.markdown(f"""
+    <style>
+    .stApp {{ background-color: #F8FAF8; }}
+    .main-card {{
+        background: white; padding: 30px; border-radius: 25px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.03); border-top: 10px solid {VERDE_OSCURO};
+    }}
+    .product-card {{
+        background: white; border-radius: 15px; padding: 15px;
+        text-align: center; border: 1px solid #EAEAEA; transition: 0.3s;
+    }}
+    .product-card:hover {{ transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }}
+    .footer-logos {{
+        display: flex; justify-content: center; align-items: center; 
+        gap: 30px; flex-wrap: wrap; padding: 30px; background: white;
+        border-radius: 20px; margin-top: 50px;
+    }}
+    .footer-logos img {{ filter: grayscale(20%); transition: 0.3s; }}
+    .footer-logos img:hover {{ filter: grayscale(0%); transform: scale(1.1); }}
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- CONFIGURACIÓN IA ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    # Usamos el modelo confirmado en tu lista
-    model = genai.GenerativeModel('models/gemini-2.0-flash')
-except Exception as e:
-    st.error(f"⚠️ Error de configuración: {e}")
-
-# --- DISEÑO ---
-st.markdown("<style>.stApp { background: #f0f4f0; } .product-card { background: white; padding: 15px; border-radius: 12px; border-left: 5px solid #1b5e20; margin-bottom: 10px; }</style>", unsafe_allow_html=True)
-
-try:
-    st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=320)
+    model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
 except:
-    st.image("https://www.grupomultiagro.com/wp-content/uploads/2022/03/logo-multiagro-horizontal.png", width=300)
-
-# --- DATOS RD ---
-PROVINCIAS = ["Azua", "Baoruco", "Barahona", "Dajabón", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Valverde", "Santo Domingo"]
-CULTIVOS_DATA = {
-    "Arroz": ["Urea Multiagro", "Pro-Arroz", "Zinc Foliar"],
-    "Vegetales (Campo Abierto)": ["Bio-Safe", "Fertirriego Base", "Calcio-Boro"],
-    "Vegetales (Invernadero)": ["Plástico Térmico", "Goteo Netafim", "Trampas Amarillas"],
-    "Banano / Plátano": ["Sigatoka Elite", "Potasio Soluble"],
-    "Cacao": ["Fungicida Cobre", "Fertilizante Floración"],
-    "Café": ["Control Roya", "Abono Orgánico"]
-}
-
-# --- INTERFAZ ---
-tab1, tab2 = st.tabs(["🔍 Diagnóstico IA", "🛒 Catálogo"])
-
-with tab1:
-    c1, c2 = st.columns(2)
-    with c1:
-        cultivo_sel = st.selectbox("Cultivo", list(CULTIVOS_DATA.keys()))
-    with c2:
-        prov_sel = st.selectbox("Provincia", PROVINCIAS)
-
-    st.markdown("### 📸 Imagen del Problema")
-    f_cam = st.camera_input("Tomar foto")
-    f_gal = st.file_uploader("O subir de la galería", type=["jpg", "jpeg", "png"])
-
-    img_file = f_cam if f_cam is not None else f_gal
-
-    if img_file is not None:
-        img_view = Image.open(img_file)
-        st.image(img_view, width=350, caption="Imagen seleccionada")
-        
-        if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
-            with st.spinner("La IA de Multiagro está diagnosticando..."):
-                try:
-                    prompt = f"Actúa como agrónomo experto de Multiagro en RD. Analiza esta foto de {cultivo_sel} en {prov_sel}. Identifica la plaga o deficiencia y recomienda soluciones cortas."
-                    response = model.generate_content([prompt, img_view])
-                    
-                    st.markdown("### 📋 Diagnóstico Sugerido")
-                    diag_text = response.text
-                    st.write(diag_text)
-                    
-                    st.markdown("---")
-                    st.subheader(f"🛒 Recomendados para {cultivo_sel}")
-                    for p in CULTIVOS_DATA.get(cultivo_sel, []):
-                        st.markdown(f"<div class='product-card'><b>{p}</b></div>", unsafe_allow_html=True)
-                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} en {prov_sel} tiene: {diag_text[:60]}... Me interesa el producto {p}")
-                        st.markdown(f"[💬 Consultar por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
-                except Exception as e:
-                    st.error(f"Error técnico: {e}")
-
-with tab2:
-    st.header("Catálogo")
-    st.write("Explorando 2,500+ referencias de Grupo Multiagro...")
+    st.warning("⚠️ El sistema de IA está en mantenimiento (API Key).
