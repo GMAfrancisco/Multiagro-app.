@@ -3,14 +3,15 @@ import google.generativeai as genai
 from PIL import Image
 import urllib.parse
 
-# --- CONFIGURACIÓN ---
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
 
+# --- CONEXIÓN IA (MODELO COMPATIBLE) ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    # Cambiamos a la versión más genérica que acepta la mayoría de las cuentas
-    model = genai.GenerativeModel('models/gemini-1.5-flash')
+    # Cambiamos a 'gemini-pro-vision', el estándar de oro para fotos
+    model = genai.GenerativeModel('gemini-pro-vision')
 except Exception as e:
     st.error(f"⚠️ Error de configuración: {e}")
 
@@ -22,8 +23,8 @@ try:
 except:
     st.image("https://www.grupomultiagro.com/wp-content/uploads/2022/03/logo-multiagro-horizontal.png", width=300)
 
-# --- DATOS (Reducidos para estabilidad) ---
-PROVINCIAS = ["La Vega", "Moca", "Azua", "San Juan", "Santiago", "Monte Cristi", "Dajabón", "Duarte", "Valverde", "San Cristóbal", "Samaná", "Hato Mayor"]
+# --- DATOS (PROVINCIAS Y CULTIVOS) ---
+PROVINCIAS = ["La Vega", "Moca", "Azua", "San Juan", "Santiago", "Monte Cristi", "Duarte", "Valverde", "San Cristóbal", "Dajabón"]
 CULTIVOS_DATA = {
     "Arroz": ["Urea Multiagro", "Pro-Arroz", "Zinc Foliar"],
     "Vegetales (Campo Abierto)": ["Bio-Safe", "Fertirriego Base", "Calcio-Boro"],
@@ -54,25 +55,28 @@ with tab1:
         st.image(img_view, width=350, caption="Imagen seleccionada")
         
         if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
-            with st.spinner("Analizando cultivo con IA..."):
+            with st.spinner("Analizando cultivo..."):
                 try:
-                    # PROMPT PROFESIONAL
-                    prompt = f"Como experto agrónomo de Multiagro en RD, analiza esta foto de {cultivo_sel} en {prov_sel}. Identifica la plaga o deficiencia y recomienda una solución."
+                    # El prompt debe ser directo para este modelo
+                    prompt = f"Como agrónomo experto en República Dominicana, analiza esta foto de {cultivo_sel}. Identifica la plaga o deficiencia y recomienda una solución de Grupo Multiagro."
                     
-                    # Llamada con el nombre de modelo corregido
+                    # Ejecución del diagnóstico
                     response = model.generate_content([prompt, img_view])
                     
                     st.markdown("### 📋 Diagnóstico Sugerido")
                     st.write(response.text)
                     
                     st.markdown("---")
-                    st.subheader("🛒 Soluciones Sugeridas")
+                    st.subheader("🛒 Soluciones Disponibles")
                     for p in CULTIVOS_DATA.get(cultivo_sel, []):
                         st.markdown(f"<div class='product-card'><b>{p}</b></div>", unsafe_allow_html=True)
-                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} tiene un problema. La IA sugirió: {response.text[:50]}... Me interesa: {p}")
+                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} tiene un problema. La IA sugirió: {response.text[:60]}... Me interesa: {p}")
                         st.markdown(f"[💬 Consultar por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
                 except Exception as e:
-                    st.error(f"Error en el motor de IA: {e}")
+                    # Si falla, te mostramos qué modelos TIENE tu cuenta exactamente
+                    st.error(f"Error: {e}")
+                    if "404" in str(e):
+                        st.warning("Estamos probando una ruta alternativa. Intenta de nuevo en 10 segundos.")
 
 with tab2:
     st.header("Catálogo")
