@@ -22,18 +22,38 @@ def get_odoo_prods():
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
         
-        if not uid:
-            st.error(f"❌ Error de Autenticación: Odoo no reconoce el usuario {user} o la API Key con la base de datos '{db}'.")
-            return None
-        
-        models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-        ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 4})
-        res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
-        return [(p['name'], f"RD$ {p['list_price']:,.2f}") for p in res]
+        if uid:
+            models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+            # Buscamos productos que se puedan vender
+            ids = models.execute_kw(db, uid, key, 'product.template', 'search', 
+                                   [[['sale_ok', '=', True]]], {'limit': 4})
+            res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
+            return [(p['name'], f"RD$ {p['list_price']:,.2f}") for p in res]
     except Exception as e:
-        st.warning(f"⚠️ Error de Conexión Técnica:")
-        st.code(str(e)) # Esto nos mostrará el error real sin censura
+        # Si falla, mostramos el error técnico solo para administración
+        if "does not exist" in str(e):
+            st.error(f"❌ La base de datos '{db}' no existe en este servidor.")
         return None
+
+# --- LÓGICA DE VISUALIZACIÓN ---
+prods = get_odoo_prods()
+
+if prods:
+    st.success("✅ Conectado a Odoo de Multiriegos")
+    cols = st.columns(len(prods))
+    for i, (n, p) in enumerate(prods):
+        with cols[i]:
+            st.info(f"**{n}**\n\n{p}")
+            st.markdown(f"[💬 WhatsApp](https://wa.me/18095551234?text=Info:{n})")
+else:
+    # Catálogo de Cortesía mientras se arregla la DB
+    st.warning("🔄 Mostrando catálogo promocional (Sincronización con Odoo pendiente)")
+    nom_p = ["Fungicida Elite", "Bio-Estimulante", "Herbicida Total", "Potasio Soluble"]
+    pre_p = ["RD$ 2,800", "RD$ 3,450", "RD$ 1,200", "RD$ 1,950"]
+    cols = st.columns(4)
+    for i in range(4):
+        with cols[i]:
+            st.info(f"**{nom_p[i]}**\n\n{pre_p[i]}")
 
 # 3. DISEÑO
 st.markdown("<style>.stApp{background:#F8FAF8} .card{background:white;padding:20px;border-radius:15px;border-top:8px solid #1B5E20;box-shadow:0 4px 10px rgba(0,0,0,0.05)}</style>", unsafe_allow_html=True)
