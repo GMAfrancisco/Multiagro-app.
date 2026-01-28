@@ -1,23 +1,19 @@
-¡Mil disculpas! Tienes toda la razón. En el afán de limpiar el código, moví piezas que no debía. El eslogan va exactamente debajo del logo y la frase de "Diagnóstico de Cultivos" debe permanecer como encabezado de la sección de IA, ya que es la guía del usuario.
-
-Aquí tienes la versión corregida, manteniendo el eslogan en cursiva bajo el logo y restaurando la frase de Diagnóstico en su lugar correspondiente.
-
-🛠️ Código Corregido (Eslogan + Frase de Diagnóstico)
-Python
 import streamlit as st
 import xmlrpc.client
 import google.generativeai as genai
 from PIL import Image
 import os
 
-# 1. SETUP PROFESIONAL
+# 1. CONFIGURACION DE PAGINA
 st.set_page_config(page_title="Grupo Multiagro | Consultor AgTech", layout="wide")
 
-# 2. FUNCIÓN ODOO
+# 2. FUNCION ODOO
 def get_odoo_prods():
     try:
-        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
-        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        url = st.secrets["ODOO_URL"]
+        db = st.secrets["ODOO_DB"]
+        user = st.secrets["ODOO_USER"]
+        key = st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
         if uid:
@@ -25,7 +21,8 @@ def get_odoo_prods():
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 4})
             res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
             return res
-    except: return None
+    except:
+        return None
 
 # 3. ESTILOS CSS
 st.markdown("""
@@ -38,27 +35,24 @@ st.markdown("""
         font-family: 'Georgia', serif;
         font-style: italic;
         color: #1B5E20;
-        font-size: 1rem;
+        font-size: 1.1rem;
         margin-top: -15px;
-        margin-bottom: 30px;
+        margin-bottom: 25px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 4. ENCABEZADO (Logo + Eslogan justo debajo)
+# 4. ENCABEZADO (Logo + Eslogan)
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in os.listdir("."):
         if f.lower().startswith("grupo_multiagro"):
             st.image(f, use_container_width=True)
-    # ESlogan pegado al logo
     st.markdown('<p class="eslogan">"Expertos en soluciones agrícolas"</p>', unsafe_allow_html=True)
 
-# --- BLOQUE 1: DIAGNÓSTICO (Con su frase restaurada) ---
+# 5. BLOQUE 1: DIAGNOSTICO DE CULTIVOS
 st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-st.markdown("### 🔍 Diagnóstico de Cultivos") # <-- Frase restaurada
-st.write("Identifique plagas o deficiencias. La IA le sugerirá productos de nuestro catálogo.")
-
+st.markdown("### 🔍 Diagnóstico de Cultivos")
 metodo = st.radio("Seleccione método:", ["📂 Galería", "📸 Cámara"], horizontal=True)
 
 if metodo == "📂 Galería":
@@ -68,20 +62,21 @@ else:
 
 if img:
     if st.button("🚀 ANALIZAR AHORA"):
-        with st.spinner("Analizando..."):
+        with st.spinner("Analizando con IA..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
-                prompt = "Analiza esta planta, identifica el problema y sugiere productos de Soluciones Multiagro."
+                prompt = "Analiza esta planta, identifica plagas y sugiere productos de Soluciones Multiagro."
                 res = model.generate_content([prompt, Image.open(img)])
-                st.success("Análisis Técnico:")
+                st.success("✅ Diagnóstico Completado")
                 st.write(res.text)
-            except: st.error("Error de conexión con IA.")
+            except:
+                st.error("Error al procesar la imagen.")
 st.markdown("</div>", unsafe_allow_html=True)
 
 st.divider()
 
-# --- BLOQUE 2: SOLUCIONES MULTIAGRO ---
+# 6. BLOQUE 2: SOLUCIONES MULTIAGRO
 st.markdown("### 🛒 Soluciones Multiagro")
 prods = get_odoo_prods()
 if prods:
@@ -95,7 +90,7 @@ else:
     for col, t in zip([c1,c2,c3,c4], ["Fungicida", "Herbicida", "Fertilizante", "Insecticida"]):
         col.info(f"**{t}**\n\nConsultar precio")
 
-# --- BLOQUE 3: LOGOS ---
+# 7. BLOQUE 3: LOGOS DE EMPRESAS
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.divider()
 st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
@@ -112,3 +107,5 @@ for i, lid in enumerate(l_ids):
                     st.image(img_l.resize((int(img_l.size[0]*ratio), 80), Image.Resampling.LANCZOS))
                 except: pass
                 break
+
+st.markdown("<p style='text-align:center; font-size:12px; color:#aaa; margin-top:20px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
