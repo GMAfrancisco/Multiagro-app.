@@ -6,7 +6,6 @@ import urllib.parse
 # --- CONFIGURACIÓN ---
 st.set_page_config(page_title="Multiagro IA", page_icon="🌱", layout="wide")
 
-# Intentar configurar IA
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
@@ -15,18 +14,8 @@ except:
     st.error("⚠️ Configure su API Key en los Secrets de Streamlit.")
 
 # --- DISEÑO ---
-st.markdown("""
-    <style>
-    .stApp { background: #f0f4f0; }
-    .product-card { 
-        background: white; padding: 15px; border-radius: 12px; 
-        border-left: 5px solid #1b5e20; margin-bottom: 10px; 
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
-    }
-    </style>
-    """, unsafe_allow_html=True)
+st.markdown("<style>.stApp { background: #f0f4f0; } .product-card { background: white; padding: 15px; border-radius: 12px; border-left: 5px solid #1b5e20; margin-bottom: 10px; }</style>", unsafe_allow_html=True)
 
-# Logo
 try:
     st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=320)
 except:
@@ -47,21 +36,41 @@ CULTIVOS_DATA = {
 tab1, tab2 = st.tabs(["🔍 Diagnóstico IA", "🛒 Catálogo"])
 
 with tab1:
-    col1, col2 = st.columns(2)
-    with col1:
+    c1, c2 = st.columns(2)
+    with c1:
         cultivo_sel = st.selectbox("Cultivo", list(CULTIVOS_DATA.keys()))
-    with col2:
+    with c2:
         prov_sel = st.selectbox("Provincia", PROVINCIAS)
 
     st.markdown("### 📸 Imagen del Problema")
-    foto_camara = st.camera_input("Tomar foto")
-    foto_galeria = st.file_uploader("O subir de la galería", type=["jpg", "jpeg", "png"])
+    f_cam = st.camera_input("Tomar foto")
+    f_gal = st.file_uploader("O subir de la galería", type=["jpg", "jpeg", "png"])
 
-    imagen_final = foto_camara if foto_camara is not None else foto_galeria
+    img_file = f_cam if f_cam is not None else f_gal
 
-    if imagen_final:
-        img = Image.open(imagen_final)
-        st.image(img, width=350, caption="Imagen para análisis")
+    if img_file is not None:
+        img_view = Image.open(img_file)
+        st.image(img_view, width=350, caption="Imagen seleccionada")
         
         if st.button("🚀 ANALIZAR CON IA MULTIAGRO"):
-            with st.spinner("Nuestra IA está analizando su cultivo..."):
+            with st.spinner("Analizando..."):
+                try:
+                    prompt = f"Actúa como agrónomo experto de Multiagro en RD. Analiza este {cultivo_sel} en {prov_sel}. Identifica el problema y da una solución breve."
+                    response = model.generate_content([prompt, img_view])
+                    diagnostico = response.text
+                    
+                    st.markdown("### 📋 Resultado")
+                    st.write(diagnostico)
+                    
+                    st.markdown("---")
+                    st.subheader("🛒 Soluciones Multiagro")
+                    for p in CULTIVOS_DATA.get(cultivo_sel, []):
+                        st.markdown(f"<div class='product-card'><b>{p}</b></div>", unsafe_allow_html=True)
+                        msg = urllib.parse.quote(f"Hola Multiagro, mi {cultivo_sel} en {prov_sel} tiene: {diagnostico[:50]}... Me interesa: {p}")
+                        st.markdown(f"[💬 Consultar {p} por WhatsApp](https://wa.me/1809XXXXXXX?text={msg})")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+with tab2:
+    st.header("Catálogo")
+    st.write("Sincronizando con Odoo 17...")
