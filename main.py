@@ -3,51 +3,61 @@ import google.generativeai as genai
 from PIL import Image
 import urllib.parse
 
-# --- CONFIGURACIÓN DE PÁGINA ---
+# --- CONFIGURACIÓN ---
 st.set_page_config(page_title="Multiagro App", page_icon="🌱", layout="wide")
 
 # Colores Corporativos
-VERDE_OSCURO = "#1B5E20"
-VERDE_VIVO = "#388E3C"
+V_OSCURO = "#1B5E20"
+V_VIVO = "#388E3C"
 
-# --- CONFIGURACIÓN IA ---
+# --- IA ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
 except:
-    st.error("⚠️ Error en API Key. Verifique los Secrets en Streamlit.")
+    st.error("⚠️ Error en API Key. Verifique Secrets.")
 
-# --- DISEÑO ---
+# --- CSS ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: #F8FAF8; }}
     .main-card {{
-        background: white; padding: 30px; border-radius: 25px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.03); border-top: 10px solid {VERDE_OSCURO};
+        background: white; padding: 25px; border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 8px solid {V_OSCURO};
     }}
     .product-card {{
-        background: white; border-radius: 15px; padding: 15px;
-        text-align: center; border: 1px solid #EAEAEA; min-height: 120px;
+        background: white; border-radius: 12px; padding: 12px;
+        text-align: center; border: 1px solid #EEE;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- CABECERA ---
+# --- HEADER ---
 try:
-    st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=300)
+    st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=280)
 except:
     st.title("GRUPO MULTIAGRO")
 
-st.markdown(f"<h1 style='color:{VERDE_OSCURO}; text-align:center;'>Consultor AgTech Multiagro</h1>", unsafe_allow_html=True)
-
-# --- MÓDULO DE DIAGNÓSTICO ---
+# --- DIAGNÓSTICO ---
 with st.container():
     st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-    st.subheader("🔍 Diagnóstico de Cultivos")
+    st.markdown(f"<h2 style='color:{V_OSCURO};'>🔍 Diagnóstico IA</h2>", unsafe_allow_html=True)
     
-    c1, c2 = st.columns(2)
-    with c1:
-        cultivo_sel = st.selectbox("Seleccione su Cultivo", ["Arroz", "Banano / Plátano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"])
-    with c2:
-        modo_captura = st.radio("Método:", ["Subir Archivo", "C
+    col_a, col_b = st.columns(2)
+    with col_a:
+        cultivo = st.selectbox("Cultivo:", ["Arroz", "Banano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"])
+    with col_b:
+        # AQUÍ ESTABA EL ERROR: Texto corregido y cerrado
+        opcion = st.radio("Acción:", ["Subir Foto", "Usar Cámara"], horizontal=True)
+
+    img = None
+    if opcion == "Usar Cámara":
+        img = st.camera_input("Capturar")
+    else:
+        img = st.file_uploader("Galería", type=['jpg', 'png', 'jpeg'])
+
+    if img:
+        st.image(img, width=300)
+        if st.button("🚀 ANALIZAR AHORA"):
+            with st.spinner("Analizando..."):
