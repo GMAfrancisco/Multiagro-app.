@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import urllib.parse
+import os
 
 # --- CONFIGURACIÓN ---
 st.set_page_config(page_title="Multiagro App", page_icon="🌱", layout="wide")
@@ -33,18 +34,14 @@ st.markdown(f"""
     """, unsafe_allow_html=True)
 
 # --- HEADER ---
-try:
+# Intenta cargar el logo principal con fallback
+if os.path.exists("Grupo_Multiagro_Mesa de trabajo 1.png"):
     st.image("Grupo_Multiagro_Mesa de trabajo 1.png", width=280)
-except:
-    st.title("GRUPO MULTIAGRO")
+else:
+    st.markdown(f"<h1 style='color:{V_OSCURO};'>GRUPO MULTIAGRO</h1>", unsafe_allow_html=True)
 
 # --- LISTAS DE DATOS ---
-LISTA_CULTIVOS = [
-    "Arroz", "Banano", "Cacao", 
-    "Vegetales Campo Abierto", 
-    "Vegetales Invernadero", 
-    "Aguacate", "Café"
-]
+LISTA_CULTIVOS = ["Arroz", "Banano", "Cacao", "Vegetales Campo Abierto", "Vegetales Invernadero", "Aguacate", "Café"]
 
 # --- DIAGNÓSTICO ---
 with st.container():
@@ -93,20 +90,28 @@ for i in range(len(items)):
         txt = urllib.parse.quote(f"Me interesa: {items[i]['n']}")
         st.markdown(f"[💬 Cotizar WhatsApp](https://wa.me/18095551234?text={txt})")
 
-# --- LOGOS ---
+# --- LOGOS (CON BUSCADOR DE ARCHIVOS) ---
 st.markdown("---")
-st.markdown("<p style='text-align:center; color:#999;'>NUESTRAS EMPRESAS</p>", unsafe_allow_html=True)
-logos = [
+st.markdown("<p style='text-align:center; color:#999; font-weight:bold;'>NUESTRAS EMPRESAS</p>", unsafe_allow_html=True)
+
+# Nombres exactos que subiste
+logos_deseados = [
     "Logo Mundo Agricola.jpg", 
     "Logo Multisemillas.jpg", 
     "IMG-20251217-WA0012.jpg", 
     "Logo-Fortius.png", 
     "Logo-Agroservicios-Final_Mesa de trabajo 1.png"
 ]
-l_cols = st.columns(5)
-for i in range(len(logos)):
+
+l_cols = st.columns(len(logos_deseados))
+
+for i, nombre_logo in enumerate(logos_deseados):
     with l_cols[i]:
-        try:
-            st.image(logos[i], use_container_width=True)
-        except:
-            st.caption(f"Logo {i+1}")
+        # Verificamos si el archivo existe antes de intentar mostrarlo
+        if os.path.exists(nombre_logo):
+            st.image(nombre_logo, use_container_width=True)
+        else:
+            # Si no aparece, mostramos un aviso discreto para saber cuál falta
+            st.write(f"⚠️ {nombre_logo[:10]}...")
+
+st.markdown("<p style='text-align:center; font-size:12px; color:#aaa; margin-top:50px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
