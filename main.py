@@ -1,7 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import urllib.parse
 import os
 
 # --- 1. CONFIGURACIÓN ---
@@ -15,7 +14,7 @@ try:
 except:
     st.error("Error en API Key.")
 
-# --- 3. ESTILOS (RESTAURADOS) ---
+# --- 3. ESTILOS ---
 st.markdown("""
     <style>
     .stApp { background-color: #F8FAF8; }
@@ -27,23 +26,21 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. DEPURADOR DE ARCHIVOS (ESTO NOS DIRÁ LA VERDAD) ---
-# Solo tú y yo veremos esto para arreglar los nombres
-archivos_en_servidor = os.listdir(".")
-st.sidebar.write("### 📂 Archivos detectados en el servidor:")
-st.sidebar.write(archivos_en_servidor)
+# --- 4. ESCÁNER DE ARCHIVOS (PARA LOS LOGOS) ---
+archivos = os.listdir(".")
+st.sidebar.write("### 📂 Archivos en el servidor:")
+st.sidebar.write(archivos)
 
-def mostrar_logo(nombre_buscado):
-    # Buscamos el archivo ignorando mayúsculas/minúsculas
-    for f in archivos_en_servidor:
-        if f.lower() == nombre_buscado.lower():
+def mostrar_logo(nombre):
+    for f in archivos:
+        if f.lower() == nombre.lower():
             return st.image(f, use_container_width=True)
-    return st.caption(f"❌ No hallado: {nombre_buscado}")
+    return st.caption(f"❌ {nombre}")
 
 # --- 5. CABECERA ---
 st.markdown("<h1 style='text-align:center; color:#1B5E20;'>GRUPO MULTIAGRO</h1>", unsafe_allow_html=True)
-c_head1, c_head2, c_head3 = st.columns([1, 2, 1])
-with c_head2:
+c1, c2, c3 = st.columns([1, 2, 1])
+with c2:
     mostrar_logo("Grupo_Multiagro_Mesa de trabajo 1.png")
 
 # --- 6. DIAGNÓSTICO ---
@@ -67,21 +64,9 @@ if img_input:
                 pil_img = Image.open(img_input)
                 prompt = f"Como agrónomo en RD, analiza este {cultivo} e identifica plagas."
                 res = model.generate_content([prompt, pil_img])
-                st.success("Diagnóstico completado")
+                st.success("Diagnóstico listo")
                 st.write(res.text)
             except Exception as e:
                 st.error(f"Error: {e}")
 
-# --- 7. PRODUCTOS ---
-st.divider()
-items = [
-    {"n": "Fungicida Elite", "p": "RD$ 2,800"},
-    {"n": "Bio-Estimulante", "p": "RD$ 3,450"},
-    {"n": "Herbicida Total", "p": "RD$ 1,200"},
-    {"n": "Potasio Soluble", "p": "RD$ 1,950"}
-]
-p_cols = st.columns(4)
-for i, item in enumerate(items):
-    with p_cols[i]:
-        st.markdown(f"<div class='product-card'><b>{item['n']}</b><br><small>{item['p']}</small></div>", unsafe_allow_html=True)
-        txt_wa = urllib.parse.quote(
+#
