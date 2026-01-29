@@ -14,40 +14,27 @@ def get_odoo_prods():
         db = st.secrets["ODOO_DB"]
         user = st.secrets["ODOO_USER"]
         key = st.secrets["ODOO_API_KEY"]
+        
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
         
-        if not uid:
-            # Esto nos dirá en la consola de Streamlit si falló el login
-            print("Error: Autenticación fallida en Odoo")
-            return None
-            
-        models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-        # Buscamos productos que tengan "Venta ok" y que tengan stock o sean servicios
-        ids = models.execute_kw(db, uid, key, 'product.template', 'search', 
-                               [[['sale_ok','=',True], ['type','!=','service']]], 
-                               {'limit': 4})
-        res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
-        return res
-    except Exception as e:
-        print(f"Error de conexión: {e}")
-        return None
-
-def registrar_cliente_odoo(nombre, email, telefono):
-    try:
-        url = st.secrets["ODOO_URL"]
-        db = st.secrets.get("ODOO_DB", "odoo-multiriegos-prod-12691727")
-        user = st.secrets["ODOO_USER"]
-        key = st.secrets["ODOO_API_KEY"]
-        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
-        uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
-                'name': nombre, 'email': email, 'phone': telefono,
-                'comment': 'Registrado desde App AgTech Multiagro'
-            }])
-    except:
+            # Simplificamos la búsqueda al máximo para probar conexión
+            ids = models.execute_kw(db, uid, key, 'product.template', 'search', 
+                                   [[['sale_ok','=',True]]], 
+                                   {'limit': 4})
+            if ids:
+                res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
+                return res
+            else:
+                st.warning("No se encontraron productos con 'Puede ser vendido' activo.")
+                return []
+        else:
+            st.error("🔑 Error: Credenciales incorrectas (Revisa el API Key y el Usuario)")
+            return None
+    except Exception as e:
+        st.error(f"❌ Error de Conexión: {str(e)}")
         return None
 
 # 2. ENCABEZADO (Logo Principal)
