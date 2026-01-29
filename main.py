@@ -66,7 +66,7 @@ with mid:
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
 
-# 3. SECCIÓN: DIAGNÓSTICO DE CULTIVO (CON CHAT INTERACTIVO)
+# 3. SECCIÓN: DIAGNÓSTICO DE CULTIVO
 st.markdown("### 🔍 Diagnóstico de Cultivo")
 
 img = None
@@ -75,7 +75,7 @@ tab_gal, tab_cam = st.tabs(["📁 SUBIR DE GALERÍA", "📸 USAR CÁMARA"])
 with tab_gal:
     img_gal = st.file_uploader("Selecciona una foto", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
 with tab_cam:
-    st.info("Tip: Si abre la cámara frontal, usa el icono de giro en tu pantalla.")
+    st.info("Tip: Para mejor enfoque, usa la cámara trasera.")
     img_cam = st.camera_input("Capturar muestra")
 
 if img_cam: img = img_cam
@@ -83,44 +83,51 @@ elif img_gal: img = img_gal
 
 if img is not None:
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("IA analizando..."):
+        with st.spinner("IA analizando patologías..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
-                instruccion = "Eres un Agrónomo Senior de Multiagro. Analiza esta imagen, da un diagnóstico con nivel de confianza y haz 2 preguntas breves al productor para confirmar el problema."
+                
+                # INSTRUCCIÓN ENFOCADA EN PATOLOGÍAS
+                instruccion = """
+                Eres un Patólogo Agrónomo Senior de Grupo Multiagro. Tu prioridad es:
+                1. Identificar signos de insectos, ácaros, hongos, bacterias o virus.
+                2. Nombrar la plaga o enfermedad específica y evaluar el nivel de daño.
+                3. Recomendar protocolo de control con productos específicos de Multiagro.
+                4. Mencionar etapa fenológica o estado nutricional SOLO como información secundaria.
+                5. Hacer 2 preguntas clave para confirmar el diagnóstico.
+                Responde en español dominicano profesional y directo.
+                """
+                
                 res = model.generate_content([instruccion, Image.open(img)])
-                # Guardamos el primer resultado en el historial
                 st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
             except: st.error("Error en el análisis de IA.")
 
-# --- MOSTRAR EL RESULTADO DEL CHAT Y EL CUADRO DE RESPUESTA ---
 if st.session_state.chat_history:
     st.markdown("---")
-    # Mostramos el último mensaje de la IA
     st.info(st.session_state.chat_history[-1]["parts"][0])
     
-    # Cuadro para que el productor responda a las preguntas de la IA
-    user_reply = st.chat_input("Responde aquí a la IA (ej: 'Sí, hay puntos negros debajo')")
+    user_reply = st.chat_input("Responde a la IA aquí para precisar el diagnóstico...")
     
     if user_reply:
-        with st.spinner("Actualizando diagnóstico..."):
+        with st.spinner("Actualizando peritaje..."):
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            # Iniciamos chat con la memoria de lo hablado
             chat = model.start_chat(history=st.session_state.chat_history)
             response = chat.send_message(user_reply)
-            
-            # Guardamos la conversación
             st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
             st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
             st.rerun()
 
-    # Botón de Segunda Opinión Humana
-    mensaje_wa = f"Hola técnico de Multiagro, necesito validar este diagnóstico:\n\n{st.session_state.chat_history[-1]['parts'][0][:200]}..."
-    link_soporte = f"https://wa.me/18295624653?text={urllib.parse.quote(mensaje_wa)}"
-    st.link_button("👨‍🌾 Hablar con un Técnico Humano (WhatsApp)", link_soporte, use_container_width=True)
+    # Botón de Segunda Opinión Humana con Personalización
+    nombre_productor = st.session_state.get('reg_ok', 'un productor')
+    msg_wa = f"Hola técnico de Multiagro, soy {nombre_productor}. Necesito ayuda con este diagnóstico:\n\n{st.session_state.chat_history[-1]['parts'][0][:300]}..."
+    link_wa = f"https://wa.me/18295624653?text={urllib.parse.quote(msg_wa)}"
+    
+    st.warning(f"¿Deseas validar esto con un experto, {nombre_productor}?")
+    st.link_button("👨‍🌾 Contactar Servicio Técnico (WhatsApp)", link_wa, use_container_width=True)
 
-# 4. TIENDA (Sugerencias)
+# 4. TIENDA
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 prods = get_odoo_prods()
@@ -128,30 +135,28 @@ if prods:
     cols = st.columns(len(prods))
     for i, p in enumerate(prods):
         with cols[i]:
-            nombre_p = p['name'].split('(')[0].strip()
-            st.metric(label=nombre_p, value=f"RD$ {p['list_price']:,.2f}")
-            link_p = f"https://wa.me/18295624653?text={urllib.parse.quote('Me interesa el producto: ' + nombre_p)}"
-            st.link_button("💬 Cotizar WhatsApp", link_p, use_container_width=True)
+            n_p = p['name'].split('(')[0].strip()
+            st.metric(label=n_p, value=f"RD$ {p['list_price']:,.2f}")
+            l_p = f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + n_p)}"
+            st.link_button("💬 Cotizar", l_p, use_container_width=True)
 
 # 5. REGISTRO
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
     with st.form("form_reg"):
-        nom = st.text_input("Nombre completo *")
-        ema = st.text_input("Correo electrónico")
-        tel = st.text_input("WhatsApp / Teléfono *")
+        n, e, t = st.text_input("Nombre *"), st.text_input("Email"), st.text_input("WhatsApp *")
         if st.form_submit_button("✅ Registrarme", use_container_width=True):
-            if nom and tel:
-                if registrar_cliente_odoo(nom, ema, tel):
-                    enviar_aviso_email(nom, ema, tel)
-                    st.session_state['reg_ok'] = nom
+            if n and t:
+                if registrar_cliente_odoo(n, e, t):
+                    enviar_aviso_email(n, e, t)
+                    st.session_state['reg_ok'] = n
                     st.rerun()
             else: st.error("Completa los campos obligatorios")
 else:
-    st.success(f"¡Excelente, {st.session_state['reg_ok']}! Ya estás registrado.")
+    st.success(f"¡Registrado como: {st.session_state['reg_ok']}!")
 
-# 6. LOGOS UNIFORMES
+# 6. LOGOS
 st.divider()
 logos = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
 l_cols = st.columns(5)
