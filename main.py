@@ -11,7 +11,8 @@ st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 def get_odoo_prods():
     try:
         url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"]
+        # Usamos el nombre de tu base de datos real
+        db = st.secrets.get("ODOO_DB", "odoo-multiriegos-prod-12691727")
         user = st.secrets["ODOO_USER"]
         key = st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
@@ -27,7 +28,7 @@ def get_odoo_prods():
 def registrar_cliente_odoo(nombre, email, telefono):
     try:
         url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"]
+        db = st.secrets.get("ODOO_DB", "odoo-multiriegos-prod-12691727")
         user = st.secrets["ODOO_USER"]
         key = st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
@@ -36,7 +37,7 @@ def registrar_cliente_odoo(nombre, email, telefono):
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
             return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
                 'name': nombre, 'email': email, 'phone': telefono,
-                'comment': 'Registrado desde App AgTech'
+                'comment': 'Registrado desde App AgTech Multiagro'
             }])
     except:
         return None
@@ -100,11 +101,11 @@ if 'reg_ok' not in st.session_state:
                     st.session_state['reg_ok'] = nom
                     st.rerun()
                 else:
-                    st.error("No se pudo conectar con Odoo.")
+                    st.error("No se pudo conectar con Odoo. Revisa la base de datos.")
             else:
                 st.error("Por favor completa los campos obligatorios (*)")
 else:
-    st.success(f"¡Excelente, {st.session_state['reg_ok']}! Ya estás registrado.")
+    st.success(f"¡Excelente, {st.session_state['reg_ok']}! Ya estás registrado en nuestro sistema.")
 
 # 6. PIE DE PÁGINA (Logos Uniformes)
 st.divider()
@@ -118,7 +119,7 @@ for i, l in enumerate(logos):
         if os.path.exists(l):
             try:
                 img_l = Image.open(l).convert("RGBA")
-                h_base = 60 # Altura uniforme para todos
+                h_base = 60 
                 w_orig, h_orig = img_l.size
                 w_new = int(h_base * (w_orig / h_orig))
                 img_res = img_l.resize((w_new, h_base), Image.Resampling.LANCZOS)
