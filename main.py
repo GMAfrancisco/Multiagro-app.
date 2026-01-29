@@ -95,6 +95,45 @@ if prods:
 else:
     st.warning("Cargando catálogo de productos...")
 # 5. SECCIÓN: REGISTRO DEL CLIENTE
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# --- FUNCIÓN PARA ENVIAR CORREO ---
+def enviar_aviso_email(nombre, email_cliente, tel):
+    try:
+        remitente = st.secrets["EMAIL_SENDER"]
+        password = st.secrets["EMAIL_PASSWORD"]
+        destinatario = st.secrets["EMAIL_RECEIVER"]
+
+        msg = MIMEMultipart()
+        msg['From'] = remitente
+        msg['To'] = destinatario
+        msg['Subject'] = f"🚀 NUEVO SUSCRIPTOR: {nombre}"
+
+        cuerpo = f"""
+        Hola Equipo Multiagro,
+        
+        Se ha registrado un nuevo productor interesado:
+        
+        👤 Nombre: {nombre}
+        📧 Email: {email_cliente if email_cliente else 'No provisto'}
+        📞 WhatsApp: {tel}
+        
+        Nota: Este contacto ya ha sido enviado a Odoo SH.
+        """
+        msg.attach(MIMEText(cuerpo, 'plain'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(remitente, password)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except:
+        return False
+
+# --- SECCIÓN DE REGISTRO EN LA APP ---
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
@@ -105,17 +144,23 @@ if 'reg_ok' not in st.session_state:
             ema = st.text_input("Correo electrónico")
         with col2:
             tel = st.text_input("WhatsApp / Teléfono *")
-        if st.form_submit_button("✅ Registrarme"):
+        
+        if st.form_submit_button("✅ Registrarme y recibir asesoría", use_container_width=True):
             if nom and tel:
-                if registrar_cliente_odoo(nom, ema, tel):
-                    st.session_state['reg_ok'] = nom
-                    st.rerun()
-                else:
-                    st.error("No se pudo conectar con Odoo. Revisa la base de datos.")
+                with st.spinner("Conectando con el sistema..."):
+                    # Ejecutar ambas acciones
+                    res_odoo = registrar_cliente_odoo(nom, ema, tel)
+                    enviar_aviso_email(nom, ema, tel)
+                    
+                    if res_odoo:
+                        st.session_state['reg_ok'] = nom
+                        st.rerun()
+                    else:
+                        st.error("Error al registrar en Odoo. Verifica tus credenciales.")
             else:
                 st.error("Por favor completa los campos obligatorios (*)")
 else:
-    st.success(f"¡Excelente, {st.session_state['reg_ok']}! Ya estás registrado en nuestro sistema.")
+    st.success(f"¡Excelente, {st.session_state['reg_ok']}! Ya estamos procesando tu solicitud.")
 
 # 6. PIE DE PÁGINA (Logos Uniformes)
 st.divider()
