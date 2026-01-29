@@ -70,15 +70,30 @@ if img and st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_cont
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 prods = get_odoo_prods()
+
 if prods:
+    # Creamos columnas para los productos
     cols = st.columns(len(prods))
     for i, p in enumerate(prods):
         with cols[i]:
-            st.info(f"**{p['name']}**\n\nRD$ {p['list_price']:,.2f}")
-            st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Hola, quiero info de: {p['name']})")
+            # 1. Limpiamos el nombre del producto (quitamos "(copia)" y códigos feos)
+            nombre_limpio = p['name'].split('(')[0].strip()
+            
+            # 2. Mostramos la tarjeta del producto
+            st.markdown(f"""
+                <div style="border: 1px solid #ddd; border-radius: 10px; padding: 15px; text-align: center; background-color: #f9f9f9; height: 180px;">
+                    <p style="font-weight: bold; color: #333; margin-bottom: 5px;">{nombre_limpio}</p>
+                    <p style="color: #2e7d32; font-size: 1.2rem; font-weight: bold;">RD$ {p['list_price']:,.2f}</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # 3. Botón de WhatsApp estilizado
+            texto_wa = f"Hola Grupo Multiagro, solicito cotización de: {nombre_limpio}"
+            link_wa = f"https://wa.me/18295624653?text={texto_wa.replace(' ', '%20')}"
+            
+            st.link_button(f"💬 Cotizar por WhatsApp", link_wa, use_container_width=True)
 else:
     st.warning("Cargando catálogo de productos...")
-
 # 5. SECCIÓN: REGISTRO DEL CLIENTE
 st.divider()
 st.markdown("### 👤 Registro de Productor")
