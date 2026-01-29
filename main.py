@@ -73,24 +73,41 @@ with tab_cam:
     img_cam = st.camera_input("Capturar muestra")
 
 # INICIALIZACIÓN DE LA VARIABLE IMG (Para evitar el NameError)
-img = None
-if img_cam:
-    img = img_cam
-elif img_gal:
-    img = img_gal
-
 if img:
+    st.success("✅ Imagen lista para procesar")
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("IA analizando..."):
+        with st.spinner("Realizando peritaje agronómico..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
-                instruccion = "Eres un agrónomo experto de Grupo Multiagro en RD. Analiza el problema en la imagen y da un diagnóstico profundo con técnicas de control y productos recomendados en español."
+                
+                # INSTRUCCIÓN MEJORADA
+                instruccion = """
+                Eres un Agrónomo Senior de Grupo Multiagro. 
+                1. Evalúa la calidad de la imagen. Si es mala, indícalo.
+                2. Da un diagnóstico técnico con Nivel de Confianza (%).
+                3. Recomienda productos de Multiagro y técnicas de control.
+                4. Haz 2 preguntas clave al productor para validar el problema.
+                Responde en español dominicano profesional.
+                """
+                
                 res = model.generate_content([instruccion, Image.open(img)])
+                resultado_ia = res.text
+                
                 st.markdown("---")
-                st.markdown(res.text)
-            except: st.error("Error en el análisis de IA.")
-
+                st.markdown(resultado_ia)
+                
+                # --- NUEVO: BOTÓN DE CONTACTO TÉCNICO ---
+                st.warning("¿No estás seguro del resultado? Habla con un técnico humano.")
+                
+                # Preparamos el mensaje para WhatsApp
+                mensaje_soporte = f"Hola Técnico de Multiagro, necesito validar este diagnóstico de IA:\n\n{resultado_ia[:200]}..."
+                link_soporte = f"https://wa.me/18295624653?text={urllib.parse.quote(mensaje_soporte)}"
+                
+                st.link_button("👨‍🌾 Hablar con un Técnico Humano", link_soporte, use_container_width=True)
+                
+            except Exception as e:
+                st.error(f"Error en el análisis: {str(e)}")
 # 4. TIENDA (Sugerencias)
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
