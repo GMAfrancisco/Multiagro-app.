@@ -56,49 +56,47 @@ with mid:
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
 
-# --- SECCIÓN 1: DIAGNÓSTICO DE IA (Diseño táctil) ---
+# --- SECCIÓN 1: DIAGNÓSTICO DE IA (Diseño Inteligente) ---
 st.markdown("<div class='card'>", unsafe_allow_html=True)
-st.markdown("<h2 style='text-align:center;'>📸 Capturar Diagnóstico</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;'>🔍 Analizar Cultivo</h2>", unsafe_allow_html=True)
 
-# Creamos pestañas grandes y fáciles de tocar
-tab_cam, tab_gal = st.tabs(["📷 USAR CÁMARA EN VIVO", "📁 SUBIR DE GALERÍA"])
-
-with tab_cam:
-    st.markdown("<p style='font-size: 0.9rem; color: #555;'>Apunta directamente a la hoja o fruto afectado:</p>", unsafe_allow_html=True)
-    img_cam = st.camera_input("Capturar muestra para Grupo Multiagro")
+# Invertimos el orden: Galería primero para evitar que la cámara abra sola
+tab_gal, tab_cam = st.tabs(["📁 SUBIR FOTO", "📸 TOMAR FOTO"])
 
 with tab_gal:
-    st.markdown("<p style='font-size: 0.9rem; color: #555;'>Selecciona una foto guardada:</p>", unsafe_allow_html=True)
-    img_gal = st.file_uploader("Seleccionar imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
+    st.markdown("<p style='text-align:center; color: #555;'>Selecciona una imagen de tu galería:</p>", unsafe_allow_html=True)
+    img_gal = st.file_uploader("Buscar en el dispositivo", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
+
+with tab_cam:
+    st.markdown("<p style='text-align:center; color: #555;'>La cámara se activará al seleccionar esta pestaña:</p>", unsafe_allow_html=True)
+    # Al estar en la segunda pestaña, no se activa hasta que el usuario hace clic aquí
+    img_cam = st.camera_input("Capturar ahora")
 
 # Unificamos la imagen seleccionada
 img = img_cam if img_cam else img_gal
 
 if img:
-    # Mostramos un mensaje de confirmación de imagen lista
-    st.success("✅ Imagen lista para procesar")
+    st.success("✅ Imagen lista")
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("Realizando análisis técnico..."):
+        with st.spinner("Analizando..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
                 instruccion = """
                 Eres el Asesor Agronómico experto de Grupo Multiagro en República Dominicana.
-                Analiza la imagen detalladamente y estructura tu respuesta así:
-                1. DIAGNÓSTICO: Nombre técnico y común del problema.
-                2. ANÁLISIS DE DAÑO: Impacto actual y riesgo futuro.
-                3. TÉCNICAS DE CONTROL: Preventivo, Biológico y Cultural.
-                4. RECOMENDACIÓN MULTIAGRO: Producto específico y dosis.
-                5. CONSEJO TÉCNICO: Tip extra para el éxito del cultivo.
-                Responde en español profesional.
+                Analiza la imagen detalladamente y estructura tu respuesta con:
+                1. DIAGNÓSTICO técnico.
+                2. ANÁLISIS DE DAÑO.
+                3. TÉCNICAS DE CONTROL (Preventivo, Biológico y Cultural).
+                4. RECOMENDACIÓN MULTIAGRO (Producto y dosis).
                 """
                 
                 res = model.generate_content([instruccion, Image.open(img)])
                 st.markdown("---")
                 st.markdown(res.text)
-            except Exception as e:
-                st.error("Error en el sensor de IA. Verifica tu conexión.")
+            except:
+                st.error("Error en el sensor de IA.")
 st.markdown("</div>", unsafe_allow_html=True)
 
 # --- SECCIÓN 2: SOLUCIONES (ODOO) ---
