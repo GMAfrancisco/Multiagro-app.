@@ -85,17 +85,30 @@ if img and st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_cont
             st.markdown(res.text)
         except: st.error("Error en IA")
 
-# 4. TIENDA
+# 4. SECCIÓN: SUGERENCIAS / TIENDA VIRTUAL (Odoo)
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 prods = get_odoo_prods()
+
 if prods:
     cols = st.columns(len(prods))
     for i, p in enumerate(prods):
         with cols[i]:
+            # 1. Limpiamos el nombre para que sea corto y profesional
             nombre_limpio = p['name'].split('(')[0].strip()
-            st.info(f"**{nombre_limpio}**\n\nRD$ {p['list_price']:,.2f}")
-            st.markdown(f"[💬 Cotizar](https://wa.me/18295624653?text=Cotizar:%20{nombre_limpio})")
+            
+            # 2. Mostramos el precio destacado
+            st.metric(label=nombre_limpio, value=f"RD$ {p['list_price']:,.2f}")
+            
+            # 3. Botón de WhatsApp real y estilizado
+            texto_wa = f"Hola Grupo Multiagro, solicito cotización de: {nombre_limpio}"
+            # Usamos quote para que los espacios no rompan el link
+            import urllib.parse
+            link_wa = f"https://wa.me/18295624653?text={urllib.parse.quote(texto_wa)}"
+            
+            st.link_button("💬 Cotizar por WhatsApp", link_wa, use_container_width=True)
+else:
+    st.warning("Cargando catálogo de productos...")
 
 # 5. REGISTRO
 st.divider()
