@@ -11,18 +11,26 @@ st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 def get_odoo_prods():
     try:
         url = st.secrets["ODOO_URL"]
-        # Usamos el nombre de tu base de datos real
-        db = st.secrets.get("ODOO_DB", "odoo-multiriegos-prod-12691727")
+        db = st.secrets["ODOO_DB"]
         user = st.secrets["ODOO_USER"]
         key = st.secrets["ODOO_API_KEY"]
-        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
+        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
-        if uid:
-            models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
-            ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 4})
-            res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
-            return res
-    except:
+        
+        if not uid:
+            # Esto nos dirá en la consola de Streamlit si falló el login
+            print("Error: Autenticación fallida en Odoo")
+            return None
+            
+        models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+        # Buscamos productos que tengan "Venta ok" y que tengan stock o sean servicios
+        ids = models.execute_kw(db, uid, key, 'product.template', 'search', 
+                               [[['sale_ok','=',True], ['type','!=','service']]], 
+                               {'limit': 4})
+        res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price']})
+        return res
+    except Exception as e:
+        print(f"Error de conexión: {e}")
         return None
 
 def registrar_cliente_odoo(nombre, email, telefono):
