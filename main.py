@@ -50,25 +50,43 @@ if img and st.button("🚀 INICIAR ANÁLISIS TÉCNICO", type="primary", use_cont
             st.markdown(res.text)
         except: st.error("Error en el análisis.")
 
-# 4. SOLUCIONES Y LOGOS
+# --- SECCIÓN 4: PIE DE PÁGINA (Logos Uniformes) ---
 st.divider()
-st.markdown("### 🛒 Soluciones Recomendadas")
-prods = get_odoo_prods()
-if prods:
-    cols = st.columns(len(prods))
-    for i, p in enumerate(prods):
-        with cols[i]:
-            st.info(f"**{p['name']}**\n\nRD$ {p['list_price']:,.2f}")
+st.markdown("<p style='text-align:center; font-weight:bold; color:#333; margin-bottom:20px;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 
-# PIE DE PÁGINA: LOS 5 LOGOS
-st.divider()
-st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
-logos = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
-l_cols = st.columns(5)
+# Lista de archivos
+logos = [
+    "LogoMundoAgricola.png", 
+    "LogoMultisemillas.png", 
+    "LogoMultiriegos.png", 
+    "LogoFortius.png", 
+    "LogoAgroservicios.png"
+]
 
-for i, l in enumerate(logos):
+# Creamos las 5 columnas
+l_cols = st.columns(len(logos))
+
+for i, nombre_archivo in enumerate(logos):
     with l_cols[i]:
-        if os.path.exists(l):
-            st.image(l, use_container_width=True)
+        if os.path.exists(nombre_archivo):
+            try:
+                # Abrimos la imagen
+                img = Image.open(nombre_archivo).convert("RGBA")
+                
+                # NORMALIZACIÓN: Forzamos una altura de 60px para todos
+                altura_deseada = 60
+                ancho_original, altura_original = img.size
+                ratio = ancho_original / altura_original
+                nuevo_ancho = int(altura_deseada * ratio)
+                
+                # Redimensionamos con alta calidad
+                img_resized = img.resize((nuevo_ancho, altura_deseada), Image.Resampling.LANCZOS)
+                
+                # Mostramos la imagen centrada
+                st.image(img_resized, use_container_width=False)
+            except:
+                st.caption("Multiagro")
         else:
-            st.caption("Multiagro")
+            st.caption("Falta Logo")
+
+st.markdown("<p style='text-align:center; font-size:0.8rem; color:gray; margin-top:30px;'>© 2026 GRUPO MULTIAGRO | República Dominicana</p>", unsafe_allow_html=True)
