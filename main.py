@@ -11,6 +11,10 @@ import urllib.parse
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
+# --- INICIALIZACIÓN DE MEMORIA DE CHAT ---
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
 # --- FUNCIONES DE INTEGRACIÓN ---
 def get_odoo_prods():
     try:
@@ -62,10 +66,9 @@ with mid:
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
 
-# 3. SECCIÓN: DIAGNÓSTICO DE CULTIVO
+# 3. SECCIÓN: DIAGNÓSTICO DE CULTIVO (CON CHAT INTERACTIVO)
 st.markdown("### 🔍 Diagnóstico de Cultivo")
 
-# IMPORTANTE: Inicializamos las variables para evitar el NameError
 img = None
 tab_gal, tab_cam = st.tabs(["📁 SUBIR DE GALERÍA", "📸 USAR CÁMARA"])
 
@@ -75,43 +78,47 @@ with tab_cam:
     st.info("Tip: Si abre la cámara frontal, usa el icono de giro en tu pantalla.")
     img_cam = st.camera_input("Capturar muestra")
 
-# Asignamos la imagen a la variable global 'img'
-if img_cam:
-    img = img_cam
-elif img_gal:
-    img = img_gal
+if img_cam: img = img_cam
+elif img_gal: img = img_gal
 
-# Solo ejecutamos si 'img' no es None
 if img is not None:
-    st.success("✅ Imagen lista")
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("IA analizando calidad y patología..."):
+        with st.spinner("IA analizando..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
-                
-                instruccion = """
-                Eres un Agrónomo Senior de Grupo Multiagro. 
-                1. Evalúa la calidad de la imagen. 
-                2. Da un diagnóstico técnico con Nivel de Confianza (%).
-                3. Recomienda productos de Multiagro y técnicas de control.
-                4. Haz 2 preguntas clave al productor para validar el problema.
-                Responde en español dominicano profesional de forma estructurada.
-                """
-                
+                instruccion = "Eres un Agrónomo Senior de Multiagro. Analiza esta imagen, da un diagnóstico con nivel de confianza y haz 2 preguntas breves al productor para confirmar el problema."
                 res = model.generate_content([instruccion, Image.open(img)])
-                diag_texto = res.text
-                st.markdown("---")
-                st.markdown(diag_texto)
-                
-                # Botón de Segunda Opinión Humana
-                st.warning("¿Deseas validar este resultado con un experto?")
-                mensaje_wa = f"Hola técnico de Multiagro, necesito validar este diagnóstico de la IA:\n\n{diag_texto[:300]}..."
-                link_soporte = f"https://wa.me/18295624653?text={urllib.parse.quote(mensaje_wa)}"
-                st.link_button("👨‍🌾 Contactar Servicio Técnico (WhatsApp)", link_soporte, use_container_width=True)
-                
-            except Exception as e:
-                st.error("Error en el análisis. Intenta con otra foto.")
+                # Guardamos el primer resultado en el historial
+                st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
+            except: st.error("Error en el análisis de IA.")
+
+# --- MOSTRAR EL RESULTADO DEL CHAT Y EL CUADRO DE RESPUESTA ---
+if st.session_state.chat_history:
+    st.markdown("---")
+    # Mostramos el último mensaje de la IA
+    st.info(st.session_state.chat_history[-1]["parts"][0])
+    
+    # Cuadro para que el productor responda a las preguntas de la IA
+    user_reply = st.chat_input("Responde aquí a la IA (ej: 'Sí, hay puntos negros debajo')")
+    
+    if user_reply:
+        with st.spinner("Actualizando diagnóstico..."):
+            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+            model = genai.GenerativeModel('gemini-2.0-flash-lite')
+            # Iniciamos chat con la memoria de lo hablado
+            chat = model.start_chat(history=st.session_state.chat_history)
+            response = chat.send_message(user_reply)
+            
+            # Guardamos la conversación
+            st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
+            st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
+            st.rerun()
+
+    # Botón de Segunda Opinión Humana
+    mensaje_wa = f"Hola técnico de Multiagro, necesito validar este diagnóstico:\n\n{st.session_state.chat_history[-1]['parts'][0][:200]}..."
+    link_soporte = f"https://wa.me/18295624653?text={urllib.parse.quote(mensaje_wa)}"
+    st.link_button("👨‍🌾 Hablar con un Técnico Humano (WhatsApp)", link_soporte, use_container_width=True)
 
 # 4. TIENDA (Sugerencias)
 st.divider()
