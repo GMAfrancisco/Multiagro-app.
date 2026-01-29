@@ -6,17 +6,16 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import urllib.parse
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# --- FUNCIONES DE INTEGRACIÓN (Odoo) ---
+# --- FUNCIONES DE INTEGRACIÓN ---
 def get_odoo_prods():
     try:
-        url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"]
-        user = st.secrets["ODOO_USER"]
-        key = st.secrets["ODOO_API_KEY"]
+        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
+        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
         if uid:
@@ -28,10 +27,8 @@ def get_odoo_prods():
 
 def registrar_cliente_odoo(nombre, email, telefono):
     try:
-        url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"]
-        user = st.secrets["ODOO_USER"]
-        key = st.secrets["ODOO_API_KEY"]
+        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
+        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
         if uid:
@@ -42,17 +39,13 @@ def registrar_cliente_odoo(nombre, email, telefono):
             }])
     except: return None
 
-# --- FUNCIÓN PARA ENVIAR CORREO ---
 def enviar_aviso_email(nombre, email_cliente, tel):
     try:
-        remitente = st.secrets["EMAIL_SENDER"]
-        password = st.secrets["EMAIL_PASSWORD"]
+        remitente, password = st.secrets["EMAIL_SENDER"], st.secrets["EMAIL_PASSWORD"]
         destinatario = st.secrets["EMAIL_RECEIVER"]
         msg = MIMEMultipart()
-        msg['From'] = remitente
-        msg['To'] = destinatario
-        msg['Subject'] = f"🚀 NUEVO SUSCRIPTOR: {nombre}"
-        cuerpo = f"Nuevo productor interesado:\n\n👤 Nombre: {nombre}\n📧 Email: {email_cliente}\n📞 WhatsApp: {tel}"
+        msg['From'], msg['To'], msg['Subject'] = remitente, destinatario, f"🚀 NUEVO SUSCRIPTOR: {nombre}"
+        cuerpo = f"Nuevo productor:\n👤 {nombre}\n📧 {email_cliente}\n📞 {tel}"
         msg.attach(MIMEText(cuerpo, 'plain'))
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -72,44 +65,44 @@ with mid:
 # 3. DIAGNÓSTICO DE CULTIVO
 st.markdown("### 🔍 Diagnóstico de Cultivo")
 tab_gal, tab_cam = st.tabs(["📁 SUBIR DE GALERÍA", "📸 USAR CÁMARA"])
-with tab_gal: img_gal = st.file_uploader("Foto", type=['png', 'jpg', 'jpeg'], key="gal")
+
+with tab_gal:
+    img_gal = st.file_uploader("Selecciona una foto", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
 with tab_cam:
-    st.markdown("<p style='text-align:center;'>Apunta a la plaga con la cámara trasera:</p>", unsafe_allow_html=True)
-    img_cam = st.camera_input("Capturar muestra", label_visibility="collapsed")
+    st.info("Tip: Si abre la cámara frontal, usa el icono de giro en tu pantalla.")
+    img_cam = st.camera_input("Capturar muestra")
 
-if img and st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-    with st.spinner("Analizando..."):
-        try:
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            res = model.generate_content(["Analiza la imagen como agrónomo experto en español.", Image.open(img)])
-            st.markdown(res.text)
-        except: st.error("Error en IA")
+# INICIALIZACIÓN DE LA VARIABLE IMG (Para evitar el NameError)
+img = None
+if img_cam:
+    img = img_cam
+elif img_gal:
+    img = img_gal
 
-# 4. SECCIÓN: SUGERENCIAS / TIENDA VIRTUAL (Odoo)
+if img:
+    if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
+        with st.spinner("IA analizando..."):
+            try:
+                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+                model = genai.GenerativeModel('gemini-2.0-flash-lite')
+                instruccion = "Eres un agrónomo experto de Grupo Multiagro en RD. Analiza el problema en la imagen y da un diagnóstico profundo con técnicas de control y productos recomendados en español."
+                res = model.generate_content([instruccion, Image.open(img)])
+                st.markdown("---")
+                st.markdown(res.text)
+            except: st.error("Error en el análisis de IA.")
+
+# 4. TIENDA (Sugerencias)
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 prods = get_odoo_prods()
-
 if prods:
     cols = st.columns(len(prods))
     for i, p in enumerate(prods):
         with cols[i]:
-            # 1. Limpiamos el nombre para que sea corto y profesional
             nombre_limpio = p['name'].split('(')[0].strip()
-            
-            # 2. Mostramos el precio destacado
             st.metric(label=nombre_limpio, value=f"RD$ {p['list_price']:,.2f}")
-            
-            # 3. Botón de WhatsApp real y estilizado
-            texto_wa = f"Hola Grupo Multiagro, solicito cotización de: {nombre_limpio}"
-            # Usamos quote para que los espacios no rompan el link
-            import urllib.parse
-            link_wa = f"https://wa.me/18295624653?text={urllib.parse.quote(texto_wa)}"
-            
-            st.link_button("💬 Cotizar por WhatsApp", link_wa, use_container_width=True)
-else:
-    st.warning("Cargando catálogo de productos...")
+            link_wa = f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + nombre_limpio)}"
+            st.link_button("💬 Cotizar WhatsApp", link_wa, use_container_width=True)
 
 # 5. REGISTRO
 st.divider()
@@ -121,9 +114,8 @@ if 'reg_ok' not in st.session_state:
         tel = st.text_input("WhatsApp / Teléfono *")
         if st.form_submit_button("✅ Registrarme", use_container_width=True):
             if nom and tel:
-                r_odoo = registrar_cliente_odoo(nom, ema, tel)
-                enviar_aviso_email(nom, ema, tel)
-                if r_odoo:
+                if registrar_cliente_odoo(nom, ema, tel):
+                    enviar_aviso_email(nom, ema, tel)
                     st.session_state['reg_ok'] = nom
                     st.rerun()
             else: st.error("Completa los campos obligatorios")
