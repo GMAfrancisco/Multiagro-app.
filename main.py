@@ -62,8 +62,11 @@ with mid:
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
 
-# 3. DIAGNÓSTICO DE CULTIVO
+# 3. SECCIÓN: DIAGNÓSTICO DE CULTIVO
 st.markdown("### 🔍 Diagnóstico de Cultivo")
+
+# IMPORTANTE: Inicializamos las variables para evitar el NameError
+img = None
 tab_gal, tab_cam = st.tabs(["📁 SUBIR DE GALERÍA", "📸 USAR CÁMARA"])
 
 with tab_gal:
@@ -72,42 +75,44 @@ with tab_cam:
     st.info("Tip: Si abre la cámara frontal, usa el icono de giro en tu pantalla.")
     img_cam = st.camera_input("Capturar muestra")
 
-# INICIALIZACIÓN DE LA VARIABLE IMG (Para evitar el NameError)
-if img:
-    st.success("✅ Imagen lista para procesar")
+# Asignamos la imagen a la variable global 'img'
+if img_cam:
+    img = img_cam
+elif img_gal:
+    img = img_gal
+
+# Solo ejecutamos si 'img' no es None
+if img is not None:
+    st.success("✅ Imagen lista")
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("Realizando peritaje agronómico..."):
+        with st.spinner("IA analizando calidad y patología..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # INSTRUCCIÓN MEJORADA
                 instruccion = """
                 Eres un Agrónomo Senior de Grupo Multiagro. 
-                1. Evalúa la calidad de la imagen. Si es mala, indícalo.
+                1. Evalúa la calidad de la imagen. 
                 2. Da un diagnóstico técnico con Nivel de Confianza (%).
                 3. Recomienda productos de Multiagro y técnicas de control.
                 4. Haz 2 preguntas clave al productor para validar el problema.
-                Responde en español dominicano profesional.
+                Responde en español dominicano profesional de forma estructurada.
                 """
                 
                 res = model.generate_content([instruccion, Image.open(img)])
-                resultado_ia = res.text
-                
+                diag_texto = res.text
                 st.markdown("---")
-                st.markdown(resultado_ia)
+                st.markdown(diag_texto)
                 
-                # --- NUEVO: BOTÓN DE CONTACTO TÉCNICO ---
-                st.warning("¿No estás seguro del resultado? Habla con un técnico humano.")
-                
-                # Preparamos el mensaje para WhatsApp
-                mensaje_soporte = f"Hola Técnico de Multiagro, necesito validar este diagnóstico de IA:\n\n{resultado_ia[:200]}..."
-                link_soporte = f"https://wa.me/18295624653?text={urllib.parse.quote(mensaje_soporte)}"
-                
-                st.link_button("👨‍🌾 Hablar con un Técnico Humano", link_soporte, use_container_width=True)
+                # Botón de Segunda Opinión Humana
+                st.warning("¿Deseas validar este resultado con un experto?")
+                mensaje_wa = f"Hola técnico de Multiagro, necesito validar este diagnóstico de la IA:\n\n{diag_texto[:300]}..."
+                link_soporte = f"https://wa.me/18295624653?text={urllib.parse.quote(mensaje_wa)}"
+                st.link_button("👨‍🌾 Contactar Servicio Técnico (WhatsApp)", link_soporte, use_container_width=True)
                 
             except Exception as e:
-                st.error(f"Error en el análisis: {str(e)}")
+                st.error("Error en el análisis. Intenta con otra foto.")
+
 # 4. TIENDA (Sugerencias)
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
@@ -116,10 +121,10 @@ if prods:
     cols = st.columns(len(prods))
     for i, p in enumerate(prods):
         with cols[i]:
-            nombre_limpio = p['name'].split('(')[0].strip()
-            st.metric(label=nombre_limpio, value=f"RD$ {p['list_price']:,.2f}")
-            link_wa = f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + nombre_limpio)}"
-            st.link_button("💬 Cotizar WhatsApp", link_wa, use_container_width=True)
+            nombre_p = p['name'].split('(')[0].strip()
+            st.metric(label=nombre_p, value=f"RD$ {p['list_price']:,.2f}")
+            link_p = f"https://wa.me/18295624653?text={urllib.parse.quote('Me interesa el producto: ' + nombre_p)}"
+            st.link_button("💬 Cotizar WhatsApp", link_p, use_container_width=True)
 
 # 5. REGISTRO
 st.divider()
