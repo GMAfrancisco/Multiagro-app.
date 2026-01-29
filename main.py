@@ -1,17 +1,13 @@
 import streamlit as st
 import xmlrpc.client
 import google.generativeai as genai
-from PIL import Image, ImageFile
+from PIL import Image
 import os
 
-# --- PREVENCIÓN DE ERRORES DE MEMORIA ---
-Image.MAX_IMAGE_PIXELS = None 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
 # 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# 2. FUNCIONES DE INTEGRACIÓN (Odoo)
+# --- FUNCIONES ODOO ---
 def get_odoo_prods():
     try:
         url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
@@ -25,112 +21,46 @@ def get_odoo_prods():
             return res
     except: return None
 
-def registrar_cliente_odoo(nombre, email, telefono):
-    try:
-        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
-        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
-        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
-        uid = common.authenticate(db, user, key, {})
-        if uid:
-            models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
-                'name': nombre, 'email': email, 'phone': telefono,
-                'comment': 'Cliente registrado desde App AgTech'
-            }])
-    except: return None
-
-# 3. ESTILOS VISUALES
-st.markdown("""
-    <style>
-    .stApp {background-color: #F0F2F0;}
-    h1, h2, h3, h4, p, label { color: #1A1A1A !important; font-weight: 600 !important; }
-    .card { background: white; padding: 20px; border-radius: 15px; border-left: 8px solid #1B5E20; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    .stButton>button { width: 100%; border-radius: 10px; background-color: #1B5E20; color: white; }
-    </style>
-""", unsafe_allow_html=True)
-
-# 4. ENCABEZADO
+# 2. ENCABEZADO
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
-    for f in os.listdir("."):
+    for f in sorted(os.listdir(".")):
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
 
-# --- SECCIÓN 1: DIAGNÓSTICO DE IA (Diseño Inteligente) ---
-st.markdown("<div class='card'>", unsafe_allow_html=True)
-st.markdown("<h2 style='text-align:center;'>🔍 Analizar Cultivo</h2>", unsafe_allow_html=True)
-
-# Invertimos el orden: Galería primero para evitar que la cámara abra sola
-tab_gal, tab_cam = st.tabs(["📁 SUBIR FOTO", "📸 TOMAR FOTO"])
+# 3. SECCIÓN DE DIAGNÓSTICO (Galería primero para no abrir cámara sola)
+st.markdown("### 🔍 Análisis de Cultivos")
+tab_gal, tab_cam = st.tabs(["📁 SUBIR DE GALERÍA", "📸 USAR CÁMARA"])
 
 with tab_gal:
-    st.markdown("<p style='text-align:center; color: #555;'>Selecciona una imagen de tu galería:</p>", unsafe_allow_html=True)
-    img_gal = st.file_uploader("Buscar en el dispositivo", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
+    img_gal = st.file_uploader("Selecciona una foto", type=['png', 'jpg', 'jpeg'], key="gal")
 
 with tab_cam:
-    st.markdown("<p style='text-align:center; color: #555;'>La cámara se activará al seleccionar esta pestaña:</p>", unsafe_allow_html=True)
-    # Al estar en la segunda pestaña, no se activa hasta que el usuario hace clic aquí
-    img_cam = st.camera_input("Capturar ahora")
+    img_cam = st.camera_input("Capturar muestra")
 
-# Unificamos la imagen seleccionada
 img = img_cam if img_cam else img_gal
 
-if img:
-    st.success("✅ Imagen lista")
-    if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("Analizando..."):
-            try:
-                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-                model = genai.GenerativeModel('gemini-2.0-flash-lite')
-                
-                instruccion = """
-                Eres el Asesor Agronómico experto de Grupo Multiagro en República Dominicana.
-                Analiza la imagen detalladamente y estructura tu respuesta con:
-                1. DIAGNÓSTICO técnico.
-                2. ANÁLISIS DE DAÑO.
-                3. TÉCNICAS DE CONTROL (Preventivo, Biológico y Cultural).
-                4. RECOMENDACIÓN MULTIAGRO (Producto y dosis).
-                """
-                
-                res = model.generate_content([instruccion, Image.open(img)])
-                st.markdown("---")
-                st.markdown(res.text)
-            except:
-                st.error("Error en el sensor de IA.")
-st.markdown("</div>", unsafe_allow_html=True)
+if img and st.button("🚀 INICIAR ANÁLISIS TÉCNICO", type="primary", use_container_width=True):
+    with st.spinner("IA analizando..."):
+        try:
+            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+            model = genai.GenerativeModel('gemini-2.0-flash-lite')
+            instruccion = "Eres un agrónomo experto de Grupo Multiagro en RD. Analiza el problema en la imagen y da un diagnóstico profundo con técnicas de control y productos recomendados en español."
+            res = model.generate_content([instruccion, Image.open(img)])
+            st.markdown(res.text)
+        except: st.error("Error en el análisis.")
 
-# --- SECCIÓN 2: SOLUCIONES (ODOO) ---
+# 4. SOLUCIONES Y LOGOS
 st.divider()
-st.subheader("🛒 Soluciones Multiagro")
+st.markdown("### 🛒 Soluciones Recomendadas")
 prods = get_odoo_prods()
 if prods:
     cols = st.columns(len(prods))
     for i, p in enumerate(prods):
         with cols[i]:
-            st.markdown(f"**{p['name']}**")
-            st.markdown(f"<span style='color:#1B5E20; font-size:1.2rem;'>RD$ {p['list_price']:,.2f}</span>", unsafe_allow_html=True)
-            st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info:{p['name']}")
-else: st.info("Cargando catálogo...")
+            st.info(f"**{p['name']}**\n\nRD$ {p['list_price']:,.2f}")
 
-# --- SECCIÓN 3: REGISTRO (DESPUÉS DE SOLUCIONES) ---
-st.divider()
-st.markdown("<div class='card'>", unsafe_allow_html=True)
-st.subheader("👤 Registro de Productor")
-if 'reg' not in st.session_state:
-    with st.form("registro"):
-        n, e, t = st.text_input("Nombre completo *"), st.text_input("Email"), st.text_input("WhatsApp *")
-        if st.form_submit_button("✅ Guardar mi Registro"):
-            if n and t:
-                if registrar_cliente_odoo(n, e, t):
-                    st.session_state['reg'] = n
-                    st.rerun()
-                else: st.error("No se pudo conectar con Odoo.")
-            else: st.warning("Nombre y WhatsApp son obligatorios.")
-else:
-    st.success(f"¡Gracias por registrarte, {st.session_state['reg']}!")
-st.markdown("</div>", unsafe_allow_html=True)
-
-# --- SECCIÓN 4: LOGOS DE EMPRESAS ---
+# PIE DE PÁGINA: LOS 5 LOGOS
 st.divider()
 st.markdown("<p style='text-align:center; font-weight:bold;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 logos = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
@@ -139,10 +69,6 @@ l_cols = st.columns(5)
 for i, l in enumerate(logos):
     with l_cols[i]:
         if os.path.exists(l):
-            try:
-                # Carga segura para evitar DecompressionBomb
-                st.image(l, use_container_width=True)
-            except: st.caption("Empresa")
-        else: st.caption("Multiagro")
-
-st.markdown("<p style='text-align:center; font-size:0.8rem; color:gray;'>© 2026 GRUPO MULTIAGRO | info@grupomultiagro.com</p>", unsafe_allow_html=True)
+            st.image(l, use_container_width=True)
+        else:
+            st.caption("Multiagro")
