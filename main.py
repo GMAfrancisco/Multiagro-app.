@@ -73,8 +73,9 @@ with mid:
 st.markdown("### 🔍 Diagnóstico de Cultivo")
 tab_gal, tab_cam = st.tabs(["📁 SUBIR DE GALERÍA", "📸 USAR CÁMARA"])
 with tab_gal: img_gal = st.file_uploader("Foto", type=['png', 'jpg', 'jpeg'], key="gal")
-with tab_cam: img_cam = st.camera_input("Capturar")
-img = img_cam if img_cam else img_gal
+with tab_cam:
+    st.markdown("<p style='text-align:center;'>Apunta a la plaga con la cámara trasera:</p>", unsafe_allow_html=True)
+    img_cam = st.camera_input("Capturar muestra", label_visibility="collapsed")
 
 if img and st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
     with st.spinner("Analizando..."):
