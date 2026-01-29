@@ -75,7 +75,7 @@ tab_gal, tab_cam = st.tabs(["📁 SUBIR DE GALERÍA", "📸 USAR CÁMARA"])
 with tab_gal:
     img_gal = st.file_uploader("Selecciona una foto", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
 with tab_cam:
-    st.info("Tip: Para mejor enfoque, usa la cámara trasera.")
+    st.info("Tip: Asegura buena iluminación para un mejor detalle de la plaga.")
     img_cam = st.camera_input("Capturar muestra")
 
 if img_cam: img = img_cam
@@ -83,20 +83,22 @@ elif img_gal: img = img_gal
 
 if img is not None:
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("IA analizando patologías..."):
+        with st.spinner("IA realizando peritaje detallado..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # INSTRUCCIÓN ENFOCADA EN PATOLOGÍAS
+                # INSTRUCCIÓN RE-POTENCIADA
                 instruccion = """
-                Eres un Patólogo Agrónomo Senior de Grupo Multiagro. Tu prioridad es:
-                1. Identificar signos de insectos, ácaros, hongos, bacterias o virus.
-                2. Nombrar la plaga o enfermedad específica y evaluar el nivel de daño.
-                3. Recomendar protocolo de control con productos específicos de Multiagro.
-                4. Mencionar etapa fenológica o estado nutricional SOLO como información secundaria.
-                5. Hacer 2 preguntas clave para confirmar el diagnóstico.
-                Responde en español dominicano profesional y directo.
+                Eres el Agrónomo Principal de Grupo Multiagro. Realiza un diagnóstico exhaustivo:
+                
+                1. IDENTIFICACIÓN: Nombre común y científico de la plaga, hongo o deficiencia detectada. Explica brevemente los síntomas visibles.
+                2. NIVEL DE DAÑO: Evalúa la gravedad (Leve, Moderada, Crítica).
+                3. PRÁCTICAS DE CAMPO: Sugiere métodos de control cultural (poda, riego, eliminación de hospederos, etc.).
+                4. RECOMENDACIÓN DE PRODUCTOS: Sugiere productos específicos disponibles en Multiagro (insecticidas, fungicidas o fertilizantes foliares) indicando el porqué de su elección.
+                5. PREGUNTAS DE CIERRE: Haz 2 preguntas clave para confirmar (ej. condiciones climáticas o extensión del daño).
+                
+                Formato: Usa negritas para productos y secciones. Sé muy detallado pero profesional.
                 """
                 
                 res = model.generate_content([instruccion, Image.open(img)])
@@ -105,12 +107,12 @@ if img is not None:
 
 if st.session_state.chat_history:
     st.markdown("---")
-    st.info(st.session_state.chat_history[-1]["parts"][0])
+    st.markdown(st.session_state.chat_history[-1]["parts"][0])
     
-    user_reply = st.chat_input("Responde a la IA aquí para precisar el diagnóstico...")
+    user_reply = st.chat_input("Responde aquí a la IA para precisar detalles...")
     
     if user_reply:
-        with st.spinner("Actualizando peritaje..."):
+        with st.spinner("Refinando diagnóstico..."):
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
             chat = model.start_chat(history=st.session_state.chat_history)
@@ -119,13 +121,11 @@ if st.session_state.chat_history:
             st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
             st.rerun()
 
-    # Botón de Segunda Opinión Humana con Personalización
+    # Botón de Soporte
     nombre_productor = st.session_state.get('reg_ok', 'un productor')
     msg_wa = f"Hola técnico de Multiagro, soy {nombre_productor}. Necesito ayuda con este diagnóstico:\n\n{st.session_state.chat_history[-1]['parts'][0][:300]}..."
     link_wa = f"https://wa.me/18295624653?text={urllib.parse.quote(msg_wa)}"
-    
-    st.warning(f"¿Deseas validar esto con un experto, {nombre_productor}?")
-    st.link_button("👨‍🌾 Contactar Servicio Técnico (WhatsApp)", link_wa, use_container_width=True)
+    st.link_button("👨‍🌾 Validar con un Técnico Humano (WhatsApp)", link_wa, use_container_width=True)
 
 # 4. TIENDA
 st.divider()
@@ -154,7 +154,7 @@ if 'reg_ok' not in st.session_state:
                     st.rerun()
             else: st.error("Completa los campos obligatorios")
 else:
-    st.success(f"¡Registrado como: {st.session_state['reg_ok']}!")
+    st.success(f"¡Sesión activa como: {st.session_state['reg_ok']}!")
 
 # 6. LOGOS
 st.divider()
@@ -165,6 +165,5 @@ for i, l in enumerate(logos):
         if os.path.exists(l):
             img_l = Image.open(l).convert("RGBA")
             h_base = 60
-            w_orig, h_orig = img_l.size
-            img_res = img_l.resize((int(h_base * (w_orig/h_orig)), h_base), Image.Resampling.LANCZOS)
+            img_res = img_l.resize((int(60 * (img_l.size[0]/img_l.size[1])), 60), Image.Resampling.LANCZOS)
             st.image(img_res)
