@@ -5,11 +5,10 @@ from PIL import Image
 import os
 import base64
 
-# 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
 # --- LÓGICA DE SESIÓN (PERSISTENCIA REFORZADA) ---
-# Esta sección garantiza que una vez logueado, la App no te pida el correo de nuevo al procesar fotos
 if "user_verified" not in st.session_state:
     st.session_state.user_verified = False
 if "user_tier" not in st.session_state:
@@ -26,21 +25,19 @@ st.markdown(f"""
     <style>
     .stApp {{ background-color: #0E1117; }}
     
-    /* Placeholders en NEGRO para el campo de cultivo */
+    /* Placeholders y Cargador en NEGRO */
     input::placeholder {{ color: #000000 !important; opacity: 1 !important; }}
-    
-    /* Cargador de archivos (Instrucciones en NEGRO) */
     [data-testid="stFileUploadDropzone"] div, [data-testid="stFileUploadDropzone"] label, 
     [data-testid="stFileUploadDropzone"] span, [data-testid="stFileUploaderFileName"] {{ color: #000000 !important; }}
     [data-testid="stFileUploadDropzone"] button {{ color: #000000 !important; background-color: #f0f2f6 !important; }}
     
-    /* Pestañas (Galería/Cámara) en BLANCO */
+    /* Pestañas en BLANCO */
     .stTabs [data-baseweb="tab"] p {{ color: #FFFFFF !important; font-weight: bold !important; font-size: 1.1rem; }}
     
     /* Título LOGIN en una sola línea */
     .titulo-single-line {{ text-align: center; color: white; white-space: nowrap; font-size: 2.2rem; font-weight: bold; margin: 20px 0; }}
     
-    /* CAJA DE ANÁLISIS: FORZAR LETRAS BLANCAS SIEMPRE */
+    /* CAJA DE ANÁLISIS: FORZAR LETRAS BLANCAS */
     .diag-box {{ 
         background:#161B22; padding:25px; border-radius:10px; border-left:5px solid #25D366; 
         color: #FFFFFF !important; line-height: 1.6; 
@@ -54,11 +51,8 @@ st.markdown(f"""
         background-size: cover; background-position: center;
         padding: 40px 20px; border-radius: 15px; text-align: center; margin-bottom: 25px; border: 1px solid #3E3E4A;
     }}
-
-    /* Botón verde Cotizar/Iniciar */
     div.stButton > button {{ background-color: #25D366 !important; color: #FFFFFF !important; border-radius: 20px !important; font-weight: bold !important; border: none; }}
     
-    /* Footer de Marcas */
     .footer-white {{ background-color: #FFFFFF !important; padding: 20px; border-radius: 10px; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; margin-top: 20px; }}
     .footer-white img {{ max-height: 50px; width: auto; margin: 10px; }}
     </style>
@@ -86,12 +80,10 @@ if not st.session_state.user_verified:
     _, cent, _ = st.columns([1, 2, 1])
     with cent:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        # Buscar logo Grupo Multiagro
         for f in os.listdir("."):
             if f.lower().startswith("grupo_multiagro"): st.image(f, use_container_width=True)
-        
         st.markdown('<div class="titulo-single-line">Diagnóstico Experto</div>', unsafe_allow_html=True)
-        u_email = st.text_input("Ingresa tu correo para iniciar:", placeholder="ejemplo@grupomultiagro.com")
+        u_email = st.text_input("Ingresa tu correo:", placeholder="ejemplo@grupomultiagro.com")
         if st.button("INGRESAR"):
             if "@" in u_email:
                 st.session_state.user_verified = True
@@ -105,7 +97,7 @@ with logo_cent:
     for f in os.listdir("."):
         if f.lower().startswith("grupo_multiagro"): st.image(f, use_container_width=True)
 
-st.markdown(f'<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Plan: {st.session_state.user_tier}</p></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Acceso: {st.session_state.user_tier}</p></div>', unsafe_allow_html=True)
 
 todos_los_prods = get_odoo_prods()
 
@@ -118,26 +110,28 @@ with t2: img_cam = st.camera_input("Tomar foto", on_change=reset_analisis)
 img_final = img_cam if img_cam else img_gal
 
 if img_final and st.button("🚀 INICIAR ASESORÍA"):
-    with st.spinner("Analizando con prioridad fitosanitaria..."):
+    with st.spinner("Realizando escaneo fitosanitario profundo..."):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
             
-            # PROMPT CON JERARQUÍA DE PRIORIDAD (Plaga -> Hongo -> Nutrición)
+            # PROMPT REFORZADO CON JERARQUÍA AGRESIVA DE DETECCIÓN
             prompt = f"""
             RESPONDE 100% EN ESPAÑOL. Eres el Agrónomo Senior de Grupo Multiagro. 
-            Analiza el {cultivo_input} en la imagen siguiendo este orden de prioridad:
-            1. Detecta ataques de insectos o ácaros (Plagas).
-            2. Detecta enfermedades (Hongos, Bacterias, Virus).
-            3. Si no hay plaga o enfermedad obvia, analiza deficiencias nutricionales o estrés fisiológico.
+            Analiza con máximo detalle la imagen de {cultivo_input}. 
+            
+            ORDEN DE PRIORIDAD PARA EL DIAGNÓSTICO:
+            1. INSECTOS Y ÁCAROS: Busca presencia física de plagas, huevos o larvas. Analiza patrones de masticación, raspado o presencia de melaza.
+            2. PATÓGENOS: Busca síntomas de Hongos (micelio, manchas circulares), Bacterias (exudados, necrosis acuosa) o Virus (mosaicos, deformaciones).
+            3. DEFICIENCIAS Y ESTRÉS: Solo si descartas plagas y enfermedades, analiza clorosis (nutrición) o marchitez (agua).
             
             ESTRUCTURA OBLIGATORIA DEL RESULTADO:
-            1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico del problema.
-            2. NIVEL DE CERTEZA: % de seguridad basado en la evidencia visual.
-            3. MANEJO QUÍMICO: Recomienda 4 productos específicos de {todos_los_prods} en NEGRITAS.
-            4. ADVERTENCIA TÉCNICA: Imprescindible leer etiqueta del fabricante.
-            5. LABORES CULTURALES: 5 tareas físicas para mejorar el cultivo.
-            6. INTERACCIÓN: 2 preguntas clave para el productor.
+            1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico.
+            2. NIVEL DE CERTEZA: % y justificación visual detallada.
+            3. MANEJO QUÍMICO: Recomienda 4 productos de {todos_los_prods} en NEGRITAS.
+            4. ADVERTENCIA TÉCNICA: Imprescindible leer etiqueta.
+            5. LABORES CULTURALES: 5 tareas físicas.
+            6. INTERACCIÓN: 2 preguntas técnicas al productor.
             """
             res = model.generate_content([prompt, Image.open(img_final)])
             st.session_state.chat_history = [res.text]
@@ -160,13 +154,13 @@ if mostrar:
         with cols[i]:
             img_b64 = f'data:image/png;base64,{p["image_128"]}' if p.get('image_128') else ""
             st.markdown(f'<div style="background:#1E1E26; padding:15px; border-radius:15px; border:1px solid #3E3E4A; text-align:center;"><img src="{img_b64}" style="width:100%; height:140px; object-fit:contain; background:white; border-radius:10px;"><p style="font-weight:bold; color:white; margin-top:10px;">{p["name"][:30]}</p><p style="color:#007BFF; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
-            st.link_button("🟢 Cotizar WhatsApp", f"https://wa.me/18295624653?text=Cotizar: {p['name']}", use_container_width=True)
+            st.link_button("🟢 Cotizar", f"https://wa.me/18295624653?text=Cotizar: {p['name']}", use_container_width=True)
 
 # 5. REGISTRO DE CLIENTE (CON PROVINCIAS RD)
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 provincias_rd = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
-with st.form("registro_p"):
+with st.form("registro_pro"):
     c1, c2 = st.columns(2)
     nom = c1.text_input("Nombre y Apellido *")
     tel = c1.text_input("WhatsApp / Teléfono *")
