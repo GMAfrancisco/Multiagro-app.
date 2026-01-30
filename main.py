@@ -130,15 +130,19 @@ if st.session_state.chat_history:
 # 4. TIENDA
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
-prods = get_odoo_prods()
-if prods:
-    cols = st.columns(len(prods))
-    for i, p in enumerate(prods):
-        with cols[i]:
-            n_p = p['name'].split('(')[0].strip()
-            st.metric(label=n_p, value=f"RD$ {p['list_price']:,.2f}")
-            l_p = f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + n_p)}"
-            st.link_button("💬 Cotizar", l_p, use_container_width=True)
+def get_odoo_prods():
+    try:
+        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
+        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
+        uid = common.authenticate(db, user, key, {})
+        if uid:
+            models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
+            # Agregamos 'image_128' a los campos solicitados
+            ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 4})
+            res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
+            return res
+    except: return None
 
 # 5. REGISTRO
 st.divider()
