@@ -99,7 +99,7 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# 3. SECCIÓN: DIAGNÓSTICO (Título corregido)
+# 3. SECCIÓN: DIAGNÓSTICO
 st.markdown("### 🔍 Diagnóstico Experto")
 img = None
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -117,7 +117,6 @@ if img is not None:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # PROMPT POTENCIADO PARA PRECISIÓN Y MATCH DE PRODUCTOS
                 prompt = f"""
                 RESPONDE 100% EN ESPAÑOL.
                 Eres un Fitopatólogo y Agrónomo Senior de Grupo Multiagro.
@@ -143,24 +142,31 @@ if img is not None:
                                 vistos.add(primera_palabra)
                         if len(sugeridos) >= 4: break
                 
+                # Guardar en sesión y refrescar sin mostrar error
                 st.session_state.chat_history = [{"role": "model", "parts": [texto_ia]}]
                 st.session_state.prods_filtrados = sugeridos
                 st.rerun()
-            except: st.error("Error en el análisis de IA.")
+            except Exception as e:
+                # Solo mostrar error si realmente falla la IA, no por el rerun
+                if "rerun" not in str(e).lower():
+                    st.error(f"Hubo un inconveniente con el servidor de IA: {e}")
 
 if st.session_state.chat_history:
     st.markdown("---")
     st.info(st.session_state.chat_history[-1]["parts"][0])
+    
     user_reply = st.chat_input("Escribe tu duda aquí...")
     if user_reply:
         with st.spinner("Consultando..."):
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            chat = model.start_chat(history=st.session_state.chat_history)
-            response = chat.send_message(user_reply + " (Responde siempre en español)")
-            st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
-            st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
-            st.rerun()
+            try:
+                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+                model = genai.GenerativeModel('gemini-2.0-flash-lite')
+                chat = model.start_chat(history=st.session_state.chat_history)
+                response = chat.send_message(user_reply + " (Responde siempre en español)")
+                st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
+                st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
+                st.rerun()
+            except: pass
 
 # 4. TIENDA DINÁMICA
 st.divider()
@@ -182,7 +188,7 @@ if mostrar:
 
 st.link_button("👨‍🌾 Hablar con un Técnico Humano", f"https://wa.me/18295624653", use_container_width=True)
 
-# 5. REGISTRO DE PRODUCTOR (RESTABLECIDO)
+# 5. REGISTRO DE PRODUCTOR
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
@@ -200,7 +206,7 @@ if 'reg_ok' not in st.session_state:
 else:
     st.success(f"¡Bienvenido, {st.session_state['reg_ok']}!")
 
-# 6. LOGOS FINALES (ALINEACIÓN REFORZADA)
+# 6. LOGOS FINALES
 st.divider()
 st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 l_cols = st.columns(5)
