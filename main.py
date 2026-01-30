@@ -11,15 +11,15 @@ st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
 URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200"
 
-# --- CSS DE ALTA VISIBILIDAD ---
+# --- CSS DE ALTA VISIBILIDAD Y DISEÑO ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: #0E1117; }}
     
-    /* Placeholders en negro para visibilidad total antes de escribir */
+    /* Placeholders en negro */
     input::placeholder {{ color: #000000 !important; opacity: 1 !important; }}
     
-    /* Cargador de archivos (Instrucciones en negro) */
+    /* Cargador de archivos en negro */
     [data-testid="stFileUploadDropzone"] div, 
     [data-testid="stFileUploadDropzone"] label, 
     [data-testid="stFileUploadDropzone"] span,
@@ -31,10 +31,20 @@ st.markdown(f"""
         background-color: #f0f2f6 !important;
     }}
 
-    /* Pestañas (Galería y Cámara) en blanco puro */
+    /* Pestañas en blanco */
     .stTabs [data-baseweb="tab"] p {{
         color: #FFFFFF !important;
         font-weight: bold !important;
+    }}
+
+    /* Título en una sola línea */
+    .titulo-single-line {{
+        text-align: center;
+        color: white;
+        white-space: nowrap;
+        font-size: 2.2rem;
+        font-weight: bold;
+        margin: 20px 0;
     }}
 
     /* Textos generales en blanco */
@@ -42,7 +52,7 @@ st.markdown(f"""
         color: #FFFFFF !important;
     }}
 
-    /* Banner con overlay oscuro */
+    /* Banner */
     .header-banner {{
         background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{URL_FONDO_HOJAS}");
         background-size: cover; background-position: center;
@@ -50,7 +60,7 @@ st.markdown(f"""
         margin-bottom: 25px; border: 1px solid #3E3E4A;
     }}
 
-    /* Estilo del botón de Cotizar (Verde WhatsApp) */
+    /* Botón Cotizar */
     div.stButton > button {{
         background-color: #25D366 !important;
         color: #FFFFFF !important;
@@ -58,7 +68,7 @@ st.markdown(f"""
         font-weight: bold !important;
     }}
 
-    /* Footer de Marcas con fondo blanco */
+    /* Footer de Marcas */
     .footer-white {{
         background-color: #FFFFFF !important;
         padding: 20px; border-radius: 10px;
@@ -92,24 +102,27 @@ def get_odoo_prods():
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
     except: return None
 
-# --- PANTALLA 1: LOGIN (CON LOGO GRUPO MULTIAGRO) ---
+# --- PANTALLA 1: LOGIN ---
 if not st.session_state.user_verified:
     _, cent, _ = st.columns([1, 2, 1])
     with cent:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        # Buscar y mostrar logo de Grupo Multiagro
+        # Mostrar logo Grupo Multiagro
         for f in os.listdir("."):
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
                 st.image(f, use_container_width=True)
         
-        # TÍTULO CORREGIDO A SOLICITUD
-        st.markdown("<h2 style='text-align: center;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
+        # TÍTULO EN UNA SOLA LÍNEA
+        st.markdown('<div class="titulo-single-line">🔍 Diagnóstico Experto</div>', unsafe_allow_html=True)
+        
         u_email = st.text_input("Ingresa tu correo electrónico:", placeholder="ejemplo@grupomultiagro.com")
         if st.button("INGRESAR"):
             if "@" in u_email:
                 st.session_state.user_verified = True
                 st.session_state.user_tier = "ILIMITADO" if any(x in u_email.lower() for x in ["@grupomultiagro.com", "@mundoagricola.net"]) else "GRATIS"
                 st.rerun()
+            else:
+                st.error("Por favor ingresa un correo válido.")
     st.stop()
 
 # --- PANTALLA 2: APP PRINCIPAL ---
@@ -123,7 +136,6 @@ st.markdown(f'<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Pl
 todos_los_prods = get_odoo_prods()
 
 # 3. DIAGNÓSTICO
-# Placeholder en negro corregido en CSS
 cultivo_input = st.text_input("¿Qué cultivo analizamos?", placeholder="Escribe aquí (Ej: Tomate, Arroz)", on_change=reset_analisis)
 t1, t2 = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
 
@@ -144,12 +156,12 @@ if img and st.button("🚀 INICIAR ASESORÍA"):
             st.session_state.prods_filtrados = [p for p in todos_los_prods if p['name'].split()[0].lower() in txt_l][:4] if todos_los_prods else []
             if st.session_state.user_tier == "GRATIS": st.session_state.credits -= 1
             st.rerun()
-        except: st.error("Error en el análisis.")
+        except: st.error("Error en el sistema.")
 
 if st.session_state.chat_history:
     st.markdown(f"<div style='background:#161B22; padding:20px; border-radius:10px; border-left:5px solid #25D366;'>{st.session_state.chat_history[0]}</div>", unsafe_allow_html=True)
 
-# 4. TIENDA CON BOTÓN 'COTIZAR'
+# 4. TIENDA Y LOGOS
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
@@ -161,7 +173,7 @@ if mostrar:
             st.markdown(f'<div style="background:#1E1E26; padding:15px; border-radius:15px; border:1px solid #3E3E4A; text-align:center;"><img src="{img_b64}" style="width:100%; height:150px; object-fit:contain; background:white; border-radius:10px;"><p style="font-weight:bold; color:white; margin-top:10px;">{p["name"][:30]}</p><p style="color:#007BFF; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
             st.link_button("🟢 Cotizar", f"https://wa.me/18295624653?text=Cotizar: {p['name']}", use_container_width=True)
 
-# 6. LOGOS FINALES
+# LOGOS FINALES
 st.divider()
 st.markdown("<p style='text-align:center;'>Marcas Grupo Multiagro</p>", unsafe_allow_html=True)
 logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
