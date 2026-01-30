@@ -75,6 +75,16 @@ todos_los_prods = get_odoo_prods()
 
 # 3. SECCIÓN: DIAGNÓSTICO EXPERTO
 st.markdown("### 🔍 Diagnóstico Experto")
+
+# NUEVA FUNCIÓN: Identificación del Cultivo
+col_cult1, col_cult2 = st.columns(2)
+with col_cult1:
+    cultivo_lista = st.selectbox("Selecciona el cultivo:", ["Arroz", "Banano", "Plátano", "Tomate", "Ají", "Citricos", "Aguacate", "Vegetales", "Otro (especificar)"])
+with col_cult2:
+    cultivo_otro = st.text_input("Si elegiste 'Otro', escríbelo aquí:", placeholder="Ej: Pitahaya")
+
+cultivo_final = cultivo_otro if cultivo_lista == "Otro (especificar)" else cultivo_lista
+
 img = None
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
 with tab_gal: img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
@@ -85,30 +95,30 @@ elif img_gal: img = img_gal
 
 if img is not None:
     if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
-        with st.spinner("Analizando y generando plan de manejo..."):
+        with st.spinner(f"Analizando {cultivo_final} y buscando soluciones..."):
             try:
                 nombres_inventario = [p['name'] for p in todos_los_prods] if todos_los_prods else []
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # PROMPT REFORZADO CON ASESORÍA DE LABORES CULTURALES
+                # PROMPT MEJORADO CON CULTIVO Y ADVERTENCIAS
                 prompt = f"""
                 RESPONDE 100% EN ESPAÑOL.
-                Eres un Asesor Agrónomo Senior de Grupo Multiagro. Tu diagnóstico debe ser integral.
+                Eres un Asesor Agrónomo Senior de Grupo Multiagro. 
+                CULTIVO A ANALIZAR: {cultivo_final}.
 
-                1. IDENTIFICACIÓN Y CERTEZA: Nombra la plaga (insecto), hongo o problema específico con un % de seguridad.
-                2. MANEJO QUÍMICO (CATÁLOGO): De esta lista: {nombres_inventario}, elige los 4 productos ideales. Escribe sus nombres en NEGRITAS.
-                3. LABORES DE CAMPO Y CULTURALES: Recomienda tareas específicas de labor (ej: podas de saneamiento, control de malezas, drenaje, recolección de frutos caídos).
-                4. RECOMENDACIONES DE APLICACIÓN: Horarios ideales, uso de adherentes o boquillas sugeridas.
-                5. INTERACCIÓN: Haz 2 preguntas clave al productor para refinar el caso.
-                
-                Prioriza el control de plagas y hongos, la nutrición es secundaria.
+                1. IDENTIFICACIÓN: Nombra la plaga o enfermedad específica con un % de seguridad.
+                2. MANEJO QUÍMICO: Elige los 4 mejores productos de este catálogo: {nombres_inventario}. Escríbelos en NEGRITAS.
+                3. ADVERTENCIA OBLIGATORIA: Indica claramente que deben leer la etiqueta del fabricante para verificar la dosis exacta y el periodo de carencia.
+                4. LABORES CULTURALES: Recomienda tareas de manejo físico (podas, drenaje, etc.) específicas para {cultivo_final}.
+                5. RECOMENDACIÓN TÉCNICA: Sugiere el horario de aplicación y tipo de boquilla.
+                6. INTERACCIÓN: Haz 2 preguntas clave para confirmar el estado de la parcela.
                 """
                 
                 res = model.generate_content([prompt, Image.open(img)])
                 texto_ia = res.text
                 
-                # FILTRO DE PRODUCTOS SIN REPETIR
+                # FILTRO DE PRODUCTOS
                 texto_ia_lower = texto_ia.lower()
                 sugeridos, vistos = [], set()
                 if todos_los_prods:
@@ -131,14 +141,14 @@ if st.session_state.chat_history:
     st.markdown("---")
     st.info(st.session_state.chat_history[-1]["parts"][0])
     
-    user_reply = st.chat_input("¿Alguna duda sobre las labores de manejo?")
+    user_reply = st.chat_input("Responde aquí para precisar detalles...")
     if user_reply:
         with st.spinner("Refinando asesoría..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 chat = model.start_chat(history=st.session_state.chat_history)
-                response = chat.send_message(user_reply + " (Continúa asesorando en español dominicano)")
+                response = chat.send_message(user_reply + " (Responde como experto en el cultivo indicado)")
                 st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
                 st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
                 st.rerun()
@@ -157,7 +167,7 @@ if mostrar:
                 st.markdown(f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">', unsafe_allow_html=True)
             st.markdown(f"**{p['name'].split('(')[0].strip()}**")
             st.write(f"RD$ {p['list_price']:,.2f}")
-            st.link_button("🛒 Cotizar", f"https://wa.me/18295624653?text={urllib.parse.quote('Deseo info sobre: ' + p['name'])}", use_container_width=True)
+            st.link_button("🛒 Cotizar", f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + p['name'])}", use_container_width=True)
 
 st.link_button("👨‍🌾 Hablar con un Técnico Humano", f"https://wa.me/18295624653", use_container_width=True)
 
