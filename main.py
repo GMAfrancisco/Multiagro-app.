@@ -5,8 +5,21 @@ from PIL import Image
 import os
 import base64
 
-# 1. CONFIGURACIÓN DE PÁGINA
+# 1. CONFIGURACIÓN DE PÁGINA (Debe ser lo primero)
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
+
+# --- LÓGICA DE SESIÓN (PERSISTENTE) ---
+# Inicializamos las variables de estado antes de cualquier otra lógica
+if "user_verified" not in st.session_state:
+    st.session_state.user_verified = False
+if "user_tier" not in st.session_state:
+    st.session_state.user_tier = "GRATIS"
+if "credits" not in st.session_state:
+    st.session_state.credits = 2
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "prods_filtrados" not in st.session_state:
+    st.session_state.prods_filtrados = []
 
 URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200"
 
@@ -15,7 +28,7 @@ st.markdown(f"""
     <style>
     .stApp {{ background-color: #0E1117; }}
     
-    /* Placeholders en negro para que se vean bien */
+    /* Placeholders en negro */
     input::placeholder {{ color: #000000 !important; opacity: 1 !important; }}
     
     /* Textos del cargador de archivos en negro */
@@ -76,16 +89,6 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- LÓGICA DE SESIÓN (PERSISTENTE) ---
-if "user_verified" not in st.session_state:
-    st.session_state.user_verified = False
-if "user_tier" not in st.session_state:
-    st.session_state.user_tier = "GRATIS"
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "prods_filtrados" not in st.session_state:
-    st.session_state.prods_filtrados = []
-
 def reset_analisis():
     st.session_state.chat_history = []
     st.session_state.prods_filtrados = []
@@ -116,14 +119,13 @@ def get_odoo_prods():
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
     except: return None
 
-# --- FLUJO DE PANTALLAS ---
-
+# --- FLUJO DE CONTROL DE ACCESO ---
 if not st.session_state.user_verified:
     # --- PANTALLA DE LOGIN ---
     _, cent, _ = st.columns([1, 2, 1])
     with cent:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        # Mostrar logo principal
+        # Buscar logo principal de Grupo Multiagro
         for f in os.listdir("."):
             if f.lower().startswith("grupo_multiagro"):
                 st.image(f, use_container_width=True)
@@ -134,7 +136,6 @@ if not st.session_state.user_verified:
         if st.button("INGRESAR"):
             if "@" in u_email:
                 st.session_state.user_verified = True
-                # Whitelist de empleados
                 if any(x in u_email.lower() for x in ["@grupomultiagro.com", "@mundoagricola.net"]):
                     st.session_state.user_tier = "ILIMITADO"
                 else:
@@ -142,9 +143,9 @@ if not st.session_state.user_verified:
                 st.rerun()
             else:
                 st.error("Por favor, ingresa un correo electrónico válido.")
-    st.stop()
+    st.stop() # Importante: detiene el script aquí si no ha pasado el login
 
-# --- PANTALLA PRINCIPAL (Solo se ve tras login) ---
+# --- PANTALLA PRINCIPAL (Solo se ejecuta si user_verified es True) ---
 
 # Logo en la parte superior
 _, logo_cent, _ = st.columns([1, 1, 1])
@@ -174,35 +175,19 @@ if img_final and st.button("🚀 REALIZAR DIAGNÓSTICO"):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            prompt = f"""
-            Actúa como un Agrónomo experto de Grupo Multiagro. 
-            Analiza esta imagen de {cultivo_input}. 
-            1. Identifica la plaga o enfermedad.
-            2. Recomienda productos específicos de Multiagro (escríbelos en NEGRITAS).
-            3. Indica breves labores culturales.
-            4. Haz 2 preguntas clave al productor para profundizar.
-            """
+            prompt = f"Actúa como un Agrónomo experto de Grupo Multiagro. Analiza esta imagen de {cultivo_input}. 1. Identifica la plaga o enfermedad. 2. Recomienda productos específicos de Multiagro (escríbelos en NEGRITAS). 3. Indica breves labores culturales. 4. Haz 2 preguntas clave al productor para profundizar."
             res = model.generate_content([prompt, Image.open(img_final)])
             st.session_state.chat_history = [res.text]
             
-            # Filtrar productos de Odoo que coincidan con la respuesta
             if todos_los_prods:
                 txt_lower = res.text.lower()
-                st.session_state.prods_filtrados = [
-                    p for p in todos_los_prods 
-                    if p['name'].split()[0].lower() in txt_lower
-                ][:4]
+                st.session_state.prods_filtrados = [p for p in todos_los_prods if p['name'].split()[0].lower() in txt_lower][:4]
             st.rerun()
         except Exception as e:
-            st.error(f"Hubo un problema con el análisis: {e}")
+            st.error(f"Error: {e}")
 
-# Mostrar Diagnóstico
 if st.session_state.chat_history:
-    st.markdown(f"""
-    <div style='background:#161B22; padding:20px; border-radius:10px; border-left:5px solid #25D366; margin-top:20px;'>
-        {st.session_state.chat_history[0]}
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"<div style='background:#161B22; padding:20px; border-radius:10px; border-left:5px solid #25D366; margin-top:20px;'>{st.session_state.chat_history[0]}</div>", unsafe_allow_html=True)
 
 # --- TIENDA RECOMENDADA ---
 st.divider()
@@ -223,7 +208,7 @@ if prods_a_mostrar:
             """, unsafe_allow_html=True)
             st.link_button("🟢 Cotizar WhatsApp", f"https://wa.me/18295624653?text=Hola Multiagro, deseo cotizar: {p['name']}", use_container_width=True)
 
-# --- FORMULARIO DE REGISTRO PARA NUEVOS CLIENTES ---
+# --- REGISTRO PARA NUEVOS CLIENTES ---
 st.divider()
 st.markdown("### 👤 ¿Eres un nuevo productor? Regístrate aquí")
 with st.form("registro_nuevo_cliente"):
@@ -236,20 +221,14 @@ with st.form("registro_nuevo_cliente"):
         ubicacion_c = st.text_input("Zona o Localidad")
         
     enviar_registro = st.form_submit_button("✅ Registrarme como Cliente")
-    
-    if enviar_registro:
-        if nombre_c and telefono_c:
-            resultado = registrar_en_odoo(nombre_c, correo_c, f"{telefono_c} - {ubicacion_c}")
-            if resultado:
-                st.success("¡Excelente! Tus datos han sido enviados. Un asesor de Multiagro te contactará pronto.")
-            else:
-                st.error("No pudimos procesar el registro. Inténtalo de nuevo más tarde.")
-        else:
-            st.warning("Por favor completa los campos obligatorios (*)")
+    if enviar_registro and nombre_c and telefono_c:
+        if registrar_en_odoo(nombre_c, correo_c, f"{telefono_c} - {ubicacion_c}"):
+            st.success("¡Datos enviados con éxito!")
+        else: st.error("Error al registrar.")
 
 # --- FOOTER DE MARCAS ---
 st.divider()
-st.markdown("<p style='text-align:center; color:#888;'>Nuestras Empresas y Aliados</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#FFFFFF;'>Marcas Grupo Multiagro</p>", unsafe_allow_html=True)
 marcas = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
 html_footer = '<div class="footer-white">'
 for m in marcas:
