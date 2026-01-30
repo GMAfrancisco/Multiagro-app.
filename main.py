@@ -76,14 +76,8 @@ todos_los_prods = get_odoo_prods()
 # 3. SECCIÓN: DIAGNÓSTICO EXPERTO
 st.markdown("### 🔍 Diagnóstico Experto")
 
-# NUEVA FUNCIÓN: Identificación del Cultivo
-col_cult1, col_cult2 = st.columns(2)
-with col_cult1:
-    cultivo_lista = st.selectbox("Selecciona el cultivo:", ["Arroz", "Banano", "Plátano", "Tomate", "Ají", "Citricos", "Aguacate", "Vegetales", "Otro (especificar)"])
-with col_cult2:
-    cultivo_otro = st.text_input("Si elegiste 'Otro', escríbelo aquí:", placeholder="Ej: Pitahaya")
-
-cultivo_final = cultivo_otro if cultivo_lista == "Otro (especificar)" else cultivo_lista
+# Campo de cultivo simplificado para no perder el foco
+cultivo_input = st.text_input("¿Qué cultivo estamos analizando?", placeholder="Ej: Arroz, Tomate, Plátano...")
 
 img = None
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -95,24 +89,23 @@ elif img_gal: img = img_gal
 
 if img is not None:
     if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
-        with st.spinner(f"Analizando {cultivo_final} y buscando soluciones..."):
+        with st.spinner("IA analizando presencia de patógenos..."):
             try:
                 nombres_inventario = [p['name'] for p in todos_los_prods] if todos_los_prods else []
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # PROMPT MEJORADO CON CULTIVO Y ADVERTENCIAS
                 prompt = f"""
                 RESPONDE 100% EN ESPAÑOL.
-                Eres un Asesor Agrónomo Senior de Grupo Multiagro. 
-                CULTIVO A ANALIZAR: {cultivo_final}.
+                Eres un Fitopatólogo y Entomólogo experto de Grupo Multiagro. 
+                CULTIVO: {cultivo_input if cultivo_input else 'Desconocido (identifícalo tú)'}.
 
-                1. IDENTIFICACIÓN: Nombra la plaga o enfermedad específica con un % de seguridad.
-                2. MANEJO QUÍMICO: Elige los 4 mejores productos de este catálogo: {nombres_inventario}. Escríbelos en NEGRITAS.
-                3. ADVERTENCIA OBLIGATORIA: Indica claramente que deben leer la etiqueta del fabricante para verificar la dosis exacta y el periodo de carencia.
-                4. LABORES CULTURALES: Recomienda tareas de manejo físico (podas, drenaje, etc.) específicas para {cultivo_final}.
-                5. RECOMENDACIÓN TÉCNICA: Sugiere el horario de aplicación y tipo de boquilla.
-                6. INTERACCIÓN: Haz 2 preguntas clave para confirmar el estado de la parcela.
+                1. IDENTIFICACIÓN POSITIVA: Identifica con nombre común y técnico la plaga (insecto), hongo o ácaro presente. Sé directo.
+                2. NIVEL DE CERTEZA: Indica un % de probabilidad basado en lo que ves.
+                3. RECOMENDACIÓN MULTIAGRO: De esta lista: {nombres_inventario}, elige los 4 mejores. Pon sus nombres en NEGRITAS.
+                4. NOTA DE SEGURIDAD: Advierte OBLIGATORIAMENTE que deben consultar la etiqueta del fabricante para dosis exactas y periodos de carencia.
+                5. MANEJO TÉCNICO: Describe labores culturales (podas, riego, limpieza) específicas para este problema.
+                6. INTERACCIÓN: Haz 2 preguntas clave para confirmar el diagnóstico.
                 """
                 
                 res = model.generate_content([prompt, Image.open(img)])
@@ -135,20 +128,20 @@ if img is not None:
                 st.session_state.prods_filtrados = sugeridos
                 st.rerun()
             except Exception as e:
-                if "rerun" not in str(e).lower(): st.error(f"Error técnico: {e}")
+                if "rerun" not in str(e).lower(): st.error(f"Error en el análisis: {e}")
 
 if st.session_state.chat_history:
     st.markdown("---")
     st.info(st.session_state.chat_history[-1]["parts"][0])
     
-    user_reply = st.chat_input("Responde aquí para precisar detalles...")
+    user_reply = st.chat_input("Responde aquí a la IA...")
     if user_reply:
-        with st.spinner("Refinando asesoría..."):
+        with st.spinner("Consultando..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 chat = model.start_chat(history=st.session_state.chat_history)
-                response = chat.send_message(user_reply + " (Responde como experto en el cultivo indicado)")
+                response = chat.send_message(user_reply + " (Continúa en español dominicano profesional)")
                 st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
                 st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
                 st.rerun()
