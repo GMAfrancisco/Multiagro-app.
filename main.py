@@ -16,10 +16,10 @@ st.markdown(f"""
     <style>
     .stApp {{ background-color: #0E1117; }}
     
-    /* Placeholders en negro para visibilidad */
+    /* Placeholders en negro para visibilidad total antes de escribir */
     input::placeholder {{ color: #000000 !important; opacity: 1 !important; }}
     
-    /* Cargador de archivos en negro */
+    /* Cargador de archivos (Instrucciones en negro) */
     [data-testid="stFileUploadDropzone"] div, 
     [data-testid="stFileUploadDropzone"] label, 
     [data-testid="stFileUploadDropzone"] span,
@@ -31,7 +31,7 @@ st.markdown(f"""
         background-color: #f0f2f6 !important;
     }}
 
-    /* Pestañas en blanco */
+    /* Pestañas (Galería y Cámara) en blanco puro */
     .stTabs [data-baseweb="tab"] p {{
         color: #FFFFFF !important;
         font-weight: bold !important;
@@ -42,7 +42,7 @@ st.markdown(f"""
         color: #FFFFFF !important;
     }}
 
-    /* Banner */
+    /* Banner con overlay oscuro */
     .header-banner {{
         background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{URL_FONDO_HOJAS}");
         background-size: cover; background-position: center;
@@ -50,7 +50,7 @@ st.markdown(f"""
         margin-bottom: 25px; border: 1px solid #3E3E4A;
     }}
 
-    /* Botón Cotizar */
+    /* Estilo del botón de Cotizar (Verde WhatsApp) */
     div.stButton > button {{
         background-color: #25D366 !important;
         color: #FFFFFF !important;
@@ -58,7 +58,7 @@ st.markdown(f"""
         font-weight: bold !important;
     }}
 
-    /* Footer Marcas */
+    /* Footer de Marcas con fondo blanco */
     .footer-white {{
         background-color: #FFFFFF !important;
         padding: 20px; border-radius: 10px;
@@ -69,7 +69,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- LÓGICA DE SESIÓN (PERMANENTE) ---
+# --- LÓGICA DE SESIÓN (PERSISTENTE) ---
 if "user_verified" not in st.session_state: st.session_state.user_verified = False
 if "user_tier" not in st.session_state: st.session_state.user_tier = "GRATIS"
 if "credits" not in st.session_state: st.session_state.credits = 2
@@ -92,17 +92,18 @@ def get_odoo_prods():
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
     except: return None
 
-# --- PANTALLA 1: LOGIN (CON LOGO CORRECTO) ---
+# --- PANTALLA 1: LOGIN (CON LOGO GRUPO MULTIAGRO) ---
 if not st.session_state.user_verified:
     _, cent, _ = st.columns([1, 2, 1])
     with cent:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        # Solo logo Grupo Multiagro en Login
+        # Buscar y mostrar logo de Grupo Multiagro
         for f in os.listdir("."):
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
                 st.image(f, use_container_width=True)
         
-        st.markdown("<h2 style='text-align: center;'>🔍 Diagnóstico Experto De Tu Cultivo</h2>", unsafe_allow_html=True)
+        # TÍTULO CORREGIDO A SOLICITUD
+        st.markdown("<h2 style='text-align: center;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
         u_email = st.text_input("Ingresa tu correo electrónico:", placeholder="ejemplo@grupomultiagro.com")
         if st.button("INGRESAR"):
             if "@" in u_email:
@@ -111,7 +112,7 @@ if not st.session_state.user_verified:
                 st.rerun()
     st.stop()
 
-# --- PANTALLA 2: APP (SESIÓN YA INICIADA) ---
+# --- PANTALLA 2: APP PRINCIPAL ---
 _, logo_cent, _ = st.columns([1, 1, 1])
 with logo_cent:
     for f in os.listdir("."):
@@ -122,6 +123,7 @@ st.markdown(f'<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Pl
 todos_los_prods = get_odoo_prods()
 
 # 3. DIAGNÓSTICO
+# Placeholder en negro corregido en CSS
 cultivo_input = st.text_input("¿Qué cultivo analizamos?", placeholder="Escribe aquí (Ej: Tomate, Arroz)", on_change=reset_analisis)
 t1, t2 = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
 
@@ -138,17 +140,16 @@ if img and st.button("🚀 INICIAR ASESORÍA"):
             prompt = f"Experto Multiagro. Analiza {cultivo_input}. Identifica plaga, productos en NEGRITAS, labores y 2 preguntas."
             res = model.generate_content([prompt, Image.open(img)])
             st.session_state.chat_history = [res.text]
-            # Filtro simple de productos
             txt_l = res.text.lower()
             st.session_state.prods_filtrados = [p for p in todos_los_prods if p['name'].split()[0].lower() in txt_l][:4] if todos_los_prods else []
             if st.session_state.user_tier == "GRATIS": st.session_state.credits -= 1
             st.rerun()
-        except: st.error("Error.")
+        except: st.error("Error en el análisis.")
 
 if st.session_state.chat_history:
     st.markdown(f"<div style='background:#161B22; padding:20px; border-radius:10px; border-left:5px solid #25D366;'>{st.session_state.chat_history[0]}</div>", unsafe_allow_html=True)
 
-# 4. TIENDA
+# 4. TIENDA CON BOTÓN 'COTIZAR'
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
