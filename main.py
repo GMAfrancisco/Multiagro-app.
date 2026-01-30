@@ -76,8 +76,8 @@ todos_los_prods = get_odoo_prods()
 # 3. SECCIÓN: DIAGNÓSTICO EXPERTO
 st.markdown("### 🔍 Diagnóstico Experto")
 
-# Campo de cultivo simplificado para no perder el foco
-cultivo_input = st.text_input("¿Qué cultivo estamos analizando?", placeholder="Ej: Arroz, Tomate, Plátano...")
+# Entrada de cultivo para precisión
+cultivo_info = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Tomate, Arroz, Plátano...")
 
 img = None
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -89,7 +89,7 @@ elif img_gal: img = img_gal
 
 if img is not None:
     if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
-        with st.spinner("IA analizando presencia de patógenos..."):
+        with st.spinner("Analizando presencia de patógenos y plagas..."):
             try:
                 nombres_inventario = [p['name'] for p in todos_los_prods] if todos_los_prods else []
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -98,14 +98,15 @@ if img is not None:
                 prompt = f"""
                 RESPONDE 100% EN ESPAÑOL.
                 Eres un Fitopatólogo y Entomólogo experto de Grupo Multiagro. 
-                CULTIVO: {cultivo_input if cultivo_input else 'Desconocido (identifícalo tú)'}.
+                CULTIVO: {cultivo_info if cultivo_info else 'No especificado'}.
 
-                1. IDENTIFICACIÓN POSITIVA: Identifica con nombre común y técnico la plaga (insecto), hongo o ácaro presente. Sé directo.
-                2. NIVEL DE CERTEZA: Indica un % de probabilidad basado en lo que ves.
-                3. RECOMENDACIÓN MULTIAGRO: De esta lista: {nombres_inventario}, elige los 4 mejores. Pon sus nombres en NEGRITAS.
-                4. NOTA DE SEGURIDAD: Advierte OBLIGATORIAMENTE que deben consultar la etiqueta del fabricante para dosis exactas y periodos de carencia.
-                5. MANEJO TÉCNICO: Describe labores culturales (podas, riego, limpieza) específicas para este problema.
-                6. INTERACCIÓN: Haz 2 preguntas clave para confirmar el diagnóstico.
+                TAREAS OBLIGATORIAS:
+                1. IDENTIFICACIÓN POSITIVA: Analiza la imagen y detecta con nombre común y técnico la plaga (insecto), hongo o ácaro. Sé contundente.
+                2. NIVEL DE CERTEZA: Indica un % de seguridad en el diagnóstico.
+                3. MANEJO QUÍMICO: Elige los 4 mejores productos de este catálogo: {nombres_inventario}. Pon sus nombres en NEGRITAS.
+                4. ADVERTENCIA TÉCNICA: Indica que es IMPRESCINDIBLE leer la etiqueta del fabricante para verificar la dosis exacta y precauciones.
+                5. LABORES CULTURALES Y DE MANEJO: Describe tareas de labor (podas, limpieza, riego, etc.) específicas para erradicar este problema.
+                6. INTERACCIÓN: Haz 2 preguntas clave al productor para confirmar el diagnóstico.
                 """
                 
                 res = model.generate_content([prompt, Image.open(img)])
@@ -134,14 +135,14 @@ if st.session_state.chat_history:
     st.markdown("---")
     st.info(st.session_state.chat_history[-1]["parts"][0])
     
-    user_reply = st.chat_input("Responde aquí a la IA...")
+    user_reply = st.chat_input("Escribe tu duda aquí...")
     if user_reply:
         with st.spinner("Consultando..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 chat = model.start_chat(history=st.session_state.chat_history)
-                response = chat.send_message(user_reply + " (Continúa en español dominicano profesional)")
+                response = chat.send_message(user_reply + " (Continúa asesorando en español dominicano)")
                 st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
                 st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
                 st.rerun()
