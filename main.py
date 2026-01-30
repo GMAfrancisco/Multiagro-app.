@@ -84,25 +84,25 @@ if img_cam: img = img_cam
 elif img_gal: img = img_gal
 
 if img is not None:
-    if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("Analizando presencia de insectos o patógenos..."):
+    if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
+        with st.spinner("Analizando y generando plan de manejo..."):
             try:
                 nombres_inventario = [p['name'] for p in todos_los_prods] if todos_los_prods else []
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # INSTRUCCIÓN DE ALTA PRECISIÓN: PRIORIDAD ENTOMOLÓGICA Y FITOPATOLÓGICA
+                # PROMPT REFORZADO CON ASESORÍA DE LABORES CULTURALES
                 prompt = f"""
                 RESPONDE 100% EN ESPAÑOL.
-                Eres un Especialista en Protección de Cultivos de Grupo Multiagro. 
-                Tu prioridad es la detección específica de agentes bióticos.
+                Eres un Asesor Agrónomo Senior de Grupo Multiagro. Tu diagnóstico debe ser integral.
 
-                1. IDENTIFICACIÓN POSITIVA: Analiza la imagen y determina si hay un INSECTO (especie), HONGO (género/especie), o ÁCARO. Si es una deficiencia, menciónala pero prioriza la búsqueda de plagas.
-                2. NIVEL DE CERTEZA: Proporciona un porcentaje de confianza basado en la evidencia visual.
-                3. DESCRIPCIÓN DEL DAÑO: Explica qué patrones de alimentación o infección ves (ej: raspado, clorosis circular, micelio visible).
-                4. RECOMENDACIÓN MULTIAGRO: De este catálogo: {nombres_inventario}, elige los 4 productos exactos.
-                5. PREGUNTAS DE CAMPO: Haz 2 preguntas para confirmar el diagnóstico (ej: presencia de hormigas, estado del envés, temperatura local).
-                6. PLAN DE ACCIÓN: Protocolo de aplicación inmediato.
+                1. IDENTIFICACIÓN Y CERTEZA: Nombra la plaga (insecto), hongo o problema específico con un % de seguridad.
+                2. MANEJO QUÍMICO (CATÁLOGO): De esta lista: {nombres_inventario}, elige los 4 productos ideales. Escribe sus nombres en NEGRITAS.
+                3. LABORES DE CAMPO Y CULTURALES: Recomienda tareas específicas de labor (ej: podas de saneamiento, control de malezas, drenaje, recolección de frutos caídos).
+                4. RECOMENDACIONES DE APLICACIÓN: Horarios ideales, uso de adherentes o boquillas sugeridas.
+                5. INTERACCIÓN: Haz 2 preguntas clave al productor para refinar el caso.
+                
+                Prioriza el control de plagas y hongos, la nutrición es secundaria.
                 """
                 
                 res = model.generate_content([prompt, Image.open(img)])
@@ -131,14 +131,14 @@ if st.session_state.chat_history:
     st.markdown("---")
     st.info(st.session_state.chat_history[-1]["parts"][0])
     
-    user_reply = st.chat_input("Responde aquí para precisar el diagnóstico...")
+    user_reply = st.chat_input("¿Alguna duda sobre las labores de manejo?")
     if user_reply:
-        with st.spinner("Analizando respuesta..."):
+        with st.spinner("Refinando asesoría..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 chat = model.start_chat(history=st.session_state.chat_history)
-                response = chat.send_message(user_reply + " (Continúa en español profesional)")
+                response = chat.send_message(user_reply + " (Continúa asesorando en español dominicano)")
                 st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
                 st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
                 st.rerun()
@@ -146,7 +146,7 @@ if st.session_state.chat_history:
 
 # 4. TIENDA DINÁMICA
 st.divider()
-st.markdown("### 🛒 Soluciones Recomendadas")
+st.markdown("### 🛒 Soluciones Sugeridas")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
 
 if mostrar:
@@ -157,7 +157,7 @@ if mostrar:
                 st.markdown(f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">', unsafe_allow_html=True)
             st.markdown(f"**{p['name'].split('(')[0].strip()}**")
             st.write(f"RD$ {p['list_price']:,.2f}")
-            st.link_button("🛒 Cotizar", f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + p['name'])}", use_container_width=True)
+            st.link_button("🛒 Cotizar", f"https://wa.me/18295624653?text={urllib.parse.quote('Deseo info sobre: ' + p['name'])}", use_container_width=True)
 
 st.link_button("👨‍🌾 Hablar con un Técnico Humano", f"https://wa.me/18295624653", use_container_width=True)
 
