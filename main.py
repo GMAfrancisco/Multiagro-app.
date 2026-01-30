@@ -85,22 +85,24 @@ elif img_gal: img = img_gal
 
 if img is not None:
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("Realizando peritaje fitosanitario..."):
+        with st.spinner("Analizando presencia de insectos o patógenos..."):
             try:
                 nombres_inventario = [p['name'] for p in todos_los_prods] if todos_los_prods else []
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # PROMPT RE-POTENCIADO CON CERTEZA E INTERACCIÓN
+                # INSTRUCCIÓN DE ALTA PRECISIÓN: PRIORIDAD ENTOMOLÓGICA Y FITOPATOLÓGICA
                 prompt = f"""
                 RESPONDE 100% EN ESPAÑOL.
-                Eres un Fitopatólogo y Especialista en Nutrición de Grupo Multiagro.
-                1. DIAGNÓSTICO: Identifica plaga, hongo o carencia. Indica un % de PROBABILIDAD DE CERTEZA.
-                2. ANÁLISIS TÉCNICO: Explica los síntomas observados en la imagen.
-                3. RECOMENDACIÓN: Selecciona de este catálogo: {nombres_inventario} los 4 productos ideales.
-                4. PLAN DE ACCIÓN: Medidas culturales y nutricionales de choque.
-                5. INTERACCIÓN: Haz 2 preguntas clave al productor para refinar este diagnóstico.
-                Usa negritas para los productos y sé muy profesional.
+                Eres un Especialista en Protección de Cultivos de Grupo Multiagro. 
+                Tu prioridad es la detección específica de agentes bióticos.
+
+                1. IDENTIFICACIÓN POSITIVA: Analiza la imagen y determina si hay un INSECTO (especie), HONGO (género/especie), o ÁCARO. Si es una deficiencia, menciónala pero prioriza la búsqueda de plagas.
+                2. NIVEL DE CERTEZA: Proporciona un porcentaje de confianza basado en la evidencia visual.
+                3. DESCRIPCIÓN DEL DAÑO: Explica qué patrones de alimentación o infección ves (ej: raspado, clorosis circular, micelio visible).
+                4. RECOMENDACIÓN MULTIAGRO: De este catálogo: {nombres_inventario}, elige los 4 productos exactos.
+                5. PREGUNTAS DE CAMPO: Haz 2 preguntas para confirmar el diagnóstico (ej: presencia de hormigas, estado del envés, temperatura local).
+                6. PLAN DE ACCIÓN: Protocolo de aplicación inmediato.
                 """
                 
                 res = model.generate_content([prompt, Image.open(img)])
@@ -136,7 +138,7 @@ if st.session_state.chat_history:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 chat = model.start_chat(history=st.session_state.chat_history)
-                response = chat.send_message(user_reply + " (Continúa en español dominicano profesional)")
+                response = chat.send_message(user_reply + " (Continúa en español profesional)")
                 st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
                 st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
                 st.rerun()
