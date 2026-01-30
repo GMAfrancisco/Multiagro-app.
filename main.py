@@ -12,7 +12,7 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# URL de una imagen de hojas profesional (puedes cambiarla por una local si prefieres)
+# URL de imagen profesional
 URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80"
 
 # CSS PARA EL BANNER Y LA LÍNEA GRÁFICA
@@ -33,7 +33,7 @@ st.markdown(f"""
         border: 1px solid #3E3E4A;
     }}
     
-    /* Forzar textos blancos en toda la App */
+    /* Forzar textos blancos en la App */
     label, .stMarkdown, p, span, .stText, .stTabs [data-baseweb="tab"] p {{ 
         color: #FFFFFF !important; 
     }}
@@ -54,13 +54,19 @@ st.markdown(f"""
         padding: 5px; margin-bottom: 10px; 
     }}
 
-    /* Botón de Registro y Acciones (Azul Multiagro) */
-    div.stButton > button {{
+    /* Botón de Registro y Acciones (Texto Negro Forzado) */
+    div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"] {{
         background-color: #007BFF !important;
-        color: white !important;
+        color: #000000 !important; /* TEXTO NEGRO */
         border-radius: 25px !important;
         padding: 10px 25px !important;
         border: none !important;
+        font-weight: bold !important;
+    }}
+    
+    /* Específico para el texto dentro del botón de enlace (Cotizar) */
+    a[data-testid="stBaseButton-secondary"] p {{
+        color: #000000 !important;
     }}
 
     /* Contenedor de Logos en Blanco */
@@ -115,8 +121,6 @@ def enviar_aviso_email(nombre, email, tel):
     except: return False
 
 # --- CUERPO DE LA APP ---
-
-# 2. ENCABEZADO CON LOGO
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in sorted(os.listdir(".")):
@@ -125,7 +129,6 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# 3. BANNER CON FONDO DE HOJAS Y TÍTULO
 st.markdown(f"""
     <div class="header-banner">
         <h1 style="color: white; margin: 0; font-size: 3rem;">🔍 Diagnóstico Experto</h1>
@@ -133,7 +136,6 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# Entrada de cultivo
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Tomate, Arroz, Plátano...")
 
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -174,14 +176,14 @@ if st.session_state.chat_history:
 st.divider()
 st.markdown("<h3 style='color: #007BFF;'>🛒 Soluciones Sugeridas</h3>", unsafe_allow_html=True)
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
-
 if mostrar:
     cols = st.columns(len(mostrar))
     for i, p in enumerate(mostrar):
         with cols[i]:
             img_b64 = f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">' if p.get('image_128') else ""
             st.markdown(f'<div class="product-card">{img_b64}<h4 style="font-size:0.9rem;">{p["name"].split("(")[0].strip()}</h4><p style="color:#007BFF; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
-            st.link_button("WhatsApp", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
+            # CAMBIO: "WhatsApp" por "Cotizar"
+            st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
 # 5. REGISTRO
 st.divider()
@@ -191,13 +193,15 @@ if 'reg_ok' not in st.session_state:
         nom = st.text_input("Nombre completo *")
         ema = st.text_input("Correo electrónico")
         tel = st.text_input("WhatsApp / Teléfono *")
-        if st.form_submit_button("✅ Registrarme"):
+        # CAMBIO: "Registrarme" con R mayúscula y configurado para texto negro vía CSS
+        if st.form_submit_button("✅ Regístrame"):
             if nom and tel:
                 if registrar_cliente_odoo(nom, ema, tel):
                     enviar_aviso_email(nom, ema, tel)
                     st.session_state['reg_ok'] = nom
                     st.rerun()
-else: st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
+else: 
+    st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
 
 # 6. LOGOS
 st.divider()
