@@ -5,11 +5,10 @@ from PIL import Image
 import os
 import base64
 
-# 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
 # --- LÓGICA DE SESIÓN (PERSISTENCIA REFORZADA) ---
-# Inicializamos las variables de estado al inicio absoluto para que Streamlit no las resetee
 if "user_verified" not in st.session_state:
     st.session_state.user_verified = False
 if "user_tier" not in st.session_state:
@@ -65,9 +64,7 @@ st.markdown(f"""
     }}
     .diag-box * {{ color: #FFFFFF !important; }}
 
-    h1, h2, h3, h4, .stMarkdown p, label {{
-        color: #FFFFFF !important;
-    }}
+    h1, h2, h3, h4, .stMarkdown p, label {{ color: #FFFFFF !important; }}
 
     /* Banner Principal */
     .header-banner {{
@@ -122,7 +119,6 @@ if not st.session_state.user_verified:
         for f in os.listdir("."):
             if f.lower().startswith("grupo_multiagro"):
                 st.image(f, use_container_width=True)
-        
         st.markdown('<div class="titulo-single-line">Diagnóstico Experto</div>', unsafe_allow_html=True)
         u_email = st.text_input("Ingresa tu correo electrónico:", placeholder="ejemplo@grupomultiagro.com")
         if st.button("INGRESAR"):
@@ -130,8 +126,6 @@ if not st.session_state.user_verified:
                 st.session_state.user_verified = True
                 st.session_state.user_tier = "ILIMITADO" if any(x in u_email.lower() for x in ["@grupomultiagro.com", "@mundoagricola.net"]) else "GRATIS"
                 st.rerun()
-            else:
-                st.error("Por favor, ingresa un correo válido.")
     st.stop()
 
 # --- PANTALLA PRINCIPAL ---
@@ -146,7 +140,7 @@ st.markdown(f'<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Pl
 todos_los_prods = get_odoo_prods()
 
 # 3. SECCIÓN DIAGNÓSTICO
-cultivo_input = st.text_input("¿Qué cultivo analizamos hoy?", placeholder="Ej: Tomate, Arroz", on_change=reset_analisis)
+cultivo_input = st.text_input("¿Qué cultivo analizamos?", placeholder="Ej: Tomate, Arroz", on_change=reset_analisis)
 t1, t2 = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
 with t1: img_gal = st.file_uploader("Subir imagen", type=['png','jpg','jpeg'], on_change=reset_analisis)
 with t2: img_cam = st.camera_input("Tomar foto", on_change=reset_analisis)
@@ -154,22 +148,23 @@ with t2: img_cam = st.camera_input("Tomar foto", on_change=reset_analisis)
 img_final = img_cam if img_cam else img_gal
 
 if img_final and st.button("🚀 INICIAR ASESORÍA"):
-    with st.spinner("Escaneando píxeles en busca de insectos y patógenos..."):
+    with st.spinner("Escaneando minuciosamente en busca de insectos y patógenos..."):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
             
-            # PROMPT CON JERARQUÍA DE DESCARTE (PRIORIDAD TÉCNICA)
+            # PROMPT REFORZADO PARA DETECCIÓN DE SIGNOS DIRECTOS
             prompt = f"""
             RESPONDE 100% EN ESPAÑOL. Eres el Agrónomo Patólogo Senior de Grupo Multiagro.
-            Analiza esta imagen de {cultivo_input} buscando SIGNOS DIRECTOS con este orden de prioridad:
+            Analiza esta imagen de {cultivo_input} buscando SIGNOS DIRECTOS DE VIDA.
             
-            1. ENTOMOLOGÍA: Escanea la imagen buscando cuerpos de insectos, ácaros, larvas, huevos o alas. Identifica especie si es posible.
-            2. PATOLOGÍA: Busca signos de Hongos (micelio, esporas), Bacterias (exudados) o Virus.
-            3. NUTRICIÓN: Solo si descartas vida patógena o insectil, analiza síntomas de deficiencias nutricionales.
+            JERARQUÍA DE DIAGNÓSTICO (ESTRICTA):
+            1. ENTOMOLOGÍA: No te distraigas con la planta. Busca cuerpos de insectos, ácaros, larvas, huevos o telas de araña. Identifica la especie exacta.
+            2. PATOLOGÍA: Busca micelios de hongos, esporas, cancros o exudados bacterianos.
+            3. NUTRICIÓN: Solo si tras un escaneo pixel por pixel NO hay insectos ni hongos, analiza deficiencias.
 
             ESTRUCTURA OBLIGATORIA:
-            1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico.
+            1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico del insecto o patógeno.
             2. NIVEL DE CERTEZA: % de seguridad.
             3. MANEJO QUÍMICO: Recomienda 4 productos de {todos_los_prods} en NEGRITAS.
             4. ADVERTENCIA TÉCNICA: Leer etiqueta del fabricante.
@@ -187,7 +182,7 @@ if img_final and st.button("🚀 INICIAR ASESORÍA"):
 if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[0]}</div>", unsafe_allow_html=True)
 
-# 4. TIENDA
+# 4. TIENDA Y 5. REGISTRO (Mantenidos íntegros)
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
@@ -199,18 +194,17 @@ if mostrar:
             st.markdown(f'<div style="background:#1E1E26; padding:15px; border-radius:15px; border:1px solid #3E3E4A; text-align:center;"><img src="{img_b64}" style="width:100%; height:140px; object-fit:contain; background:white; border-radius:10px;"><p style="font-weight:bold; color:white; margin-top:10px;">{p["name"][:30]}</p><p style="color:#007BFF; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
             st.link_button("🟢 Cotizar", f"https://wa.me/18295624653?text=Cotizar: {p['name']}", use_container_width=True)
 
-# 5. REGISTRO DE CLIENTE (PROVINCIAS RD)
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 provincias_rd = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
-with st.form("registro_pro"):
+with st.form("registro_p"):
     c1, c2 = st.columns(2)
     nom = c1.text_input("Nombre y Apellido *")
     tel = c1.text_input("WhatsApp / Teléfono *")
-    email = c2.text_input("Correo Electrónico")
+    ema = c2.text_input("Correo Electrónico")
     prov = c2.selectbox("Provincia / Localidad", provincias_rd)
     if st.form_submit_button("✅ ENVIAR MIS DATOS"):
-        if nom and tel: st.success("¡Datos registrados con éxito!")
+        if nom and tel: st.success("¡Datos registrados!")
 
 # 6. LOGOS FINALES
 st.divider()
