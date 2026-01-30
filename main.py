@@ -4,18 +4,16 @@ import google.generativeai as genai
 from PIL import Image
 import os
 import base64
-import time
 
 # 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción)
 st.set_page_config(
-    page_title="Grupo Multiagro | AgTech Diagnóstico",
+    page_title="Grupo Multiagro | Diagnóstico Experto",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- LÓGICA DE SESIÓN (PERSISTENCIA BLINDADA) ---
-# Inicializamos las variables de estado al inicio absoluto para evitar reinicios por refresco
+# --- LÓGICA DE SESIÓN (PERSISTENCIA TOTAL) ---
 if "user_verified" not in st.session_state:
     st.session_state.user_verified = False
 if "user_tier" not in st.session_state:
@@ -51,7 +49,7 @@ st.markdown(f"""
         margin: 20px 0; 
     }}
     
-    /* CAJA DE ANÁLISIS: FORZAR LETRAS BLANCAS Y DISEÑO PROFESIONAL */
+    /* CAJA DE ANÁLISIS: FORZAR LETRAS BLANCAS */
     .diag-box {{ 
         background: #161B22; 
         padding: 30px; 
@@ -81,10 +79,9 @@ st.markdown(f"""
         border-radius: 25px !important; 
         font-weight: bold !important; 
         border: none !important;
-        padding: 10px 25px !important;
     }}
     
-    /* Footer Logos con fondo blanco */
+    /* Footer Logos */
     .footer-white {{ 
         background-color: #FFFFFF !important; 
         padding: 25px; 
@@ -114,11 +111,9 @@ def registrar_en_odoo(nombre, email, telefono, provincia):
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
             return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
                 'name': nombre, 'email': email, 'phone': telefono, 
-                'comment': f'Prospecto desde App Diagnóstico. Provincia: {provincia}'
+                'comment': f'Prospecto desde App AgTech. Provincia: {provincia}'
             }])
-    except Exception as e:
-        st.error(f"Error de conexión Odoo: {e}")
-        return None
+    except: return None
 
 def get_odoo_prods():
     try:
@@ -130,8 +125,7 @@ def get_odoo_prods():
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 150})
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
-    except:
-        return []
+    except: return []
 
 # --- FLUJO DE CONTROL: LOGIN ---
 if not st.session_state.user_verified:
@@ -139,142 +133,107 @@ if not st.session_state.user_verified:
     with cent:
         st.markdown("<br><br>", unsafe_allow_html=True)
         for f in os.listdir("."):
-            if f.lower().startswith("grupo_multiagro"):
-                st.image(f, use_container_width=True)
-        
+            if f.lower().startswith("grupo_multiagro"): st.image(f, use_container_width=True)
         st.markdown('<div class="titulo-single-line">Diagnóstico Experto</div>', unsafe_allow_html=True)
-        u_email = st.text_input("Correo electrónico corporativo o personal:", placeholder="usuario@grupomultiagro.com")
-        
+        u_email = st.text_input("Correo electrónico:", placeholder="usuario@grupomultiagro.com")
         if st.button("ACCEDER AL SISTEMA"):
             if "@" in u_email:
                 st.session_state.user_verified = True
                 whitelist = ["@grupomultiagro.com", "@mundoagricola.net", "@multisemillas.com.do"]
-                if any(domain in u_email.lower() for domain in whitelist):
-                    st.session_state.user_tier = "ILIMITADO (Staff)"
-                else:
-                    st.session_state.user_tier = "GRATIS"
+                st.session_state.user_tier = "ILIMITADO (Staff)" if any(d in u_email.lower() for d in whitelist) else "GRATIS"
                 st.rerun()
-            else:
-                st.error("Ingrese un correo electrónico válido.")
+            else: st.error("Ingrese un correo válido.")
     st.stop()
 
 # --- PANTALLA PRINCIPAL ---
 _, logo_cent, _ = st.columns([1, 1, 1])
 with logo_cent:
     for f in os.listdir("."):
-        if f.lower().startswith("grupo_multiagro"):
-            st.image(f, use_container_width=True)
+        if f.lower().startswith("grupo_multiagro"): st.image(f, use_container_width=True)
 
-st.markdown(f'<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Nivel de Acceso: {st.session_state.user_tier}</p></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Plan activo: {st.session_state.user_tier}</p></div>', unsafe_allow_html=True)
 
 todos_los_prods = get_odoo_prods()
 
-# --- SECCIÓN DIAGNÓSTICO ---
-cultivo_input = st.text_input("Indique el cultivo a analizar:", placeholder="Ej: Tomate, Ají, Arroz...", on_change=reset_analisis)
+# --- DIAGNÓSTICO ---
+cultivo_input = st.text_input("¿Qué cultivo analizamos?", placeholder="Ej: Tomate, Ají...", on_change=reset_analisis)
+tab1, tab2 = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
 
-tab1, tab2 = st.tabs(["📁 CARGAR GALERÍA", "📸 CAPTURAR CÁMARA"])
-
-with tab1:
-    img_gal = st.file_uploader("Suba una imagen de alta resolución", type=['png','jpg','jpeg'], on_change=reset_analisis)
-with tab2:
-    img_cam = st.camera_input("Enfoque directamente al insecto o signo", on_change=reset_analisis)
+with tab1: img_gal = st.file_uploader("Sube una imagen nítida", type=['png','jpg','jpeg'], on_change=reset_analisis)
+with tab2: img_cam = st.camera_input("Enfoque al insecto o signo", on_change=reset_analisis)
 
 img_final = img_cam if img_cam else img_gal
 
-if img_final and st.button("🚀 EJECUTAR DIAGNÓSTICO DE PRECISIÓN"):
-    with st.spinner("Iniciando escaneo morfológico y patológico..."):
+if img_final and st.button("🚀 INICIAR ANÁLISIS"):
+    with st.spinner("Escaneando píxeles..."):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-1.5-pro') # Usamos Pro para mayor capacidad de detección
+            model = genai.GenerativeModel('gemini-2.0-flash-lite') # Modelo compatible
             
-            # PROMPT DE MÁXIMO RIGOR TÉCNICO
+            # PROMPT REFORZADO: ESCANEO POR PÍXELES PARA DETECTAR SIGNOS (Insectos/Hongos)
             prompt = f"""
-            INSTRUCCIÓN IMPERATIVA: RESPONDE 100% EN ESPAÑOL. Eres un Patólogo y Entomólogo Senior de Grupo Multiagro. 
-            Debes actuar como un microscopio. Analiza la imagen de {cultivo_input} buscando SIGNOS de vida.
+            INSTRUCCIÓN: RESPONDE 100% EN ESPAÑOL. Eres un Patólogo y Entomólogo Senior de Grupo Multiagro. 
+            Analiza esta imagen de {cultivo_input} buscando SIGNOS DIRECTOS de plagas o patógenos.
             
             JERARQUÍA DE DESCARTE (PASO A PASO):
-            1. ESCANEO ENTOMOLÓGICO: Observa los pétalos, anteras y centro de la flor. Busca insectos diminutos, alargados o puntos móviles (ej. Trips/Frankliniella). Si ves cualquier cuerpo extraño que no sea parte natural de la planta, IDENTIFÍCALO como plaga principal.
-            2. ESCANEO PATOLÓGICO: Busca micelios de hongos, esporas, cancros o exudados bacterianos acuosos.
-            3. ESCANEO NUTRICIONAL: Solo si la planta está libre de organismos ajenos tras un análisis pixelar, evalúa clorosis o deformaciones por nutrición.
+            1. ESCANEO ENTOMOLÓGICO: Busca en pétalos, centro de la flor y hojas cuerpos alargados (Trips), puntos móviles (Ácaros) o melaza (Áfidos). Si detectas vida, nómbrala.
+            2. ESCANEO PATOLÓGICO: Busca micelio, esporas o manchas con halos (Hongos/Bacterias).
+            3. ESCANEO NUTRICIONAL: Solo si descartas lo anterior tras análisis pixelar, evalúa deficiencias.
             
-            ESTRUCTURA DE RESPUESTA (OBLIGATORIA):
-            1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico (Sé agresivo en la detección: si hay insectos, nómbralos).
+            ESTRUCTURA OBLIGATORIA:
+            1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico (Sé agresivo: si hay insectos, identifícalos).
             2. NIVEL DE CERTEZA: % de seguridad.
-            3. MANEJO QUÍMICO: Recomienda 4 productos de esta lista {todos_los_prods} en NEGRITAS.
-            4. ADVERTENCIA TÉCNICA: Recordar lectura de etiqueta.
-            5. LABORES CULTURALES: 5 tareas físicas de manejo.
-            6. INTERACCIÓN: 2 preguntas técnicas al productor.
+            3. MANEJO QUÍMICO: Recomienda 4 productos de {todos_los_prods} en NEGRITAS.
+            4. ADVERTENCIA TÉCNICA: Leer etiqueta.
+            5. LABORES CULTURALES: 5 tareas.
+            6. INTERACCIÓN: 2 preguntas.
             """
             res = model.generate_content([prompt, Image.open(img_final)])
             st.session_state.chat_history = [res.text]
-            
-            # Filtrar productos para la tienda
             txt_l = res.text.lower()
             if todos_los_prods:
                 st.session_state.prods_filtrados = [p for p in todos_los_prods if p['name'].split()[0].lower() in txt_l][:4]
             st.rerun()
-        except Exception as e:
-            st.error(f"Error técnico en el análisis: {e}")
+        except Exception as e: st.error(f"Error técnico: {e}")
 
 if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[0]}</div>", unsafe_allow_html=True)
 
-# --- TIENDA DE PRODUCTOS ---
+# --- TIENDA ---
 st.divider()
-st.markdown("### 🛒 Insumos Recomendados para este Caso")
+st.markdown("### 🛒 Insumos Sugeridos")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
-
 if mostrar:
     cols = st.columns(len(mostrar))
     for i, p in enumerate(mostrar):
         with cols[i]:
             img_b64 = f'data:image/png;base64,{p["image_128"]}' if p.get('image_128') else ""
-            st.markdown(f"""
-            <div style="background:#1E1E26; padding:15px; border-radius:15px; border:1px solid #3E3E4A; text-align:center;">
-                <img src="{img_b64}" style="width:100%; height:140px; object-fit:contain; background:white; border-radius:10px;">
-                <p style="font-weight:bold; color:white; margin-top:10px; min-height:45px;">{p["name"][:35]}</p>
-                <p style="color:#25D366; font-size:1.2rem; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            st.link_button("🟢 Cotizar vía WhatsApp", f"https://wa.me/18295624653?text=Hola Multiagro, deseo cotizar: {p['name']}", use_container_width=True)
+            st.markdown(f'<div style="background:#1E1E26; padding:15px; border-radius:15px; border:1px solid #3E3E4A; text-align:center;"><img src="{img_b64}" style="width:100%; height:140px; object-fit:contain; background:white; border-radius:10px;"><p style="font-weight:bold; color:white; margin-top:10px; height:45px;">{p["name"][:35]}</p><p style="color:#25D366; font-size:1.2rem; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
+            st.link_button("🟢 Cotizar WhatsApp", f"https://wa.me/18295624653?text=Cotizar: {p['name']}", use_container_width=True)
 
-# --- REGISTRO DE CLIENTE CRM ---
+# --- REGISTRO CRM ---
 st.divider()
-st.markdown("### 👤 ¿Nuevo Productor? Regístrese para asistencia personalizada")
-provincias_rd = [
-    "Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", 
-    "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", 
-    "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", 
-    "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", 
-    "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"
-]
-with st.form("registro_crm"):
+st.markdown("### 👤 Registro de Productor")
+provincias = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
+with st.form("registro_p"):
     c1, c2 = st.columns(2)
-    with c1:
-        nom_p = st.text_input("Nombre Completo *")
-        tel_p = st.text_input("WhatsApp / Celular *")
-    with c2:
-        ema_p = st.text_input("Email (Opcional)")
-        prov_p = st.selectbox("Provincia de su cultivo", provincias_rd)
-        
-    if st.form_submit_button("✅ ENVIAR MIS DATOS"):
-        if nom_p and tel_p:
-            if registrar_en_odoo(nom_p, ema_p, tel_p, prov_p):
-                st.success("¡Registro exitoso! Un asesor técnico se pondrá en contacto.")
-            else:
-                st.error("Error al guardar datos.")
-        else:
-            st.warning("Nombre y Teléfono son campos obligatorios.")
+    nom = c1.text_input("Nombre y Apellido *")
+    tel = c1.text_input("WhatsApp / Teléfono *")
+    ema = c2.text_input("Email (Opcional)")
+    prov = c2.selectbox("Provincia", provincias)
+    if st.form_submit_button("✅ COMPLETAR REGISTRO"):
+        if nom and tel:
+            if registrar_en_odoo(nom, ema, tel, prov): st.success("¡Registrado con éxito!")
+            else: st.error("Error al guardar.")
 
-# --- FOOTER DE MARCAS ---
+# --- FOOTER ---
 st.divider()
 st.markdown("<p style='text-align:center; color:#FFFFFF; font-weight:bold;'>Marcas Grupo Multiagro</p>", unsafe_allow_html=True)
 logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
 html_logos = '<div class="footer-white">'
 for m in logos_list:
     if os.path.exists(m):
-        with open(m, "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-            html_logos += f'<img src="data:image/png;base64,{b64}">'
+        with open(m, "rb") as f: b64 = base64.b64encode(f.read()).decode()
+        html_logos += f'<img src="data:image/png;base64,{b64}">'
 html_logos += '</div>'
 st.markdown(html_logos, unsafe_allow_html=True)
