@@ -12,30 +12,11 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# CSS PARA IMÁGENES DE PRODUCTOS Y LOGOS ALINEADOS
 st.markdown("""
     <style>
-    .product-img { 
-        width: 100%; 
-        height: 180px; 
-        object-fit: contain; 
-        background-color: white; 
-        border-radius: 10px; 
-        padding: 5px; 
-        margin-bottom: 10px; 
-    }
-    .logo-container { 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        height: 80px; 
-        padding: 10px; 
-    }
-    .logo-container img { 
-        max-height: 100%; 
-        max-width: 100%; 
-        object-fit: contain; 
-    }
+    .product-img { width: 100%; height: 180px; object-fit: contain; background-color: white; border-radius: 10px; padding: 5px; margin-bottom: 10px; }
+    .logo-container { display: flex; justify-content: center; align-items: center; height: 80px; padding: 10px; }
+    .logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -43,7 +24,6 @@ if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
 # --- FUNCIONES DE INTEGRACIÓN ---
-
 def get_odoo_prods():
     try:
         url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
@@ -66,29 +46,23 @@ def registrar_cliente_odoo(nombre, email, telefono):
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
             return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
-                'name': nombre, 'email': email, 'phone': telefono,
-                'comment': 'Registrado desde App AgTech Multiagro'
+                'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'
             }])
     except: return None
 
-def enviar_aviso_email(nombre, email_cliente, tel):
+def enviar_aviso_email(nombre, email, tel):
     try:
-        remitente = st.secrets["EMAIL_SENDER"]
-        password = st.secrets["EMAIL_PASSWORD"]
-        destinatario = st.secrets["EMAIL_RECEIVER"]
+        rem, pas = st.secrets["EMAIL_SENDER"], st.secrets["EMAIL_PASSWORD"]
         msg = MIMEMultipart()
-        msg['From'], msg['To'], msg['Subject'] = remitente, destinatario, f"🚀 NUEVO SUSCRIPTOR: {nombre}"
-        cuerpo = f"Nuevo productor registrado:\n👤 {nombre}\n📧 {email_cliente}\n📞 {tel}"
-        msg.attach(MIMEText(cuerpo, 'plain'))
+        msg['From'], msg['To'], msg['Subject'] = rem, st.secrets["EMAIL_RECEIVER"], f"🚀 Nuevo Registro: {nombre}"
+        msg.attach(MIMEText(f"Nombre: {nombre}\nEmail: {email}\nTel: {tel}", 'plain'))
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
-        server.login(remitente, password)
+        server.login(rem, pas)
         server.send_message(msg)
         server.quit()
         return True
     except: return False
-
-# --- INTERFAZ ---
 
 # 2. ENCABEZADO
 _, mid, _ = st.columns([1, 2, 1])
@@ -99,7 +73,7 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# 3. SECCIÓN: DIAGNÓSTICO
+# 3. SECCIÓN: DIAGNÓSTICO EXPERTO
 st.markdown("### 🔍 Diagnóstico Experto")
 img = None
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -111,25 +85,28 @@ elif img_gal: img = img_gal
 
 if img is not None:
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("IA analizando patología y catálogo..."):
+        with st.spinner("Realizando peritaje fitosanitario..."):
             try:
                 nombres_inventario = [p['name'] for p in todos_los_prods] if todos_los_prods else []
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
+                # PROMPT RE-POTENCIADO CON CERTEZA E INTERACCIÓN
                 prompt = f"""
                 RESPONDE 100% EN ESPAÑOL.
-                Eres un Fitopatólogo y Agrónomo Senior de Grupo Multiagro.
-                1. IDENTIFICA con seguridad absoluta la plaga, hongo o deficiencia. No seas ambiguo.
-                2. De esta lista de Odoo: {nombres_inventario}, elige los 4 mejores productos.
-                3. Escribe los nombres de los productos recomendados en NEGRITAS (ej: **Nombre**).
-                4. Justifica tu elección y da un plan de acción cultural y químico.
+                Eres un Fitopatólogo y Especialista en Nutrición de Grupo Multiagro.
+                1. DIAGNÓSTICO: Identifica plaga, hongo o carencia. Indica un % de PROBABILIDAD DE CERTEZA.
+                2. ANÁLISIS TÉCNICO: Explica los síntomas observados en la imagen.
+                3. RECOMENDACIÓN: Selecciona de este catálogo: {nombres_inventario} los 4 productos ideales.
+                4. PLAN DE ACCIÓN: Medidas culturales y nutricionales de choque.
+                5. INTERACCIÓN: Haz 2 preguntas clave al productor para refinar este diagnóstico.
+                Usa negritas para los productos y sé muy profesional.
                 """
                 
                 res = model.generate_content([prompt, Image.open(img)])
                 texto_ia = res.text
                 
-                # FILTRO DE PRODUCTOS SIN REPETIR ENVASES
+                # FILTRO DE PRODUCTOS SIN REPETIR
                 texto_ia_lower = texto_ia.lower()
                 sugeridos, vistos = [], set()
                 if todos_los_prods:
@@ -142,27 +119,24 @@ if img is not None:
                                 vistos.add(primera_palabra)
                         if len(sugeridos) >= 4: break
                 
-                # Guardar en sesión y refrescar sin mostrar error
                 st.session_state.chat_history = [{"role": "model", "parts": [texto_ia]}]
                 st.session_state.prods_filtrados = sugeridos
                 st.rerun()
             except Exception as e:
-                # Solo mostrar error si realmente falla la IA, no por el rerun
-                if "rerun" not in str(e).lower():
-                    st.error(f"Hubo un inconveniente con el servidor de IA: {e}")
+                if "rerun" not in str(e).lower(): st.error(f"Error técnico: {e}")
 
 if st.session_state.chat_history:
     st.markdown("---")
     st.info(st.session_state.chat_history[-1]["parts"][0])
     
-    user_reply = st.chat_input("Escribe tu duda aquí...")
+    user_reply = st.chat_input("Responde aquí para precisar el diagnóstico...")
     if user_reply:
-        with st.spinner("Consultando..."):
+        with st.spinner("Analizando respuesta..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 chat = model.start_chat(history=st.session_state.chat_history)
-                response = chat.send_message(user_reply + " (Responde siempre en español)")
+                response = chat.send_message(user_reply + " (Continúa en español dominicano profesional)")
                 st.session_state.chat_history.append({"role": "user", "parts": [user_reply]})
                 st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
                 st.rerun()
@@ -179,12 +153,9 @@ if mostrar:
         with cols[i]:
             if p.get('image_128'):
                 st.markdown(f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">', unsafe_allow_html=True)
-            else:
-                st.image("https://cdn-icons-png.flaticon.com/512/1054/1054800.png", width=150)
             st.markdown(f"**{p['name'].split('(')[0].strip()}**")
             st.write(f"RD$ {p['list_price']:,.2f}")
-            link_p = f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + p['name'])}"
-            st.link_button("🛒 Cotizar", link_p, use_container_width=True)
+            st.link_button("🛒 Cotizar", f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + p['name'])}", use_container_width=True)
 
 st.link_button("👨‍🌾 Hablar con un Técnico Humano", f"https://wa.me/18295624653", use_container_width=True)
 
@@ -203,8 +174,7 @@ if 'reg_ok' not in st.session_state:
                     st.session_state['reg_ok'] = nom
                     st.rerun()
             else: st.error("Completa los campos obligatorios (*)")
-else:
-    st.success(f"¡Bienvenido, {st.session_state['reg_ok']}!")
+else: st.success(f"¡Bienvenido, {st.session_state['reg_ok']}!")
 
 # 6. LOGOS FINALES
 st.divider()
@@ -214,6 +184,5 @@ logos = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png"
 for i, l in enumerate(logos):
     with l_cols[i]:
         if os.path.exists(l):
-            with open(l, "rb") as f:
-                b64 = base64.b64encode(f.read()).decode()
+            with open(l, "rb") as f: b64 = base64.b64encode(f.read()).decode()
             st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64}"></div>', unsafe_allow_html=True)
