@@ -12,9 +12,10 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# CSS PARA IMÁGENES HOMOGÉNEAS (PRODUCTOS Y LOGOS)
+# CSS MEJORADO PARA PRODUCTOS Y LOGOS ALINEADOS
 st.markdown("""
     <style>
+    /* Imágenes de productos homogéneas */
     .product-img { 
         width: 100%; 
         height: 180px; 
@@ -24,8 +25,17 @@ st.markdown("""
         padding: 5px; 
         margin-bottom: 10px; 
     }
-    .logo-img {
-        height: 60px;
+    /* Contenedor de logos uniforme */
+    .logo-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 80px;
+        padding: 10px;
+    }
+    .logo-container img {
+        max-height: 100%;
+        max-width: 100%;
         object-fit: contain;
     }
     </style>
@@ -88,8 +98,8 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# 3. SECCIÓN: DIAGNÓSTICO
-st.markdown("### 🔍 Diagnóstico Fitosanitario Experto")
+# 3. SECCIÓN: DIAGNÓSTICO (Nombre corregido)
+st.markdown("### 🔍 Diagnóstico Experto")
 img = None
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
 with tab_gal: img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
@@ -106,15 +116,13 @@ if img is not None:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # INSTRUCCIÓN REFORZADA EN ESPAÑOL
                 prompt = f"""
                 RESPONDE EXCLUSIVAMENTE EN ESPAÑOL.
-                Eres un Fitopatólogo Senior de Grupo Multiagro en República Dominicana.
-                1. IDENTIFICA la plaga o enfermedad en la imagen con total seguridad.
+                Eres un Experto Agrónomo de Grupo Multiagro. 
+                1. IDENTIFICA el problema en la imagen (plagas, hongos, deficiencias, etc.).
                 2. De este catálogo: {nombres_odoo}, selecciona los 4 productos ideales.
-                3. Da un plan de manejo cultural y químico detallado.
+                3. Da un plan de manejo cultural, nutricional y químico detallado.
                 4. Usa negritas para los nombres de los productos recomendados.
-                RECUERDA: TODO EL TEXTO DEBE ESTAR EN ESPAÑOL.
                 """
                 
                 res = model.generate_content([prompt, Image.open(img)])
@@ -132,12 +140,12 @@ if img is not None:
                         if len(sugeridos) >= 4: break
                 st.session_state.prods_filtrados = sugeridos
                 st.rerun()
-            except: st.error("Error en el análisis. Intenta de nuevo.")
+            except: st.error("Error en el análisis.")
 
 if st.session_state.chat_history:
     st.markdown("---")
     st.info(st.session_state.chat_history[-1]["parts"][0])
-    user_reply = st.chat_input("Escribe tu duda aquí en español...")
+    user_reply = st.chat_input("Escribe tu duda aquí...")
     if user_reply:
         with st.spinner("Consultando..."):
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -148,7 +156,7 @@ if st.session_state.chat_history:
             st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
             st.rerun()
 
-# 4. TIENDA DINÁMICA (IMÁGENES ALINEADAS)
+# 4. TIENDA DINÁMICA
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
@@ -184,17 +192,26 @@ if 'reg_ok' not in st.session_state:
                     enviar_aviso_email(nom, ema, tel)
                     st.session_state['reg_ok'] = nom
                     st.rerun()
-            else: st.error("Completa los campos con (*)")
+            else: st.error("Completa los campos obligatorios")
 else:
     st.success(f"¡Bienvenido, {st.session_state['reg_ok']}!")
 
-# 6. LOGOS FINALES (ALINEADOS)
+# 6. LOGOS FINALES (PROPORCIONALES Y ALINEADOS)
 st.divider()
 st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 l_cols = st.columns(5)
 logos = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
+
 for i, l in enumerate(logos):
     with l_cols[i]:
         if os.path.exists(l):
-            # Usamos st.image con contenedor uniforme
-            st.image(l, use_container_width=True)
+            # Leemos la imagen y la convertimos a base64 para inyectar CSS
+            with open(l, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode()
+            st.markdown(f"""
+                <div class="logo-container">
+                    <img src="data:image/png;base64,{encoded_string}">
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.caption("Multiagro")
