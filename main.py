@@ -9,15 +9,20 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80"
+URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200"
 
-# --- CSS DE ALTA COMPATIBILIDAD (No rompe proporciones) ---
+# --- CSS DEFINITIVO: FUERZA TEXTO BLANCO Y PROPORCIÓN DE LOGOS ---
 st.markdown(f"""
     <style>
-    /* Fondo y Base */
     .stApp {{ background-color: #0E1117; }}
     
-    /* Banner */
+    /* FORZAR TEXTO BLANCO EN TODA LA APP */
+    h1, h2, h3, h4, p, label, span, .stMarkdown, .stText, .stInfo, .stSuccess, [data-baseweb="tab"] p {{
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+    }}
+
+    /* BANNER */
     .header-banner {{
         background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{URL_FONDO_HOJAS}");
         background-size: cover; background-position: center;
@@ -25,62 +30,43 @@ st.markdown(f"""
         margin-bottom: 25px; border: 1px solid #3E3E4A;
     }}
 
-    /* Texto Blanco Universal */
-    h1, h2, h3, h4, p, label, .stMarkdown {{
-        color: white !important;
-    }}
-
-    /* Tarjetas de Productos - Diseño Limpio */
-    .card-container {{
+    /* TARJETAS DE PRODUCTOS CON TEXTO CLARO */
+    .product-card {{
         background-color: #1E1E26;
-        border-radius: 12px;
+        border-radius: 15px;
         padding: 15px;
         border: 1px solid #3E3E4A;
         text-align: center;
-        height: 100%;
+        margin-bottom: 15px;
     }}
-    
-    .img-producto {{ 
-        width: 100%; height: 150px; object-fit: contain; 
-        background-color: white; border-radius: 8px; margin-bottom: 10px;
-    }}
+    .product-title {{ color: #FFFFFF !important; font-weight: bold; display: block; margin: 10px 0; }}
+    .product-price {{ color: #007BFF !important; font-weight: bold; font-size: 1.1rem; }}
+    .product-img {{ width: 100%; height: 160px; object-fit: contain; background-color: white; border-radius: 10px; padding: 5px; }}
 
-    .titulo-producto {{
-        color: white !important;
-        font-weight: bold;
-        font-size: 0.9rem;
-        display: block;
-        margin: 5px 0;
-    }}
-
-    .precio-producto {{
-        color: #007BFF !important;
-        font-weight: bold;
-        font-size: 1.1rem;
-    }}
-
-    /* Botones Estándar Streamlit Modificados */
-    .stButton>button {{
+    /* BOTONES */
+    div.stButton > button {{
         background-color: #007BFF !important;
-        color: white !important;
-        border-radius: 20px !important;
-        width: 100%;
+        color: #FFFFFF !important;
+        border-radius: 25px !important;
+        font-weight: bold !important;
+        border: none !important;
     }}
 
-    /* Contenedor de Logos Inferiores (Proporción corregida) */
-    .footer-logos {{
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: white;
-        padding: 15px;
+    /* CONTENEDOR DE LOGOS FINALES (FONDO BLANCO Y PROPORCIONAL) */
+    .footer-white {{
+        background-color: #FFFFFF !important;
+        padding: 20px;
         border-radius: 10px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        flex-wrap: wrap;
         margin-top: 20px;
     }}
-    .footer-logos img {{
-        max-height: 50px;
+    .footer-white img {{
+        max-height: 55px;
         width: auto;
-        object-fit: contain;
+        margin: 10px;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -99,7 +85,9 @@ def reset_analisis():
 def verificar_acceso(email):
     email = email.lower().strip()
     dominios = ["@grupomultiagro.com", "@mundoagricola.net"]
-    return ("ILIMITADO", "Colaborador") if any(email.endswith(d) for d in dominios) else ("GRATIS", "Usuario")
+    if any(email.endswith(d) for d in dominios):
+        return "ILIMITADO", "Colaborador Multiagro"
+    return "GRATIS", "Usuario Estándar"
 
 def get_odoo_prods():
     try:
@@ -121,7 +109,7 @@ if not st.session_state.user_verified:
         if os.path.exists("LogoMundoAgricola.png"):
             st.image("LogoMundoAgricola.png", use_container_width=True)
         st.markdown("<h2 style='text-align: center;'>🔍 Diagnóstico Experto De Tu Cultivo</h2>", unsafe_allow_html=True)
-        u_email = st.text_input("Correo electrónico:", placeholder="ejemplo@grupomultiagro.com")
+        u_email = st.text_input("Ingresa tu correo electrónico:", placeholder="ejemplo@grupomultiagro.com")
         if st.button("INGRESAR"):
             if "@" in u_email:
                 tier, label = verificar_acceso(u_email)
@@ -129,53 +117,58 @@ if not st.session_state.user_verified:
                 st.rerun()
     st.stop()
 
-# --- PANTALLA 2: APP ---
+# --- PANTALLA 2: APP PRINCIPAL ---
 _, logo_cent, _ = st.columns([1, 1, 1])
 with logo_cent:
     for f in os.listdir("."):
-        if f.lower().startswith("grupo_multiagro"): st.image(f, use_container_width=True)
+        if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
+            st.image(f, use_container_width=True)
 
-st.markdown(f'<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Plan: {st.session_state.user_tier}</p></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="header-banner"><h1 style="color: white !important;">🔍 Diagnóstico Experto</h1><p>Plan: {st.session_state.user_tier}</p></div>', unsafe_allow_html=True)
 
 if st.session_state.user_tier == "GRATIS":
     c1, c2 = st.columns([2, 1])
-    with c1: st.info(f"📊 Consultas hoy: {st.session_state.credits}")
-    with c2: st.link_button("💎 PLAN ILIMITADO", "https://wa.me/18295624653?text=Info%20Ilimitado")
+    with c1: st.info(f"📊 Consultas disponibles hoy: {st.session_state.credits}")
+    with c2: st.link_button("💎 PLAN ILIMITADO", "https://wa.me/18295624653?text=Info%20Plan%20Ilimitado", use_container_width=True)
 
 todos_los_prods = get_odoo_prods()
 
-# Diagnóstico
-cultivo_input = st.text_input("Cultivo:", on_change=reset_analisis)
+# 3. DIAGNÓSTICO
+cultivo_input = st.text_input("¿Qué cultivo analizamos?", placeholder="Ej: Tomate...", on_change=reset_analisis)
 t1, t2 = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
-with t1: img_gal = st.file_uploader("Subir", type=['png','jpg','jpeg'], on_change=reset_analisis)
-with t2: img_cam = st.camera_input("Foto", on_change=reset_analisis)
+with t1: img_gal = st.file_uploader("Subir imagen", type=['png','jpg','jpeg'], on_change=reset_analisis)
+with t2: img_cam = st.camera_input("Tomar foto", on_change=reset_analisis)
 
 img = img_cam if img_cam else img_gal
 
-if img and st.button("🚀 INICIAR ASESORÍA", disabled=(st.session_state.user_tier=="GRATIS" and st.session_state.credits<=0)):
-    with st.spinner("Analizando..."):
-        try:
-            nombres = [p['name'] for p in todos_los_prods] if todos_los_prods else []
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            res = model.generate_content([f"Analiza {cultivo_input}. Identifica plaga, recomienda 4 de {nombres} en NEGRITAS, labores y 2 preguntas.", Image.open(img)])
-            
-            sugeridos = []
-            txt_l = res.text.lower()
-            if todos_los_prods:
-                for p in todos_los_prods:
-                    if p['name'].split()[0].lower() in txt_l and len(sugeridos) < 4: sugeridos.append(p)
-            
-            st.session_state.chat_history = [res.text]
-            st.session_state.prods_filtrados = sugeridos
-            if st.session_state.user_tier == "GRATIS": st.session_state.credits -= 1
-            st.rerun()
-        except: st.error("Error")
+if img is not None:
+    bloqueo = st.session_state.user_tier == "GRATIS" and st.session_state.credits <= 0
+    if st.button("🚀 INICIAR ASESORÍA", disabled=bloqueo, type="primary"):
+        with st.spinner("IA Analizando..."):
+            try:
+                nombres_odoo = [p['name'] for p in todos_los_prods] if todos_los_prods else []
+                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+                model = genai.GenerativeModel('gemini-2.0-flash-lite')
+                prompt = f"RESPONDE ESPAÑOL. Experto Multiagro. Analiza {cultivo_input}. Identifica plaga, certeza %, recomienda 4 de {nombres_odoo} en NEGRITAS, labores y 2 preguntas."
+                res = model.generate_content([prompt, Image.open(img)])
+                
+                sugeridos = []
+                txt_l = res.text.lower()
+                if todos_los_prods:
+                    for p in todos_los_prods:
+                        p_name = p['name'].split()[0].lower()
+                        if p_name in txt_l and len(sugeridos) < 4: sugeridos.append(p)
+
+                st.session_state.chat_history = [res.text]
+                st.session_state.prods_filtrados = sugeridos
+                if st.session_state.user_tier == "GRATIS": st.session_state.credits -= 1
+                st.rerun()
+            except: st.error("Error en el análisis.")
 
 if st.session_state.chat_history:
-    st.markdown(f"<div style='background:#161B22; padding:20px; border-radius:10px; border-left:5px solid #007BFF; color:white;'>{st.session_state.chat_history[0]}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='background:#161B22; padding:20px; border-radius:10px; border-left:5px solid #007BFF;'>{st.session_state.chat_history[0]}</div>", unsafe_allow_html=True)
 
-# TIENDA CORREGIDA
+# 4. TIENDA
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
@@ -184,23 +177,22 @@ if mostrar:
     cols = st.columns(len(mostrar))
     for i, p in enumerate(mostrar):
         with cols[i]:
-            img_data = f'data:image/png;base64,{p["image_128"]}' if p.get('image_128') else ""
+            img_b64 = f'data:image/png;base64,{p["image_128"]}' if p.get('image_128') else ""
             st.markdown(f"""
-                <div class="card-container">
-                    <img src="{img_data}" class="img-producto">
-                    <span class="titulo-producto">{p['name'][:30]}</span>
-                    <p class="precio-producto">RD$ {p['list_price']:,.2f}</p>
+                <div class="product-card">
+                    <img src="{img_b64}" class="product-img">
+                    <span class="product-title">{p['name'].split('(')[0].strip()}</span>
+                    <p class="product-price">RD$ {p['list_price']:,.2f}</p>
                 </div>
             """, unsafe_allow_html=True)
-            st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}")
+            st.link_button("WhatsApp", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
-# LOGOS FINALES (CORREGIDOS)
+# 6. LOGOS FINALES (PROPORCIONALES)
 st.divider()
-st.markdown("<p style='text-align:center; color:white;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
 
-# Usamos HTML puro para los logos para asegurar proporción
-html_logos = '<div class="footer-logos">'
+html_logos = '<div class="footer-white">'
 for l in logos_list:
     if os.path.exists(l):
         with open(l, "rb") as f: b64 = base64.b64encode(f.read()).decode()
