@@ -6,7 +6,7 @@ import os
 import base64
 import urllib.parse
 
-# 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
     page_title="Grupo Multiagro | AgTech Diagnóstico",
     page_icon="🔍",
@@ -21,7 +21,7 @@ if "chat_history" not in st.session_state:
 if "prods_filtrados" not in st.session_state:
     st.session_state.prods_filtrados = []
 
-# --- CSS: ÚNICAMENTE CORRECCIÓN DE VISIBILIDAD (MANTENIENDO EL ESTILO) ---
+# --- CSS: CORRECCIÓN DE VISIBILIDAD MANTENIENDO TU ESTRUCTURA ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: #0E1117; }}
@@ -54,6 +54,7 @@ st.markdown(f"""
     button p, .stButton p, .stFormSubmitButton p {{
         color: #FFFFFF !important;
         margin: 0 !important;
+        font-size: 1rem !important;
     }}
 
     /* Estilo del análisis (Caja de texto) */
@@ -64,6 +65,7 @@ st.markdown(f"""
         border-left: 6px solid #25D366; 
         color: #FFFFFF !important; 
     }}
+    .diag-box * {{ color: #FFFFFF !important; }}
     
     /* Estilo Tienda */
     .product-card {{
@@ -85,7 +87,7 @@ def get_odoo_prods():
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
     except: return []
 
-# --- LOGIN (ORIGINAL) ---
+# --- LOGIN ORIGINAL ---
 if not st.session_state.user_verified:
     _, cent, _ = st.columns([1, 2, 1])
     with cent:
@@ -122,12 +124,13 @@ if img and st.button("🚀 INICIAR ANÁLISIS"):
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
             
             prompt = f"""
-            RESPONDE 100% EN ESPAÑOL. Eres experto en Grupo Multiagro.
-            Prioridad de análisis para {cultivo_input}:
-            1. PLAGAS (Busca insectos diminutos como Trips o Ácaros).
-            2. HONGOS/BACTERIAS.
-            3. NUTRICIÓN.
-            Lista 4 productos de {nombres_inv} y da un Plan de Acción.
+            RESPONDE 100% EN ESPAÑOL. Eres un experto de Grupo Multiagro.
+            Prioridad de análisis para {cultivo_input} (Busca signos antes que síntomas):
+            1. PLAGAS (Busca insectos diminutos como Trips, ácaros o pulgones).
+            2. HONGOS/BACTERIAS (Busca micelios, esporas o manchas).
+            3. NUTRICIÓN (Solo si descartas lo anterior tras análisis pixelar).
+            
+            Estructura: Identificación técnica, Certeza %, 4 productos de {nombres_inv} y Plan de Acción.
             """
             res = model.generate_content([prompt, Image.open(img)])
             st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
@@ -137,7 +140,7 @@ if img and st.button("🚀 INICIAR ANÁLISIS"):
 if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
 
-# TIENDA (BOTÓN COTIZAR)
+# TIENDA DINÁMICA
 st.divider()
 st.markdown("### 🛒 Insumos Recomendados")
 mostrar = todos_los_prods[:4] if todos_los_prods else []
@@ -149,7 +152,7 @@ if mostrar:
             st.markdown(f'<div class="product-card"><img src="{img_b64}" class="product-img"><p style="font-weight:bold;">{p["name"][:30]}</p></div>', unsafe_allow_html=True)
             st.link_button("🟢 COTIZAR WHATSAPP", f"https://wa.me/18295624653?text=Cotizar: {urllib.parse.quote(p['name'])}")
 
-# REGISTRO CRM (BOTÓN GUARDAR)
+# REGISTRO CRM
 st.divider()
 st.markdown("### 👤 Registrar Datos del Productor")
 provincias = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
