@@ -8,9 +8,10 @@ import urllib.parse
 
 # 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción)
 st.set_page_config(
-    page_title="Grupo Multiagro | Diagnóstico Experto",
+    page_title="Grupo Multiagro | AgTech Diagnóstico",
     page_icon="🔍",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # --- LÓGICA DE SESIÓN (PERSISTENCIA TOTAL) ---
@@ -21,14 +22,16 @@ if "chat_history" not in st.session_state:
 if "prods_filtrados" not in st.session_state:
     st.session_state.prods_filtrados = []
 
-# --- CSS DE ALTA VISIBILIDAD (CORRECCIÓN DE TEXTOS INVISIBLES) ---
+URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200"
+
+# --- CSS DE ALTA VISIBILIDAD (CORRECCIÓN TOTAL DE BOTONES E INPUTS) ---
 st.markdown(f"""
     <style>
-    /* 1. FONDO Y TEXTOS GENERALES */
+    /* Fondo y Textos Base */
     .stApp {{ background-color: #0E1117; }}
     h1, h2, h3, h4, p, span, label, div {{ color: #FFFFFF !important; }}
     
-    /* 2. CORRECCIÓN DEL CARGADOR DE ARCHIVOS (Drag and Drop) */
+    /* CORRECCIÓN FILE UPLOADER (Drag and Drop) */
     [data-testid="stFileUploadDropzone"] {{
         background-color: #262730 !important;
         border: 2px dashed #25D366 !important;
@@ -39,43 +42,48 @@ st.markdown(f"""
         color: #FFFFFF !important;
     }}
 
-    /* 3. BOTONES (Cotizar, Iniciar, Guardar Registro) */
-    button, div.stButton > button, div.stFormSubmitButton > button {{
+    /* BOTONES (Cotizar, Iniciar, Guardar Registro) - TEXTO BLANCO FORZADO */
+    button, div.stButton > button, div.stFormSubmitButton > button, .stDownloadButton > button {{
         background-color: #25D366 !important;
         color: #FFFFFF !important;
         border-radius: 25px !important;
         font-weight: bold !important;
         border: none !important;
         width: 100% !important;
-        display: block !important;
-        min-height: 45px;
+        height: 45px !important;
     }}
     
-    /* Forzar texto blanco dentro de botones de enlace y etiquetas de botones */
-    .stButton p, .stDownloadButton p, .stFormSubmitButton p, button p {{
+    /* Selector específico para el texto dentro de los botones de Streamlit */
+    button p {{
         color: #FFFFFF !important;
+        font-size: 1rem !important;
         margin: 0 !important;
     }}
 
-    /* 4. CAJA DE RESULTADOS */
+    /* CAJA DE ANÁLISIS */
     .diag-box {{ 
-        background: #161B22; 
-        padding: 25px; 
-        border-radius: 15px; 
-        border-left: 6px solid #25D366; 
-        color: #FFFFFF !important; 
+        background: #161B22; padding: 30px; border-radius: 15px; 
+        border-left: 6px solid #25D366; color: #FFFFFF !important; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }}
     .diag-box * {{ color: #FFFFFF !important; }}
 
-    /* 5. PRODUCTOS */
+    /* PRODUCTOS */
     .product-card {{
-        background:#1E1E26; padding:15px; border-radius:15px; border:1px solid #3E3E4A; text-align:center;
+        background:#1E1E26; padding:15px; border-radius:15px; 
+        border:1px solid #3E3E4A; text-align:center; margin-bottom: 10px;
     }}
     .product-img {{ width: 100%; height: 160px; object-fit: contain; background: white; border-radius: 10px; padding: 10px; }}
 
-    /* 6. INPUTS Y SELECTS */
+    /* INPUTS */
     input {{ color: #FFFFFF !important; background-color: #1E1E26 !important; }}
     .stSelectbox div {{ color: #FFFFFF !important; }}
+    
+    .header-banner {{
+        background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{URL_FONDO_HOJAS}");
+        background-size: cover; background-position: center;
+        padding: 50px 20px; border-radius: 20px; text-align: center; margin-bottom: 30px; border: 1px solid #3E3E4A;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -118,7 +126,7 @@ if not st.session_state.user_verified:
 
 # --- PANTALLA PRINCIPAL ---
 todos_los_prods = get_odoo_prods()
-st.markdown("## 🔍 Diagnóstico Fitosanitario")
+st.markdown('<div class="header-banner"><h1>🔍 Diagnóstico Experto</h1><p>Jerarquía: Plagas > Hongos > Nutrición</p></div>', unsafe_allow_html=True)
 
 cultivo_input = st.text_input("¿Qué cultivo analizamos?", placeholder="Ej: Tomate, Ají, Arroz...")
 t_gal, t_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -137,22 +145,25 @@ if img and st.button("🚀 INICIAR ANÁLISIS"):
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
             
             prompt = f"""
-            RESPONDE 100% EN ESPAÑOL. Eres un experto en entomología de Grupo Multiagro.
-            Analiza la imagen de {cultivo_input} con jerarquía de prioridad:
-            1. INSECTOS (Busca trips, ácaros, áfidos o daños de masticación).
-            2. HONGOS/BACTERIAS (Busca micelios, esporas o manchas necróticas).
-            3. NUTRICIÓN (Solo si no hay agentes bióticos presentes).
+            RESPONDE 100% EN ESPAÑOL TÉCNICO. Eres un experto de Grupo Multiagro.
+            Analiza la imagen de {cultivo_input} con rigor microscópico.
+            
+            JERARQUÍA DE DIAGNÓSTICO:
+            1. ENTOMOLOGÍA: Busca insectos (Trips, Ácaros, Áfidos) o restos biológicos.
+            2. PATOLOGÍA: Busca micelios de hongos, esporas o bacterias.
+            3. NUTRICIÓN: Solo si descartas lo anterior tras análisis pixelar.
 
-            Estructura tu respuesta así:
-            - IDENTIFICACIÓN TÉCNICA: Nombre común y científico.
-            - NIVEL DE CERTEZA: Porcentaje.
-            - PRODUCTOS RECOMENDADOS: Elige 4 de esta lista: {nombres_inv}.
-            - PLAN DE ACCIÓN: Pasos a seguir.
+            ESTRUCTURA DE RESPUESTA:
+            1. IDENTIFICACIÓN POSITIVA: Nombre común y científico.
+            2. NIVEL DE CERTEZA: % de confianza.
+            3. MANEJO QUÍMICO: Elige 4 productos de esta lista: {nombres_inv}.
+            4. ADVERTENCIA TÉCNICA: Leer etiqueta.
+            5. LABORES CULTURALES: 5 tareas.
+            6. INTERACCIÓN: 2 preguntas técnicas.
             """
             res = model.generate_content([prompt, Image.open(img)])
             st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
             
-            # Filtrado de productos para la tienda
             ia_text = res.text.lower()
             sugeridos = []
             for p in todos_los_prods:
@@ -167,7 +178,7 @@ if img and st.button("🚀 INICIAR ANÁLISIS"):
 if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
 
-# --- TIENDA DINÁMICA ---
+# --- TIENDA (BOTONES COTIZAR WHATSAPP) ---
 st.divider()
 st.markdown("### 🛒 Insumos Recomendados")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else todos_los_prods[:4]
@@ -192,9 +203,9 @@ with st.form("crm_form"):
     if st.form_submit_button("✅ GUARDAR REGISTRO"):
         if n and t:
             if registrar_en_odoo(n, e, t, pr): st.success("¡Registrado!")
-            else: st.error("Error al conectar con Odoo.")
+            else: st.error("Error al conectar.")
 
-# --- FOOTER MARCAS ---
+# --- FOOTER ---
 st.divider()
 logos = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
 html_logos = '<div style="background-color: white; padding: 20px; border-radius: 15px; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap;">'
