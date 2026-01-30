@@ -7,10 +7,24 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import urllib.parse
-import base64  # Necesario para las fotos de Odoo
+import base64
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
+
+# Estilo CSS para homogeneizar las imágenes de productos
+st.markdown("""
+    <style>
+    .product-img {
+        width: 100%;
+        height: 180px;
+        object-fit: contain;
+        background-color: white;
+        border-radius: 10px;
+        padding: 5px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -24,14 +38,10 @@ def get_odoo_prods():
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
-            # Intentamos traer image_128 (miniatura rápida)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 4})
             res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
             return res
-    except Exception as e:
-        # Si hay error, lo mostramos solo en la consola para no romper la app
-        print(f"Error Odoo: {e}")
-        return None
+    except: return None
 
 def registrar_cliente_odoo(nombre, email, telefono):
     try:
@@ -63,7 +73,7 @@ def enviar_aviso_email(nombre, email_cliente, tel):
         return True
     except: return False
 
-# 2. ENCABEZADO
+# 2. ENCABEZADO (Logo Principal)
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in sorted(os.listdir(".")):
@@ -81,19 +91,19 @@ elif img_gal: img = img_gal
 
 if img is not None:
     if st.button("🚀 INICIAR ANÁLISIS PROFUNDO", type="primary", use_container_width=True):
-        with st.spinner("Analizando..."):
+        with st.spinner("Realizando peritaje..."):
             try:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 instruccion = "Eres un Agrónomo Senior de Multiagro. Da un diagnóstico detallado, control cultural y productos de Multiagro. Haz 2 preguntas al productor."
                 res = model.generate_content([instruccion, Image.open(img)])
                 st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
-            except: st.error("Error IA")
+            except: st.error("Error en el análisis.")
 
 if st.session_state.chat_history:
     st.markdown("---")
     st.info(st.session_state.chat_history[-1]["parts"][0])
-    user_reply = st.chat_input("Responde aquí...")
+    user_reply = st.chat_input("Responde aquí a la IA...")
     if user_reply:
         with st.spinner("Actualizando..."):
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -105,7 +115,7 @@ if st.session_state.chat_history:
             st.rerun()
     st.link_button("👨‍🌾 Hablar con un Técnico", f"https://wa.me/18295624653", use_container_width=True)
 
-# 4. TIENDA CON FOTOS
+# 4. TIENDA (Soluciones Recomendadas con Tamaño Homogéneo)
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 prods = get_odoo_prods()
@@ -114,15 +124,12 @@ if prods:
     cols = st.columns(len(prods))
     for i, p in enumerate(prods):
         with cols[i]:
-            # Lógica para mostrar imagen de Odoo
+            # Imagen con tamaño forzado por HTML para uniformidad
             if p.get('image_128'):
-                try:
-                    img_data = base64.b64decode(p['image_128'])
-                    st.image(img_data, use_container_width=True)
-                except:
-                    st.image("https://cdn-icons-png.flaticon.com/512/1054/1054800.png", width=100)
+                img_base64 = p['image_128']
+                st.markdown(f'<img src="data:image/png;base64,{img_base64}" class="product-img">', unsafe_allow_html=True)
             else:
-                st.image("https://cdn-icons-png.flaticon.com/512/1054/1054800.png", width=100)
+                st.image("https://cdn-icons-png.flaticon.com/512/1054/1054800.png", width=150)
             
             nombre_p = p['name'].split('(')[0].strip()
             st.markdown(f"**{nombre_p}**")
@@ -130,9 +137,9 @@ if prods:
             link_p = f"https://wa.me/18295624653?text={urllib.parse.quote('Info sobre: ' + nombre_p)}"
             st.link_button("💬 Cotizar", link_p, use_container_width=True)
 else:
-    st.info("Catálogo disponible en tienda física.")
+    st.info("Cargando catálogo...")
 
-# 5. REGISTRO Y 6. LOGOS (Resto del código igual...)
+# 5. REGISTRO
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
@@ -146,9 +153,18 @@ if 'reg_ok' not in st.session_state:
                     st.rerun()
 else: st.success(f"Bienvenido: {st.session_state['reg_ok']}")
 
+# 6. LOGOS FINALES (Con frase restaurada)
 st.divider()
+st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 l_cols = st.columns(5)
 logos = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
 for i, l in enumerate(logos):
-    if os.path.exists(l):
-        with l_cols[i]: st.image(l, width=80)
+    with l_cols[i]:
+        if os.path.exists(l):
+            img_l = Image.open(l).convert("RGBA")
+            h_base = 60
+            w_orig, h_orig = img_l.size
+            img_res = img_l.resize((int(h_base * (w_orig/h_orig)), h_base), Image.Resampling.LANCZOS)
+            st.image(img_res)
+        else:
+            st.caption("Multiagro")
