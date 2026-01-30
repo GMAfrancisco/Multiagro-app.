@@ -11,16 +11,15 @@ st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
 URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1200"
 
-# --- CSS DE ALTA PRECISIÓN PARA CONTRASTE ---
+# --- CSS DE ALTA VISIBILIDAD ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: #0E1117; }}
     
-    /* 1. TEXTOS DE EJEMPLO (PLACEHOLDERS) EN NEGRO */
-    ::placeholder {{ color: #000000 !important; opacity: 1 !important; }}
-    input::placeholder {{ color: #000000 !important; }}
+    /* Placeholders en negro para visibilidad */
+    input::placeholder {{ color: #000000 !important; opacity: 1 !important; }}
     
-    /* 2. CARGADOR DE ARCHIVOS (TEXTOS EN NEGRO) */
+    /* Cargador de archivos en negro */
     [data-testid="stFileUploadDropzone"] div, 
     [data-testid="stFileUploadDropzone"] label, 
     [data-testid="stFileUploadDropzone"] span,
@@ -32,33 +31,26 @@ st.markdown(f"""
         background-color: #f0f2f6 !important;
     }}
 
-    /* 3. PESTAÑAS (GALERÍA Y CÁMARA) EN BLANCO */
+    /* Pestañas en blanco */
     .stTabs [data-baseweb="tab"] p {{
         color: #FFFFFF !important;
         font-weight: bold !important;
     }}
 
-    /* 4. TEXTOS GENERALES EN BLANCO */
+    /* Textos generales en blanco */
     h1, h2, h3, h4, .stMarkdown p, label {{
         color: #FFFFFF !important;
     }}
 
-    /* 5. BANNER Y TARJETAS */
+    /* Banner */
     .header-banner {{
         background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{URL_FONDO_HOJAS}");
         background-size: cover; background-position: center;
         padding: 40px 20px; border-radius: 15px; text-align: center;
         margin-bottom: 25px; border: 1px solid #3E3E4A;
     }}
-    .product-card {{
-        background-color: #1E1E26; border-radius: 15px; padding: 15px;
-        border: 1px solid #3E3E4A; text-align: center; margin-bottom: 15px;
-    }}
-    .product-title {{ color: #FFFFFF !important; font-weight: bold; display: block; margin: 10px 0; }}
-    .product-price {{ color: #007BFF !important; font-weight: bold; font-size: 1.1rem; }}
-    .product-img {{ width: 100%; height: 160px; object-fit: contain; background-color: white; border-radius: 10px; padding: 5px; }}
 
-    /* 6. BOTÓN COTIZAR */
+    /* Botón Cotizar */
     div.stButton > button {{
         background-color: #25D366 !important;
         color: #FFFFFF !important;
@@ -66,7 +58,7 @@ st.markdown(f"""
         font-weight: bold !important;
     }}
 
-    /* 7. FOOTER DE LOGOS */
+    /* Footer Marcas */
     .footer-white {{
         background-color: #FFFFFF !important;
         padding: 20px; border-radius: 10px;
@@ -77,7 +69,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- LÓGICA DE SESIÓN ---
+# --- LÓGICA DE SESIÓN (PERMANENTE) ---
 if "user_verified" not in st.session_state: st.session_state.user_verified = False
 if "user_tier" not in st.session_state: st.session_state.user_tier = "GRATIS"
 if "credits" not in st.session_state: st.session_state.credits = 2
@@ -100,13 +92,16 @@ def get_odoo_prods():
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
     except: return None
 
-# --- PANTALLA 1: LOGIN ---
+# --- PANTALLA 1: LOGIN (CON LOGO CORRECTO) ---
 if not st.session_state.user_verified:
     _, cent, _ = st.columns([1, 2, 1])
     with cent:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        if os.path.exists("LogoMundoAgricola.png"):
-            st.image("LogoMundoAgricola.png", use_container_width=True)
+        # Solo logo Grupo Multiagro en Login
+        for f in os.listdir("."):
+            if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
+                st.image(f, use_container_width=True)
+        
         st.markdown("<h2 style='text-align: center;'>🔍 Diagnóstico Experto De Tu Cultivo</h2>", unsafe_allow_html=True)
         u_email = st.text_input("Ingresa tu correo electrónico:", placeholder="ejemplo@grupomultiagro.com")
         if st.button("INGRESAR"):
@@ -116,7 +111,7 @@ if not st.session_state.user_verified:
                 st.rerun()
     st.stop()
 
-# --- PANTALLA 2: APP ---
+# --- PANTALLA 2: APP (SESIÓN YA INICIADA) ---
 _, logo_cent, _ = st.columns([1, 1, 1])
 with logo_cent:
     for f in os.listdir("."):
@@ -130,10 +125,8 @@ todos_los_prods = get_odoo_prods()
 cultivo_input = st.text_input("¿Qué cultivo analizamos?", placeholder="Escribe aquí (Ej: Tomate, Arroz)", on_change=reset_analisis)
 t1, t2 = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
 
-with t1:
-    img_gal = st.file_uploader("Subir imagen de la patología", type=['png','jpg','jpeg'], on_change=reset_analisis)
-with t2:
-    img_cam = st.camera_input("Tomar foto en campo", on_change=reset_analisis)
+with t1: img_gal = st.file_uploader("Subir imagen", type=['png','jpg','jpeg'], on_change=reset_analisis)
+with t2: img_cam = st.camera_input("Tomar foto", on_change=reset_analisis)
 
 img = img_cam if img_cam else img_gal
 
@@ -144,9 +137,10 @@ if img and st.button("🚀 INICIAR ASESORÍA"):
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
             prompt = f"Experto Multiagro. Analiza {cultivo_input}. Identifica plaga, productos en NEGRITAS, labores y 2 preguntas."
             res = model.generate_content([prompt, Image.open(img)])
+            st.session_state.chat_history = [res.text]
+            # Filtro simple de productos
             txt_l = res.text.lower()
-            sugeridos = [p for p in todos_los_prods if p['name'].split()[0].lower() in txt_l][:4] if todos_los_prods else []
-            st.session_state.chat_history, st.session_state.prods_filtrados = [res.text], sugeridos
+            st.session_state.prods_filtrados = [p for p in todos_los_prods if p['name'].split()[0].lower() in txt_l][:4] if todos_los_prods else []
             if st.session_state.user_tier == "GRATIS": st.session_state.credits -= 1
             st.rerun()
         except: st.error("Error.")
@@ -158,13 +152,12 @@ if st.session_state.chat_history:
 st.divider()
 st.markdown("### 🛒 Soluciones Recomendadas")
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
-
 if mostrar:
     cols = st.columns(len(mostrar))
     for i, p in enumerate(mostrar):
         with cols[i]:
             img_b64 = f'data:image/png;base64,{p["image_128"]}' if p.get('image_128') else ""
-            st.markdown(f'<div class="product-card"><img src="{img_b64}" class="product-img"><span class="product-title">{p["name"][:30]}</span><p class="product-price">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="background:#1E1E26; padding:15px; border-radius:15px; border:1px solid #3E3E4A; text-align:center;"><img src="{img_b64}" style="width:100%; height:150px; object-fit:contain; background:white; border-radius:10px;"><p style="font-weight:bold; color:white; margin-top:10px;">{p["name"][:30]}</p><p style="color:#007BFF; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
             st.link_button("🟢 Cotizar", f"https://wa.me/18295624653?text=Cotizar: {p['name']}", use_container_width=True)
 
 # 6. LOGOS FINALES
