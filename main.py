@@ -3,19 +3,15 @@ import xmlrpc.client
 import google.generativeai as genai
 from PIL import Image
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import urllib.parse
 import base64
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# URL del Banner de Hojas
 URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80"
 
-# CSS PARA LÍNEA GRÁFICA Y VISIBILIDAD TOTAL
+# CSS REFORZADO: CONTRASTE TOTAL Y LÍNEA GRÁFICA
 st.markdown(f"""
     <style>
     .stApp {{ background-color: #0E1117; color: #FFFFFF; }}
@@ -24,14 +20,22 @@ st.markdown(f"""
     .header-banner {{
         background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{URL_FONDO_HOJAS}");
         background-size: cover; background-position: center;
-        padding: 50px 20px; border-radius: 15px; text-align: center;
+        padding: 40px 20px; border-radius: 15px; text-align: center;
         margin-bottom: 25px; border: 1px solid #3E3E4A;
     }}
     
-    /* Textos Blancos Forzados */
-    label, .stMarkdown, p, span, .stText, .stTabs [data-baseweb="tab"] p {{ color: #FFFFFF !important; }}
+    /* FORZAR TEXTO BLANCO Y CONTRASTE */
+    label, .stMarkdown, p, span, .stText, .stTabs [data-baseweb="tab"] p {{ 
+        color: #FFFFFF !important; 
+    }}
     
-    /* Tarjetas de Productos */
+    /* ARREGLO DE INPUTS: Texto blanco sobre fondo oscuro */
+    .stTextInput input {{
+        background-color: #161B22 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #3E3E4A !important;
+    }}
+
     .product-card {{
         background-color: #1E1E26; border-radius: 15px; padding: 20px;
         border: 1px solid #3E3E4A; text-align: center; margin-bottom: 15px;
@@ -42,21 +46,19 @@ st.markdown(f"""
         background-color: white; border-radius: 10px; padding: 5px; margin-bottom: 10px; 
     }}
 
-    /* Caja de Diagnóstico */
     .diag-box {{
         background: #161B22; border-left: 5px solid #007BFF;
         padding: 25px; border-radius: 10px; margin-bottom: 25px;
-        color: #FFFFFF; line-height: 1.6; font-size: 1.1rem;
+        color: #FFFFFF; line-height: 1.6;
     }}
 
-    /* Botones Estilo Premium */
+    /* BOTONES */
     div.stButton > button {{
-        background-color: #007BFF !important; color: white !important;
+        background-color: #007BFF !important; color: #FFFFFF !important;
         border-radius: 25px !important; width: 100%; font-weight: bold;
-        text-transform: uppercase; border: none !important;
+        border: none !important;
     }}
 
-    /* Logos finales */
     .logo-container {{ 
         display: flex; justify-content: center; align-items: center; 
         height: 80px; background: #FFFFFF; border-radius: 10px; padding: 10px;
@@ -65,7 +67,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- FUNCIONES DE ESTADO Y LIMPIEZA ---
+# --- LÓGICA DE SESIÓN ---
 if "user_verified" not in st.session_state: st.session_state.user_verified = False
 if "user_tier" not in st.session_state: st.session_state.user_tier = "GRATIS"
 if "credits" not in st.session_state: st.session_state.credits = 2
@@ -76,7 +78,6 @@ def reset_analisis():
     st.session_state.chat_history = []
     st.session_state.prods_filtrados = []
 
-# --- FUNCIONES DE INTEGRACIÓN ---
 def verificar_acceso(email):
     email = email.lower().strip()
     dominios_vip = ["@grupomultiagro.com", "@mundoagricola.net"]
@@ -96,94 +97,104 @@ def get_odoo_prods():
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
     except: return None
 
-# --- PANTALLA LOGIN ---
+# --- PANTALLA 1: LOGIN ---
 if not st.session_state.user_verified:
     _, cent, _ = st.columns([1, 2, 1])
     with cent:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        # Mostrar Logo Principal si existe
-        for f in os.listdir("."):
-            if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
-                st.image(f, use_container_width=True)
-        st.subheader("Acceso a la Plataforma AgTech")
-        u_email = st.text_input("Correo electrónico Corporativo o Personal:", placeholder="ejemplo@grupomultiagro.com")
+        if os.path.exists("LogoMundoAgricola.png"):
+            st.image("LogoMundoAgricola.png", use_container_width=True)
+        
+        st.markdown("<h2 style='text-align: center; color: white;'>🔍 Diagnóstico Experto De Tu Cultivo</h2>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        u_email = st.text_input("Ingresa tu correo electrónico:", placeholder="ejemplo@grupomultiagro.com")
         if st.button("INGRESAR"):
             if "@" in u_email and "." in u_email:
                 tier, label = verificar_acceso(u_email)
                 st.session_state.user_verified, st.session_state.user_tier, st.session_state.user_email = True, tier, u_email
                 st.rerun()
-            else: st.error("Por favor ingresa un correo válido.")
+            else: st.error("Ingresa un correo válido.")
     st.stop()
 
-# --- APP PRINCIPAL ---
+# --- PANTALLA 2: APP PRINCIPAL ---
+
+# Logo Grupo Multiagro centrado después de login
+_, logo_cent, _ = st.columns([1, 1, 1])
+with logo_cent:
+    for f in os.listdir("."):
+        if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
+            st.image(f, use_container_width=True)
+
 st.markdown(f'<div class="header-banner"><h1 style="color: white; margin: 0;">🔍 Diagnóstico Experto</h1><p style="color: #E0E0E0;">Plan: {st.session_state.user_tier}</p></div>', unsafe_allow_html=True)
 
+# Lógica de Suscripción e Información de Créditos
 if st.session_state.user_tier == "GRATIS":
-    st.info(f"📊 Consultas disponibles para hoy: **{st.session_state.credits}**")
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        st.info(f"📊 Consultas disponibles hoy: **{st.session_state.credits}**")
+    with c2:
+        st.link_button("💎 SUBSCRIBIRSE A ILIMITADO", "https://wa.me/18295624653?text=Quiero%20información%20sobre%20el%20plan%20Ilimitado", use_container_width=True)
 
 todos_los_prods = get_odoo_prods()
 
 # 3. SECCIÓN DIAGNÓSTICO
-cultivo_input = st.text_input("¿Qué cultivo estamos analizando?", placeholder="Ej: Pimiento, Arroz, Tomate...", on_change=reset_analisis)
+cultivo_input = st.text_input("¿Qué cultivo estamos analizando?", placeholder="Ej: Pimiento, Arroz...", on_change=reset_analisis)
 
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
 with tab_gal: 
-    img_gal = st.file_uploader("Subir imagen de la patología", type=['png', 'jpg', 'jpeg'], on_change=reset_analisis)
+    img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], on_change=reset_analisis)
 with tab_cam: 
-    img_cam = st.camera_input("Tomar foto en campo", on_change=reset_analisis)
+    img_cam = st.camera_input("Tomar foto", on_change=reset_analisis)
 
 img = img_cam if img_cam else img_gal
 
 if img is not None:
     bloqueo = st.session_state.user_tier == "GRATIS" and st.session_state.credits <= 0
-    btn_label = "🚀 INICIAR ASESORÍA COMPLETA" if not bloqueo else "🔒 CRÉDITOS AGOTADOS"
+    btn_label = "🚀 INICIAR ASESORÍA" if not bloqueo else "🔒 CRÉDITOS AGOTADOS"
     
     if st.button(btn_label, disabled=bloqueo, type="primary"):
-        with st.spinner("IA analizando presencia de plagas/hongos..."):
+        with st.spinner("Analizando..."):
             try:
                 nombres_odoo = [p['name'] for p in todos_los_prods] if todos_los_prods else []
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
                 prompt = f"""
-                RESPONDE 100% EN ESPAÑOL. Eres el Asesor Senior de Grupo Multiagro. 
+                RESPONDE 100% ESPAÑOL. Eres experto de Grupo Multiagro.
                 CULTIVO: {cultivo_input}.
-                
-                ESTRUCTURA OBLIGATORIA:
-                1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico de la plaga o enfermedad.
-                2. NIVEL DE CERTEZA: % de seguridad y breve explicación visual del daño.
-                3. MANEJO QUÍMICO: Elige 4 productos de {nombres_odoo} en NEGRITAS (solo insecticidas/fungicidas según el caso).
-                4. ADVERTENCIA TÉCNICA: Imprescindible leer la etiqueta del fabricante para dosis y seguridad.
-                5. LABORES CULTURALES: 5 tareas específicas de manejo físico (podas, limpieza, riego).
-                6. INTERACCIÓN: Haz 2 preguntas clave al productor.
+                ESTRUCTURA: 
+                1. IDENTIFICACIÓN POSITIVA (Nombre técnico/común).
+                2. NIVEL CERTEZA %.
+                3. MANEJO QUÍMICO (4 de {nombres_odoo} en NEGRITAS).
+                4. ADVERTENCIA TÉCNICA (Leer etiqueta).
+                5. LABORES CULTURALES (5 tareas).
+                6. INTERACCIÓN (2 preguntas).
                 """
                 
                 res = model.generate_content([prompt, Image.open(img)])
                 texto_ia = res.text
                 
-                # Filtrado de productos para la tienda
+                # Filtrado de productos
                 sugeridos, vistos = [], set()
                 texto_lower = texto_ia.lower()
                 if todos_los_prods:
                     for p in todos_los_prods:
-                        p_name_key = p['name'].split()[0].lower()
-                        if p_name_key in texto_lower and p_name_key not in vistos and len(p_name_key) > 3:
-                            sugeridos.append(p)
-                            vistos.add(p_name_key)
+                        p_name = p['name'].split()[0].lower()
+                        if p_name in texto_lower and p_name not in vistos and len(p_name) > 3:
+                            sugeridos.append(p); vistos.add(p_name)
                         if len(sugeridos) >= 4: break
 
                 st.session_state.chat_history = [{"role": "model", "parts": [texto_ia]}]
                 st.session_state.prods_filtrados = sugeridos
                 if st.session_state.user_tier == "GRATIS": st.session_state.credits -= 1
                 st.rerun()
-            except Exception as e:
-                if "rerun" not in str(e).lower(): st.error(f"Error en el análisis: {e}")
+            except: st.error("Error en el análisis.")
 
-# MOSTRAR DIAGNÓSTICO
 if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
 
-# 4. TIENDA DINÁMICA
+# 4. TIENDA
 st.divider()
 st.markdown("<h3 style='color: #007BFF;'>🛒 Soluciones Recomendadas</h3>", unsafe_allow_html=True)
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
