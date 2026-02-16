@@ -39,7 +39,18 @@ st.markdown("""
 
     .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
     .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
-    .login-box { background-color: #1E1E26; border-radius: 25px; padding: 40px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); }
+    
+    /* CAMBIO AQUI: La tarjeta de login ya no tiene padding interno para que la imagen abarque todo el borde superior */
+    .login-box { 
+        background-color: #1E1E26; 
+        border-radius: 25px; 
+        padding: 0px; 
+        border: 1px solid #3E3E4A; 
+        text-align: center; 
+        margin-top: 50px; 
+        box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); 
+        overflow: hidden; 
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -60,7 +71,7 @@ def init_supabase():
 supabase: Client = init_supabase()
 
 def puede_consultar(email, tier):
-    if tier in ["collaborator", "vip"]: return True # Acceso Ilimitado
+    if tier in ["collaborator", "vip"]: return True 
     hoy = str(date.today())
     try:
         res = supabase.table("uso_diario").select("*").eq("email", email).execute()
@@ -117,11 +128,9 @@ def es_cliente_vip_odoo(email):
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             
             partner_ids = models.execute_kw(db, uid, key, 'res.partner', 'search', [[['email', '=', email]]])
-            if not partner_ids:
-                return False
+            if not partner_ids: return False
                 
             fecha_hace_60_dias = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d %H:%M:%S')
-            
             order_ids = models.execute_kw(db, uid, key, 'sale.order', 'search', [[
                 ['partner_id', 'in', partner_ids],
                 ['state', 'in', ['sale', 'done']], 
@@ -129,8 +138,7 @@ def es_cliente_vip_odoo(email):
             ]])
             
             return len(order_ids) > 0
-    except:
-        return False
+    except: return False
 
 def enviar_aviso_email(nombre, email, tel, lugar):
     try:
@@ -151,19 +159,15 @@ if not st.session_state.authenticated:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
                 st.image(f, use_container_width=True)
         
-        st.markdown('<div class="login-box">', unsafe_allow_html=True)
-        
-        # --- CAMBIO: INSERTAR BANNER AQUÍ ---
-        # Usamos la misma clase 'hero-banner' pero ajustamos altura y margen para el login
+        # --- CAMBIO AQUI: Textos integrados SOBRE la imagen de fondo ---
         st.markdown("""
-            <div class="hero-banner" style="margin-top: 0px; margin-bottom: 20px; height: 150px;">
-                <h1 class="hero-title" style="font-size: 2rem;">🔍 Diagnóstico Experto</h1>
-            </div>
+            <div class="login-box">
+                <div style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;">
+                    <h2 style='color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgTech Multiagro</h2>
+                    <p style='color: #DDDDDD; margin-top: 10px; margin-bottom: 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); font-size: 1.1rem;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>
+                </div>
+                <div style="padding: 30px;">
         """, unsafe_allow_html=True)
-        # ------------------------------------
-
-        st.markdown("<h3 style='color: #007BFF; text-align: center;'>Bienvenido a AgTech Multiagro</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #AAAAAA; margin-bottom: 25px;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>", unsafe_allow_html=True)
         
         email_input = st.text_input("Correo Electrónico", placeholder="ejemplo@correo.com", label_visibility="collapsed")
         
@@ -185,7 +189,8 @@ if not st.session_state.authenticated:
                 st.rerun()
             else:
                 st.error("Por favor, ingresa un correo electrónico válido.")
-        st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown('</div></div>', unsafe_allow_html=True) # Cierra los divs de la tarjeta
 
 else:
     # =========================================================================
