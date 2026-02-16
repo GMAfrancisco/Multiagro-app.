@@ -85,14 +85,13 @@ st.markdown("""
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
     
-    /* --- NUEVO: ESTILO PARA IMAGEN BAJO EL TÍTULO --- */
-    /* object-fit: cover garantiza que la imagen no se deforme/elongue */
+    /* --- NUEVO CSS: IMAGEN ESTÉTICA SIN ELONGACIÓN --- */
     .hero-image {
         width: 100%;
-        height: 250px;
+        height: 300px;
         object-fit: cover;
         border-radius: 20px;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         border: 1px solid #3E3E4A;
     }
     </style>
@@ -154,8 +153,7 @@ todos_los_prods = get_odoo_prods()
 # 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA E INTACTA)
 st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
 
-# --- NUEVO: IMAGEN ESTÉTICA DEBAJO DEL TÍTULO ---
-# Usamos una etiqueta HTML con la clase .hero-image para que respete el tamaño y no se estire.
+# --- NUEVO: IMAGEN ESTÉTICA ---
 st.markdown('<img src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" class="hero-image">', unsafe_allow_html=True)
 
 
