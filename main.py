@@ -59,6 +59,7 @@ if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados =
 if "authenticated" not in st.session_state: st.session_state.authenticated = False
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
+if "todos_los_prods" not in st.session_state: st.session_state.todos_los_prods = [] # NUEVO: Guardamos el catálogo en sesión
 
 # --- FUNCIONES DE INTEGRACIÓN SUPABASE Y ODOO ---
 @st.cache_resource
@@ -150,22 +151,34 @@ def enviar_aviso_email(nombre, email, tel, lugar):
         return True
     except: return False
 
-# --- NUEVO: FUNCIÓN PARA RESPONDER DUDAS (El cerebro del Chat) ---
+# --- FUNCIÓN PARA RESPONDER DUDAS CON CATÁLOGO FORZADO ---
 def enviar_pregunta():
     duda = st.session_state.input_duda
     if duda:
-        # Añadimos la pregunta del usuario al historial
         st.session_state.chat_history.append({"role": "user", "parts": [duda]})
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel('gemini-2.0-flash-lite')
-            # Enviamos todo el historial para que recuerde el contexto
             respuesta = model.generate_content(st.session_state.chat_history)
             st.session_state.chat_history.append({"role": "model", "parts": [respuesta.text]})
+            
+            # --- ACTUALIZACIÓN DINÁMICA DE LAS TARJETAS DE PRODUCTOS ---
+            texto_ia_lower = respuesta.text.lower()
+            sugeridos, vistos = [], set()
+            if st.session_state.todos_los_prods:
+                for p in st.session_state.todos_los_prods:
+                    primera_palabra = p['name'].split()[0].lower()
+                    if primera_palabra in texto_ia_lower and primera_palabra not in vistos and len(primera_palabra) > 3:
+                        sugeridos.append(p); vistos.add(primera_palabra)
+                    if len(sugeridos) >= 4: break
+            
+            # Solo si la IA recomendó algo nuevo que está en Odoo, actualizamos la tienda abajo
+            if sugeridos: 
+                st.session_state.prods_filtrados = sugeridos
+                
         except Exception as e:
             st.session_state.chat_history.append({"role": "model", "parts": [f"❌ Ocurrió un error al consultar: {str(e)}"]})
         
-        # Limpiamos la caja de texto tras enviar
         st.session_state.input_duda = ""
 
 # --- LOGICA DE AUTENTICACIÓN ---
@@ -230,7 +243,10 @@ else:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
                 st.image(f, use_container_width=True)
 
+    # Obtenemos los productos y los guardamos en sesión para que el Chat los pueda usar
     todos_los_prods = get_odoo_prods()
+    if todos_los_prods:
+        st.session_state.todos_los_prods = todos_los_prods
 
     st.markdown("""
         <div class="hero-banner">
@@ -281,9 +297,9 @@ else:
                                     sugeridos.append(p); vistos.add(primera_palabra)
                                 if len(sugeridos) >= 4: break
                         
-                        # --- CAMBIO: Se estructura el historial en formato Chat para Gemini ---
+                        # --- CAMBIO: Regla de Oro estricta inyectada en la memoria del Chat ---
                         st.session_state.chat_history = [
-                            {"role": "user", "parts": [f"Contexto oculto: Realizaste un análisis inicial. Planta: {cultivo_input}. Responde a las siguientes dudas del usuario basándote en tu diagnóstico inicial."]},
+                            {"role": "user", "parts": [f"Contexto oculto: Analizaste mi planta: {cultivo_input}. REGLA DE ORO PARA EL RESTO DEL CHAT: Si me recomiendas productos, DEBES elegir EXCLUSIVAMENTE de esta lista: {nombres_odoo}. NO inventes ni uses marcas que no estén ahí. Escribe los productos en NEGRITAS."]},
                             {"role": "model", "parts": [res.text]}
                         ]
                         st.session_state.prods_filtrados = sugeridos
@@ -294,17 +310,15 @@ else:
                     except Exception as e:
                         if "rerun" not in str(e).lower(): st.error(f"Error: {e}")
 
-    # --- CAMBIO: RENDERIZADO VISUAL DEL CHAT ---
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
-            if i == 0: continue # Omitimos el mensaje de contexto inicial (invisible para el usuario)
+            if i == 0: continue # Oculta la Regla de Oro al usuario
             
             if msj["role"] == "model":
                 st.markdown(f"<div class='diag-box'>🤖 {msj['parts'][0]}</div>", unsafe_allow_html=True)
             else:
                 st.markdown(f"<div style='text-align: right; background-color: #007BFF; color: white; padding: 15px; border-radius: 20px; margin-bottom: 25px; margin-left: 15%; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);'>👤 <b>Tú:</b><br>{msj['parts'][0]}</div>", unsafe_allow_html=True)
         
-        # Caja de texto que dispara la función enviar_pregunta al presionar Enter
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
 
     # 4. TIENDA DINÁMICA
