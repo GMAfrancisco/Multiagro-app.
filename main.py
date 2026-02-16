@@ -12,60 +12,51 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# --- BLOQUE DE APARIENCIA (AJUSTES DE REDONDEO Y GROSOR) ---
+# --- BLOQUE DE APARIENCIA (CSS INTEGRAL) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     
-    /* 1. Tarjetas de Productos con Esquinas Redondeadas (25px) */
+    /* 1. TEXTOS NEGROS EN EL CARGADOR DE ARCHIVOS (DRAG & DROP) */
+    [data-testid="stFileUploadDropzone"] div, 
+    [data-testid="stFileUploadDropzone"] label, 
+    [data-testid="stFileUploadDropzone"] small,
+    [data-testid="stFileUploadDropzone"] span {
+        color: #000000 !important;
+    }
+    [data-testid="stFileUploadDropzone"] {
+        background-color: #F0F2F6 !important;
+        border-radius: 25px;
+        border: 2px dashed #007BFF;
+    }
+
+    /* 2. TARJETAS DE PRODUCTOS (GLASSMORPHISM REDONDEADO) */
     .product-card {
         background-color: #1E1E26;
-        border-radius: 25px; /* Bordes más redondeados */
+        border-radius: 25px;
         padding: 25px;
         border: 1px solid #3E3E4A;
         text-align: center;
         margin-bottom: 20px;
-        transition: transform 0.3s ease;
     }
-    .product-card:hover { transform: translateY(-5px); } /* Efecto sutil al pasar el mouse */
-    
     .product-img { 
         width: 100%; height: 180px; object-fit: contain; 
-        background-color: white; 
-        border-radius: 20px; /* Redondeo de la imagen interna */
+        background-color: white; border-radius: 20px; 
         padding: 10px; margin-bottom: 15px; 
     }
 
-    /* 2. Caja de Diagnóstico con Bordes Suaves */
-    .diag-box {
-        background: #161B22;
-        border-left: 8px solid #007BFF;
-        padding: 25px;
-        border-radius: 20px;
-        margin-bottom: 30px;
-    }
-
-    /* 3. Líneas de Separación (Más finas y elegantes) */
-    hr {
-        border: 0;
-        height: 1px;
-        background: linear-gradient(to right, transparent, #3E3E4A, transparent);
-        margin: 40px 0;
-    }
-
-    /* 4. BOTONES: TEXTO NEGRO Y BORDES REDONDEADOS */
+    /* 3. BOTONES: TEXTO NEGRO Y ESQUINAS REDONDEADAS */
     div.stButton > button, div.stFormSubmitButton > button {
         background-color: #007BFF !important;
         color: #000000 !important; /* TEXTO NEGRO */
-        border-radius: 30px !important; /* Botón tipo píldora */
-        padding: 12px 30px !important;
-        border: none !important;
+        border-radius: 30px !important;
         font-weight: bold !important;
+        border: none !important;
     }
     
     a[data-testid="stBaseButton-secondary"] {
         background-color: #007BFF !important;
-        color: #000000 !important; /* TEXTO NEGRO */
+        color: #000000 !important;
         border-radius: 30px !important;
         font-weight: bold !important;
     }
@@ -74,43 +65,56 @@ st.markdown("""
         font-weight: bold !important;
     }
 
-    /* 5. Logos con Fondo Blanco Suave */
+    /* 4. SEPARADORES Y CAJAS */
+    .diag-box {
+        background: #161B22; border-left: 8px solid #007BFF;
+        padding: 25px; border-radius: 20px; margin-bottom: 30px;
+    }
+    hr {
+        border: 0; height: 1px;
+        background: linear-gradient(to right, transparent, #3E3E4A, transparent);
+        margin: 40px 0;
+    }
     .logo-container { 
         display: flex; justify-content: center; align-items: center; 
-        height: 100px; background: #FFFFFF; 
-        border-radius: 20px;
+        height: 100px; background: #FFFFFF; border-radius: 20px;
         padding: 15px; margin-top: 15px;
     }
-    .logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; }
     
+    /* Etiquetas generales en blanco */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
-    .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
-# --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS) ---
+# --- FUNCIONES DE INTEGRACIÓN (ODOO, EMAIL, REGISTRO) ---
+
 def get_odoo_prods():
     try:
-        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
+        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 80})
-            return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
+            res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
+            return res
     except: return None
 
 def registrar_cliente_odoo(nombre, email, telefono):
     try:
-        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
+        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'}])
+            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
+                'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'
+            }])
     except: return None
 
 def enviar_aviso_email(nombre, email, tel):
@@ -125,6 +129,8 @@ def enviar_aviso_email(nombre, email, tel):
     except: return False
 
 # --- CUERPO DE LA APP ---
+
+# 2. ENCABEZADO CON LOGO
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in sorted(os.listdir(".")):
@@ -138,8 +144,10 @@ st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
-with tab_gal: img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
-with tab_cam: img_cam = st.camera_input("Tomar foto")
+with tab_gal: 
+    img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
+with tab_cam: 
+    img_cam = st.camera_input("Tomar foto")
 
 img = img_cam if img_cam else img_gal
 
@@ -201,7 +209,7 @@ if mostrar:
             """, unsafe_allow_html=True)
             st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
-# 5. REGISTRO
+# 5. REGISTRO DE PRODUCTOR
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
