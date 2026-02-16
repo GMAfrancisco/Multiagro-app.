@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import urllib.parse
 import base64
-from datetime import date, datetime, timedelta # ACTUALIZADO: Para calcular los 60 días
+from datetime import date, datetime, timedelta
 from supabase import create_client, Client
 
 # 1. CONFIGURACIÓN DE PÁGINA
@@ -108,7 +108,6 @@ def registrar_cliente_odoo(nombre, email, telefono, lugar):
             return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgTech Multiagro | Provincia: {lugar}'}])
     except: return None
 
-# NUEVO: VALIDADOR DE CLIENTE VIP EN ODOO (COMPRAS EN ÚLTIMOS 60 DÍAS)
 def es_cliente_vip_odoo(email):
     try:
         url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
@@ -117,18 +116,15 @@ def es_cliente_vip_odoo(email):
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             
-            # 1. Buscar si el correo existe como contacto en Odoo
             partner_ids = models.execute_kw(db, uid, key, 'res.partner', 'search', [[['email', '=', email]]])
             if not partner_ids:
                 return False
                 
-            # 2. Calcular la fecha de hace 60 días
             fecha_hace_60_dias = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d %H:%M:%S')
             
-            # 3. Buscar órdenes de venta confirmadas para ese cliente en ese rango de fecha
             order_ids = models.execute_kw(db, uid, key, 'sale.order', 'search', [[
                 ['partner_id', 'in', partner_ids],
-                ['state', 'in', ['sale', 'done']], # Órdenes confirmadas o entregadas
+                ['state', 'in', ['sale', 'done']], 
                 ['date_order', '>=', fecha_hace_60_dias]
             ]])
             
@@ -156,6 +152,16 @@ if not st.session_state.authenticated:
                 st.image(f, use_container_width=True)
         
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
+        
+        # --- CAMBIO: INSERTAR BANNER AQUÍ ---
+        # Usamos la misma clase 'hero-banner' pero ajustamos altura y margen para el login
+        st.markdown("""
+            <div class="hero-banner" style="margin-top: 0px; margin-bottom: 20px; height: 150px;">
+                <h1 class="hero-title" style="font-size: 2rem;">🔍 Diagnóstico Experto</h1>
+            </div>
+        """, unsafe_allow_html=True)
+        # ------------------------------------
+
         st.markdown("<h3 style='color: #007BFF; text-align: center;'>Bienvenido a AgTech Multiagro</h3>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #AAAAAA; margin-bottom: 25px;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>", unsafe_allow_html=True)
         
@@ -167,15 +173,14 @@ if not st.session_state.authenticated:
                 st.session_state.user_email = email_lower
                 st.session_state.authenticated = True
                 
-                # --- LÓGICA DE ASIGNACIÓN DE NIVELES ---
                 with st.spinner("Verificando credenciales..."):
                     dominio = email_lower.split('@')[-1]
                     if dominio in ["grupomultiagro.com", "mundoagricola.net"]:
                         st.session_state.user_tier = "collaborator"
-                    elif es_cliente_vip_odoo(email_lower): # REVISA SI COMPRÓ HACE POCO
+                    elif es_cliente_vip_odoo(email_lower):
                         st.session_state.user_tier = "vip"
                     else:
-                        st.session_state.user_tier = "free" # Luego puede subir a "registered"
+                        st.session_state.user_tier = "free"
                 
                 st.rerun()
             else:
@@ -187,7 +192,6 @@ else:
     # --- INICIO DEL CÓDIGO MAESTRO DE LA APP ---
     # =========================================================================
     
-    # --- MOSTRAR EL ESTATUS DEL USUARIO ---
     if st.session_state.user_tier == "collaborator":
         st.sidebar.success(f"👑 Acceso Ilimitado (Staff)\n{st.session_state.user_email}")
     elif st.session_state.user_tier == "vip":
@@ -222,7 +226,6 @@ else:
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
             
-            # --- VALIDACIÓN DE LÍMITES ---
             if not puede_consultar(st.session_state.user_email, st.session_state.user_tier):
                 st.error("⚠️ Has alcanzado tu límite de diagnósticos por hoy.")
                 if st.session_state.user_tier == "free":
@@ -258,7 +261,6 @@ else:
                         st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
                         st.session_state.prods_filtrados = sugeridos
                         
-                        # --- REGISTRAR USO EN SUPABASE ---
                         registrar_uso(st.session_state.user_email, st.session_state.user_tier)
                         
                         st.rerun()
@@ -295,7 +297,6 @@ else:
     provincias_rd = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
 
     if 'reg_ok' not in st.session_state:
-        # Solo mostrar el formulario si no es VIP ni Colaborador, porque ellos ya tienen acceso total
         if st.session_state.user_tier in ["free", "registered"]:
             with st.form("form_registro"):
                 nom = st.text_input("Nombre completo *")
