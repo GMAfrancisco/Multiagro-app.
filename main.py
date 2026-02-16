@@ -85,15 +85,15 @@ st.markdown("""
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
     
-    /* --- NUEVO: Estilo para el Banner Superior Estético --- */
-    .top-banner {
+    /* --- NUEVO: ESTILO PARA IMAGEN BAJO EL TÍTULO --- */
+    /* object-fit: cover garantiza que la imagen no se deforme/elongue */
+    .hero-image {
         width: 100%;
         height: 250px;
-        border-radius: 15px;
-        object-fit: cover; /* Evita que la imagen se estire o elongue */
+        object-fit: cover;
+        border-radius: 20px;
         margin-bottom: 20px;
         border: 1px solid #3E3E4A;
-        opacity: 0.9;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -152,11 +152,13 @@ with mid:
 todos_los_prods = get_odoo_prods()
 
 # 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA E INTACTA)
-# --- AGREGADO: IMAGEN ESTÉTICA (HTML para evitar estiramientos) ---
-st.markdown('<img src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" class="top-banner">', unsafe_allow_html=True)
-
-
 st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
+
+# --- NUEVO: IMAGEN ESTÉTICA DEBAJO DEL TÍTULO ---
+# Usamos una etiqueta HTML con la clase .hero-image para que respete el tamaño y no se estire.
+st.markdown('<img src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" class="hero-image">', unsafe_allow_html=True)
+
+
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -207,7 +209,7 @@ if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
     st.chat_input("¿Dudas sobre el manejo?")
 
-# 4. SOLUCIONES SUGERIDAS (COTIZAR)
+# 4. SOLUCIONES (COTIZAR)
 st.divider()
 st.markdown("<h3 style='color: #007BFF;'>🛒 Soluciones Sugeridas</h3>", unsafe_allow_html=True)
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
