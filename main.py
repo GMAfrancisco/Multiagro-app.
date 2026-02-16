@@ -11,8 +11,8 @@ import base64
 from datetime import date, datetime, timedelta
 from supabase import create_client, Client
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
+# 1. CONFIGURACIÓN DE PÁGINA (ACTUALIZADO AL NUEVO NOMBRE)
+st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="wide")
 
 # --- BLOQUE DE APARIENCIA (VISIBILIDAD EXTREMA Y DISEÑO MODERNO) ---
 st.markdown("""
@@ -116,7 +116,8 @@ def registrar_cliente_odoo(nombre, email, telefono, lugar):
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgTech Multiagro | Provincia: {lugar}'}])
+            # ACTUALIZADO: Mensaje en Odoo
+            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgroDiagnóstico Multiagro | Provincia: {lugar}'}])
     except: return None
 
 def es_cliente_vip_odoo(email):
@@ -182,15 +183,17 @@ def enviar_pregunta():
 if not st.session_state.authenticated:
     _, mid, _ = st.columns([1, 1.5, 1])
     with mid:
+        # Nota para el ícono: Nombra tu archivo de la "M" tricolor como "grupo_multiagro_logo.png" para que aparezca aquí automáticamente
         for f in sorted(os.listdir(".")):
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
                 st.image(f, use_container_width=True)
         
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
 
+        # ACTUALIZADO: Nombre en el banner de Login
         st.markdown("""
             <div style="text-align: center; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;">
-                <h2 style='text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgTech Multiagro</h2>
+                <h2 style='text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgroDiagnóstico Multiagro</h2>
                 <p style='text-align: center; color: #DDDDDD; margin-top: 10px; margin-bottom: 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); font-size: 1.1rem;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>
             </div>
         """, unsafe_allow_html=True)
@@ -317,7 +320,8 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         
         st.markdown("<br>", unsafe_allow_html=True)
-        mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgTech Multiagro y necesito consultar a un técnico sobre mi cultivo.")
+        # ACTUALIZADO: Texto para WhatsApp con el nuevo nombre
+        mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre mi cultivo.")
         st.link_button("👨‍🌾 Consultar a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_wa}", type="secondary", use_container_width=True)
 
     # 4. TIENDA DINÁMICA
@@ -365,7 +369,7 @@ else:
     else:
         st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
-    # 6. LOGOS FINALES
+    # 6. LOGOS FINALES Y DERECHOS DE AUTOR
     st.divider()
     st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
 
@@ -377,7 +381,7 @@ else:
                 with open(l_file, "rb") as f: b64_logo = base64.b64encode(f.read()).decode()
                 st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
 
-    # --- NUEVO: PIE DE PÁGINA (DERECHOS RESERVADOS) ---
+    # --- PIE DE PÁGINA (DERECHOS RESERVADOS) ---
     st.markdown("""
         <div style='text-align: center; color: #666666; font-size: 0.85rem; margin-top: 50px; padding-bottom: 20px; font-weight: 500;'>
             &copy; 2026 Grupo Multiagro. Todos los derechos reservados.<br>
