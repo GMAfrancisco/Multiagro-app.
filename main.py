@@ -29,6 +29,7 @@ st.markdown("""
     }
 
     /* 2. BOTONES: TEXTO NEGRO TOTAL (Cotizar, Regístrame, Iniciar) */
+    /* Apuntamos al párrafo interno del botón para anular el estilo de Streamlit */
     [data-testid="stBaseButton-secondary"] p, 
     [data-testid="stBaseButton-primary"] p,
     .stButton button p,
@@ -38,6 +39,7 @@ st.markdown("""
         margin-bottom: 0px !important;
     }
     
+    /* Fondo de los botones */
     div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"] {
         background-color: #007BFF !important;
         color: #000000 !important;
@@ -82,12 +84,16 @@ st.markdown("""
     /* Visibilidad de etiquetas generales */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
-
-    /* Estilo para la imagen estética central */
-    .banner-img {
-        border-radius: 20px;
+    
+    /* --- NUEVO: Estilo para el Banner Superior Estético --- */
+    .top-banner {
+        width: 100%;
+        height: 250px;
+        border-radius: 15px;
+        object-fit: cover; /* Evita que la imagen se estire o elongue */
+        margin-bottom: 20px;
         border: 1px solid #3E3E4A;
-        margin-top: 10px;
+        opacity: 0.9;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -95,7 +101,8 @@ st.markdown("""
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
-# --- FUNCIONES DE INTEGRACIÓN ---
+# --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS AL 100%) ---
+
 def get_odoo_prods():
     try:
         url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
@@ -117,7 +124,9 @@ def registrar_cliente_odoo(nombre, email, telefono):
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'}])
+            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
+                'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'
+            }])
     except: return None
 
 def enviar_aviso_email(nombre, email, tel):
@@ -132,21 +141,21 @@ def enviar_aviso_email(nombre, email, tel):
     except: return False
 
 # --- CUERPO DE LA APP ---
+
+# 2. LOGO PRINCIPAL
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
-    # 2. LOGO PRINCIPAL
     for f in sorted(os.listdir(".")):
         if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
             st.image(f, use_container_width=True)
-    
-    # AGREGADO: Imagen estética debajo del logo central
-    st.image("https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800", use_container_width=True)
-
-
 
 todos_los_prods = get_odoo_prods()
 
-# 3. SECCIÓN: DIAGNÓSTICO EXPERTO
+# 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA E INTACTA)
+# --- AGREGADO: IMAGEN ESTÉTICA (HTML para evitar estiramientos) ---
+st.markdown('<img src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" class="top-banner">', unsafe_allow_html=True)
+
+
 st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
@@ -178,6 +187,7 @@ if img is not None:
                 
                 res = model.generate_content([prompt, Image.open(img)])
                 
+                # Filtro de productos
                 texto_ia_lower = res.text.lower()
                 sugeridos, vistos = [], set()
                 if todos_los_prods:
@@ -197,7 +207,7 @@ if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
     st.chat_input("¿Dudas sobre el manejo?")
 
-# 4. SOLUCIONES (COTIZAR)
+# 4. SOLUCIONES SUGERIDAS (COTIZAR)
 st.divider()
 st.markdown("<h3 style='color: #007BFF;'>🛒 Soluciones Sugeridas</h3>", unsafe_allow_html=True)
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
@@ -216,7 +226,7 @@ if mostrar:
             """, unsafe_allow_html=True)
             st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
-# 5. REGISTRO
+# 5. REGISTRO (REGÍSTRAME)
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
