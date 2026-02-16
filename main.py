@@ -12,7 +12,7 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# --- BLOQUE DE APARIENCIA (CSS INTEGRAL) ---
+# --- BLOQUE DE APARIENCIA (CSS CORREGIDO: TEXTOS NEGROS) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
@@ -45,7 +45,7 @@ st.markdown("""
         padding: 10px; margin-bottom: 15px; 
     }
 
-    /* 3. BOTONES: TEXTO NEGRO Y ESQUINAS REDONDEADAS */
+    /* 3. BOTONES: TEXTO NEGRO FORZADO */
     div.stButton > button, div.stFormSubmitButton > button {
         background-color: #007BFF !important;
         color: #000000 !important; /* TEXTO NEGRO */
@@ -81,7 +81,6 @@ st.markdown("""
         padding: 15px; margin-top: 15px;
     }
     
-    /* Etiquetas generales en blanco */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     </style>
     """, unsafe_allow_html=True)
@@ -89,8 +88,7 @@ st.markdown("""
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
-# --- FUNCIONES DE INTEGRACIÓN (ODOO, EMAIL, REGISTRO) ---
-
+# --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS AL 100%) ---
 def get_odoo_prods():
     try:
         url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
@@ -129,8 +127,6 @@ def enviar_aviso_email(nombre, email, tel):
     except: return False
 
 # --- CUERPO DE LA APP ---
-
-# 2. ENCABEZADO CON LOGO
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in sorted(os.listdir(".")):
@@ -139,7 +135,7 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA)
+# 3. SECCIÓN: DIAGNÓSTICO EXPERTO (BLOQUE ORIGINAL FIJO)
 st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
@@ -190,26 +186,19 @@ if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
     st.chat_input("¿Dudas sobre el manejo?")
 
-# 4. TIENDA DINÁMICA
+# 4. SOLUCIONES SUGERIDAS (COTIZAR)
 st.divider()
 st.markdown("<h3 style='color: #007BFF;'>🛒 Soluciones Sugeridas</h3>", unsafe_allow_html=True)
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
-
 if mostrar:
     cols = st.columns(len(mostrar))
     for i, p in enumerate(mostrar):
         with cols[i]:
             img_b64 = f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">' if p.get('image_128') else ""
-            st.markdown(f"""
-                <div class="product-card">
-                    {img_b64}
-                    <h4 style='font-size: 0.9rem; margin-bottom: 5px;'>{p['name'].split('(')[0].strip()}</h4>
-                    <p style='color: #007BFF; font-weight: bold;'>RD$ {p['list_price']:,.2f}</p>
-                </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f'<div class="product-card">{img_b64}<h4 style="font-size:0.9rem;">{p["name"].split("(")[0].strip()}</h4><p style="color:#007BFF; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
             st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
-# 5. REGISTRO DE PRODUCTOR
+# 5. REGISTRO (REGÍSTRAME)
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
