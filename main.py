@@ -9,28 +9,47 @@ from email.mime.multipart import MIMEMultipart
 import urllib.parse
 import base64
 
-# 1. CONFIGURACIÓN DE PÁGINA
+# 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción)
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# --- BLOQUE DE APARIENCIA (AJUSTES DE COLOR, REDONDEO Y VISIBILIDAD) ---
+# --- BLOQUE DE APARIENCIA (VISIBILIDAD EXTREMA Y DISEÑO MODERNO) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     
-    /* 1. TEXTO NEGRO EN EL CARGADOR DE ARCHIVOS (DRAG & DROP) */
-    [data-testid="stFileUploadDropzone"] div, 
-    [data-testid="stFileUploadDropzone"] label, 
-    [data-testid="stFileUploadDropzone"] small,
-    [data-testid="stFileUploadDropzone"] span {
-        color: #000000 !important; /* TEXTO NEGRO SOLICITADO */
-    }
+    /* 1. CARGADOR DE ARCHIVOS: FORZAR TEXTO NEGRO EN TODAS LAS CAPAS */
     [data-testid="stFileUploadDropzone"] {
-        background-color: #F0F2F6 !important; /* Fondo claro para contraste */
-        border-radius: 25px;
-        border: 2px dashed #007BFF;
+        background-color: #F0F2F6 !important;
+        border-radius: 20px;
+        border: 2px dashed #007BFF !important;
+    }
+    /* Selector universal para el texto dentro del cargador */
+    [data-testid="stFileUploadDropzone"] * {
+        color: #000000 !important;
     }
 
-    /* 2. Tarjetas de Productos con Esquinas Redondeadas */
+    /* 2. BOTONES: TEXTO NEGRO TOTAL (Cotizar, Regístrame, Iniciar) */
+    /* Apuntamos al párrafo interno del botón para anular el estilo de Streamlit */
+    [data-testid="stBaseButton-secondary"] p, 
+    [data-testid="stBaseButton-primary"] p,
+    .stButton button p,
+    .stFormSubmitButton button p {
+        color: #000000 !important;
+        font-weight: bold !important;
+        margin-bottom: 0px !important;
+    }
+    
+    /* Fondo de los botones */
+    div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"] {
+        background-color: #007BFF !important;
+        color: #000000 !important;
+        border-radius: 30px !important;
+        font-weight: bold !important;
+        border: none !important;
+        height: 45px !important;
+    }
+
+    /* 3. Tarjetas de Productos y Diagnóstico */
     .product-card {
         background-color: #1E1E26;
         border-radius: 25px;
@@ -38,65 +57,31 @@ st.markdown("""
         border: 1px solid #3E3E4A;
         text-align: center;
         margin-bottom: 20px;
-        transition: transform 0.3s ease;
     }
-    .product-card:hover { transform: translateY(-5px); }
-    
     .product-img { 
         width: 100%; height: 180px; object-fit: contain; 
-        background-color: white; 
-        border-radius: 20px; 
+        background-color: white; border-radius: 20px; 
         padding: 10px; margin-bottom: 15px; 
     }
-
-    /* 3. Caja de Diagnóstico */
     .diag-box {
-        background: #161B22;
-        border-left: 8px solid #007BFF;
-        padding: 25px;
-        border-radius: 20px;
-        margin-bottom: 30px;
+        background: #161B22; border-left: 8px solid #007BFF;
+        padding: 25px; border-radius: 20px; margin-bottom: 30px;
     }
 
-    /* 4. BOTONES: TEXTO NEGRO Y BORDES REDONDEADOS */
-    div.stButton > button, div.stFormSubmitButton > button {
-        background-color: #007BFF !important;
-        color: #000000 !important; /* TEXTO NEGRO SOLICITADO */
-        border-radius: 30px !important;
-        padding: 12px 30px !important;
-        border: none !important;
-        font-weight: bold !important;
-    }
-    
-    a[data-testid="stBaseButton-secondary"] {
-        background-color: #007BFF !important;
-        color: #000000 !important; /* TEXTO NEGRO EN BOTÓN COTIZAR */
-        border-radius: 30px !important;
-        font-weight: bold !important;
-    }
-    a[data-testid="stBaseButton-secondary"] p {
-        color: #000000 !important;
-        font-weight: bold !important;
-    }
-
-    /* 5. Líneas de Separación Elegantes */
+    /* 4. Líneas de Separación Elegantes */
     hr {
-        border: 0;
-        height: 1px;
+        border: 0; height: 1px;
         background: linear-gradient(to right, transparent, #3E3E4A, transparent);
         margin: 40px 0;
     }
 
-    /* 6. Logos con Fondo Blanco Suave */
+    /* 5. Contenedor de Logos Inferiores */
     .logo-container { 
         display: flex; justify-content: center; align-items: center; 
-        height: 100px; background: #FFFFFF; 
-        border-radius: 20px;
-        padding: 15px; margin-top: 15px;
+        height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px;
     }
-    .logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; }
     
-    /* Forzar visibilidad de etiquetas generales */
+    /* Visibilidad de etiquetas generales */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
     </style>
@@ -105,26 +90,32 @@ st.markdown("""
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
-# --- FUNCIONES DE INTEGRACIÓN ---
+# --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS AL 100%) ---
+
 def get_odoo_prods():
     try:
-        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
+        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 80})
-            return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
+            res = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
+            return res
     except: return None
 
 def registrar_cliente_odoo(nombre, email, telefono):
     try:
-        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
+        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'}])
+            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
+                'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'
+            }])
     except: return None
 
 def enviar_aviso_email(nombre, email, tel):
@@ -139,6 +130,8 @@ def enviar_aviso_email(nombre, email, tel):
     except: return False
 
 # --- CUERPO DE LA APP ---
+
+# 2. LOGO PRINCIPAL
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in sorted(os.listdir(".")):
@@ -147,13 +140,15 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA)
+# 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA E INTACTA)
 st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
-with tab_gal: img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
-with tab_cam: img_cam = st.camera_input("Tomar foto")
+with tab_gal: 
+    img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
+with tab_cam: 
+    img_cam = st.camera_input("Tomar foto")
 
 img = img_cam if img_cam else img_gal
 
@@ -177,6 +172,7 @@ if img is not None:
                 
                 res = model.generate_content([prompt, Image.open(img)])
                 
+                # Filtro de productos
                 texto_ia_lower = res.text.lower()
                 sugeridos, vistos = [], set()
                 if todos_los_prods:
@@ -196,7 +192,7 @@ if st.session_state.chat_history:
     st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
     st.chat_input("¿Dudas sobre el manejo?")
 
-# 4. TIENDA DINÁMICA
+# 4. SOLUCIONES (COTIZAR)
 st.divider()
 st.markdown("<h3 style='color: #007BFF;'>🛒 Soluciones Sugeridas</h3>", unsafe_allow_html=True)
 mostrar = st.session_state.prods_filtrados if st.session_state.prods_filtrados else (todos_los_prods[:4] if todos_los_prods else [])
@@ -215,7 +211,7 @@ if mostrar:
             """, unsafe_allow_html=True)
             st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
-# 5. REGISTRO
+# 5. REGISTRO (REGÍSTRAME)
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
@@ -229,8 +225,7 @@ if 'reg_ok' not in st.session_state:
                     enviar_aviso_email(nom, ema, tel)
                     st.session_state['reg_ok'] = nom
                     st.rerun()
-else: 
-    st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
+else: st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
 
 # 6. LOGOS FINALES
 st.divider()
