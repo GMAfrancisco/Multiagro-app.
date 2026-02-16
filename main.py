@@ -150,6 +150,24 @@ def enviar_aviso_email(nombre, email, tel, lugar):
         return True
     except: return False
 
+# --- NUEVO: FUNCIÓN PARA RESPONDER DUDAS (El cerebro del Chat) ---
+def enviar_pregunta():
+    duda = st.session_state.input_duda
+    if duda:
+        # Añadimos la pregunta del usuario al historial
+        st.session_state.chat_history.append({"role": "user", "parts": [duda]})
+        try:
+            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+            model = genai.GenerativeModel('gemini-2.0-flash-lite')
+            # Enviamos todo el historial para que recuerde el contexto
+            respuesta = model.generate_content(st.session_state.chat_history)
+            st.session_state.chat_history.append({"role": "model", "parts": [respuesta.text]})
+        except Exception as e:
+            st.session_state.chat_history.append({"role": "model", "parts": [f"❌ Ocurrió un error al consultar: {str(e)}"]})
+        
+        # Limpiamos la caja de texto tras enviar
+        st.session_state.input_duda = ""
+
 # --- LOGICA DE AUTENTICACIÓN ---
 if not st.session_state.authenticated:
     _, mid, _ = st.columns([1, 1.5, 1])
@@ -263,7 +281,11 @@ else:
                                     sugeridos.append(p); vistos.add(primera_palabra)
                                 if len(sugeridos) >= 4: break
                         
-                        st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
+                        # --- CAMBIO: Se estructura el historial en formato Chat para Gemini ---
+                        st.session_state.chat_history = [
+                            {"role": "user", "parts": [f"Contexto oculto: Realizaste un análisis inicial. Planta: {cultivo_input}. Responde a las siguientes dudas del usuario basándote en tu diagnóstico inicial."]},
+                            {"role": "model", "parts": [res.text]}
+                        ]
                         st.session_state.prods_filtrados = sugeridos
                         
                         registrar_uso(st.session_state.user_email, st.session_state.user_tier)
@@ -272,11 +294,18 @@ else:
                     except Exception as e:
                         if "rerun" not in str(e).lower(): st.error(f"Error: {e}")
 
+    # --- CAMBIO: RENDERIZADO VISUAL DEL CHAT ---
     if st.session_state.chat_history:
-        st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
+        for i, msj in enumerate(st.session_state.chat_history):
+            if i == 0: continue # Omitimos el mensaje de contexto inicial (invisible para el usuario)
+            
+            if msj["role"] == "model":
+                st.markdown(f"<div class='diag-box'>🤖 {msj['parts'][0]}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div style='text-align: right; background-color: #007BFF; color: white; padding: 15px; border-radius: 20px; margin-bottom: 25px; margin-left: 15%; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);'>👤 <b>Tú:</b><br>{msj['parts'][0]}</div>", unsafe_allow_html=True)
         
-        # --- CAMBIO AQUÍ: Reemplazo de st.chat_input para evitar el salto de pantalla automático ---
-        st.text_input("💬 ¿Dudas sobre el manejo o el diagnóstico?", placeholder="Escribe tu pregunta aquí...", key="dudas_input")
+        # Caja de texto que dispara la función enviar_pregunta al presionar Enter
+        st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
 
     # 4. TIENDA DINÁMICA
     st.divider()
