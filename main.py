@@ -85,6 +85,35 @@ st.markdown("""
     
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
+    
+    /* --- NUEVO CSS: BANNER SUPERIOR CON TÍTULO SUPERPUESTO --- */
+    .hero-banner {
+        /* La imagen de fondo se ajusta aquí */
+        background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80');
+        background-size: cover;
+        background-position: center 30%; /* Ajusta el encuadre vertical de la hoja */
+        width: 100%;
+        height: 220px; /* Altura fija para evitar elongación */
+        border-radius: 15px;
+        margin-top: 15px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center; /* Centra el contenido verticalmente dentro del banner */
+        padding-left: 40px; /* Espacio desde la izquierda para el texto */
+    }
+    
+    .hero-title {
+        color: #FFFFFF !important;
+        font-size: 3rem;
+        font-weight: bold;
+        margin: 0;
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.6); /* Sombra para resaltar sobre las hojas */
+        display: flex;
+        align-items: center;
+        gap: 15px; /* Espacio entre el ícono y el texto */
+    }
+    /* ----------------------------------------------------------- */
+    
     </style>
     """, unsafe_allow_html=True)
 
@@ -134,7 +163,14 @@ with mid:
 todos_los_prods = get_odoo_prods()
 
 # 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA)
-st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
+# --- MODIFICACIÓN: REEMPLAZO DEL st.markdown ORIGINAL POR EL HERO BANNER ---
+st.markdown("""
+    <div class="hero-banner">
+        <h1 class="hero-title">🔍 Diagnóstico Experto</h1>
+    </div>
+""", unsafe_allow_html=True)
+# -------------------------------------------------------------------------
+
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -215,7 +251,8 @@ if 'reg_ok' not in st.session_state:
                     enviar_aviso_email(nom, ema, tel)
                     st.session_state['reg_ok'] = nom
                     st.rerun()
-else: st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
+else:
+    st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
 
 # 6. LOGOS FINALES
 st.divider()
@@ -226,4 +263,3 @@ for i, l_file in enumerate(logos_list):
         if os.path.exists(l_file):
             with open(l_file, "rb") as f: b64_logo = base64.b64encode(f.read()).decode()
             st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
-
