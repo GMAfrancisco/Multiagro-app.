@@ -12,53 +12,61 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# --- BLOQUE DE APARIENCIA (CSS) ---
-# Aquí controlamos la estética sin tocar la lógica de análisis
+# --- BLOQUE DE APARIENCIA (AJUSTES DE REDONDEO Y GROSOR) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     
-    /* Tarjetas de Productos */
+    /* 1. Tarjetas de Productos con Esquinas Redondeadas (25px) */
     .product-card {
         background-color: #1E1E26;
-        border-radius: 15px;
-        padding: 20px;
+        border-radius: 25px; /* Bordes más redondeados */
+        padding: 25px;
         border: 1px solid #3E3E4A;
         text-align: center;
         margin-bottom: 20px;
+        transition: transform 0.3s ease;
     }
+    .product-card:hover { transform: translateY(-5px); } /* Efecto sutil al pasar el mouse */
     
     .product-img { 
         width: 100%; height: 180px; object-fit: contain; 
-        background-color: white; border-radius: 10px; 
-        padding: 5px; margin-bottom: 10px; 
+        background-color: white; 
+        border-radius: 20px; /* Redondeo de la imagen interna */
+        padding: 10px; margin-bottom: 15px; 
     }
 
-    /* Caja de Diagnóstico */
+    /* 2. Caja de Diagnóstico con Bordes Suaves */
     .diag-box {
         background: #161B22;
-        border-left: 5px solid #007BFF;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 25px;
+        border-left: 8px solid #007BFF;
+        padding: 25px;
+        border-radius: 20px;
+        margin-bottom: 30px;
     }
 
-    /* BOTONES: TEXTO NEGRO FORZADO Y ESTILO MULTIAGRO */
-    /* Botón de Iniciar Asesoría y Formulario */
+    /* 3. Líneas de Separación (Más finas y elegantes) */
+    hr {
+        border: 0;
+        height: 1px;
+        background: linear-gradient(to right, transparent, #3E3E4A, transparent);
+        margin: 40px 0;
+    }
+
+    /* 4. BOTONES: TEXTO NEGRO Y BORDES REDONDEADOS */
     div.stButton > button, div.stFormSubmitButton > button {
         background-color: #007BFF !important;
         color: #000000 !important; /* TEXTO NEGRO */
-        border-radius: 25px !important;
-        padding: 10px 25px !important;
+        border-radius: 30px !important; /* Botón tipo píldora */
+        padding: 12px 30px !important;
         border: none !important;
         font-weight: bold !important;
     }
     
-    /* Botones de Enlace (Cotizar) */
     a[data-testid="stBaseButton-secondary"] {
         background-color: #007BFF !important;
         color: #000000 !important; /* TEXTO NEGRO */
-        border-radius: 25px !important;
+        border-radius: 30px !important;
         font-weight: bold !important;
     }
     a[data-testid="stBaseButton-secondary"] p {
@@ -66,17 +74,17 @@ st.markdown("""
         font-weight: bold !important;
     }
 
-    /* Contenedor de Logos Inferiores */
+    /* 5. Logos con Fondo Blanco Suave */
     .logo-container { 
         display: flex; justify-content: center; align-items: center; 
-        height: 80px; background: #FFFFFF; border-radius: 10px;
-        padding: 10px; margin-top: 10px;
+        height: 100px; background: #FFFFFF; 
+        border-radius: 20px;
+        padding: 15px; margin-top: 15px;
     }
     .logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; }
     
-    /* Ajustes de textos en inputs para que sean visibles */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
-    .stTextInput>div>div>input { background-color: #161B22; color: white; border-color: #3E3E4A; }
+    .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -86,8 +94,7 @@ if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados =
 # --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS) ---
 def get_odoo_prods():
     try:
-        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
-        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
         if uid:
@@ -98,15 +105,12 @@ def get_odoo_prods():
 
 def registrar_cliente_odoo(nombre, email, telefono):
     try:
-        url, db = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"]
-        user, key = st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{
-                'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'
-            }])
+            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'}])
     except: return None
 
 def enviar_aviso_email(nombre, email, tel):
@@ -129,7 +133,7 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# 3. SECCIÓN: DIAGNÓSTICO EXPERTO (TU CÓDIGO FIJO)
+# 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA)
 st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
@@ -159,7 +163,6 @@ if img is not None:
                 
                 res = model.generate_content([prompt, Image.open(img)])
                 
-                # Filtro de productos
                 texto_ia_lower = res.text.lower()
                 sugeridos, vistos = [], set()
                 if todos_los_prods:
@@ -216,7 +219,6 @@ else: st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
 
 # 6. LOGOS FINALES
 st.divider()
-st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 l_cols = st.columns(5)
 logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
 for i, l_file in enumerate(logos_list):
