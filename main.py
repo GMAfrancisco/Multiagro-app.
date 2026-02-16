@@ -12,94 +12,95 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# --- BLOQUE DE APARIENCIA (AJUSTES DE REDONDEO Y GROSOR) ---
+# --- BLOQUE DE APARIENCIA (VISIBILIDAD EXTREMA Y DISEÑO MODERNO) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     
-    /* 1. Tarjetas de Productos con Esquinas Redondeadas (25px) */
+    /* 1. CARGADOR DE ARCHIVOS: FORZAR TEXTO NEGRO EN TODAS LAS CAPAS */
+    [data-testid="stFileUploadDropzone"] {
+        background-color: #F0F2F6 !important;
+        border-radius: 20px;
+        border: 2px dashed #007BFF !important;
+    }
+    /* Selector universal para el texto dentro del cargador */
+    [data-testid="stFileUploadDropzone"] * {
+        color: #000000 !important;
+    }
+
+    /* 2. BOTONES: TEXTO NEGRO TOTAL (Cotizar, Regístrame, Iniciar) */
+    /* Apuntamos al párrafo interno del botón para anular el estilo de Streamlit */
+    [data-testid="stBaseButton-secondary"] p, 
+    [data-testid="stBaseButton-primary"] p,
+    .stButton button p,
+    .stFormSubmitButton button p {
+        color: #000000 !important;
+        font-weight: bold !important;
+        margin-bottom: 0px !important;
+    }
+    
+    /* Fondo de los botones */
+    div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"] {
+        background-color: #007BFF !important;
+        color: #000000 !important;
+        border-radius: 30px !important;
+        font-weight: bold !important;
+        border: none !important;
+        height: 45px !important;
+    }
+
+    /* 3. Tarjetas de Productos y Diagnóstico */
     .product-card {
         background-color: #1E1E26;
-        border-radius: 25px; /* Bordes más redondeados */
+        border-radius: 25px;
         padding: 25px;
         border: 1px solid #3E3E4A;
         text-align: center;
         margin-bottom: 20px;
         transition: transform 0.3s ease;
     }
-    .product-card:hover { transform: translateY(-5px); } /* Efecto sutil al pasar el mouse */
+    .product-card:hover { transform: translateY(-5px); } 
     
     .product-img { 
         width: 100%; height: 180px; object-fit: contain; 
-        background-color: white; 
-        border-radius: 20px; /* Redondeo de la imagen interna */
+        background-color: white; border-radius: 20px; 
         padding: 10px; margin-bottom: 15px; 
     }
-
-    /* 2. Caja de Diagnóstico con Bordes Suaves */
     .diag-box {
-        background: #161B22;
-        border-left: 8px solid #007BFF;
-        padding: 25px;
-        border-radius: 20px;
-        margin-bottom: 30px;
+        background: #161B22; border-left: 8px solid #007BFF;
+        padding: 25px; border-radius: 20px; margin-bottom: 30px;
     }
 
-    /* 3. Líneas de Separación (Más finas y elegantes) */
+    /* 4. Líneas de Separación Elegantes */
     hr {
-        border: 0;
-        height: 1px;
+        border: 0; height: 1px;
         background: linear-gradient(to right, transparent, #3E3E4A, transparent);
         margin: 40px 0;
     }
 
-    /* 4. BOTONES: TEXTO NEGRO Y BORDES REDONDEADOS */
-    div.stButton > button, div.stFormSubmitButton > button {
-        background-color: #007BFF !important;
-        color: #000000 !important; /* TEXTO NEGRO */
-        border-radius: 30px !important; /* Botón tipo píldora */
-        padding: 12px 30px !important;
-        border: none !important;
-        font-weight: bold !important;
-    }
-    
-    a[data-testid="stBaseButton-secondary"] {
-        background-color: #007BFF !important;
-        color: #000000 !important; /* TEXTO NEGRO */
-        border-radius: 30px !important;
-        font-weight: bold !important;
-    }
-    a[data-testid="stBaseButton-secondary"] p {
-        color: #000000 !important;
-        font-weight: bold !important;
-    }
-
-    /* 5. Logos con Fondo Blanco Suave */
+    /* 5. Contenedor de Logos Inferiores */
     .logo-container { 
         display: flex; justify-content: center; align-items: center; 
-        height: 100px; background: #FFFFFF; 
-        border-radius: 20px;
-        padding: 15px; margin-top: 15px;
+        height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px;
     }
-    .logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; }
     
+    /* Visibilidad de etiquetas generales */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
-    .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
-    
-    /* --- NUEVO CSS: BANNER SUPERIOR CON TÍTULO SUPERPUESTO --- */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div { background-color: #161B22; color: white; border-radius: 15px; }
+
+    /* --- HERO BANNER CON TÍTULO SUPERPUESTO --- */
     .hero-banner {
-        /* La imagen de fondo se ajusta aquí */
         background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80');
         background-size: cover;
-        background-position: center 30%; /* Ajusta el encuadre vertical de la hoja */
+        background-position: center 30%;
         width: 100%;
-        height: 220px; /* Altura fija para evitar elongación */
+        height: 220px;
         border-radius: 15px;
         margin-top: 15px;
         margin-bottom: 30px;
         display: flex;
-        align-items: center; /* Centra el contenido verticalmente dentro del banner */
-        padding-left: 40px; /* Espacio desde la izquierda para el texto */
+        align-items: center; 
+        justify-content: center; /* CAMBIO 1: CENTRADO DE LA FRASE */
     }
     
     .hero-title {
@@ -107,20 +108,18 @@ st.markdown("""
         font-size: 3rem;
         font-weight: bold;
         margin: 0;
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.6); /* Sombra para resaltar sobre las hojas */
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
         display: flex;
         align-items: center;
-        gap: 15px; /* Espacio entre el ícono y el texto */
+        gap: 15px; 
     }
-    /* ----------------------------------------------------------- */
-    
     </style>
     """, unsafe_allow_html=True)
 
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
-# --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS) ---
+# --- FUNCIONES DE INTEGRACIÓN (ACTUALIZADAS CON PROVINCIA) ---
 def get_odoo_prods():
     try:
         url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
@@ -132,22 +131,22 @@ def get_odoo_prods():
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128']})
     except: return None
 
-def registrar_cliente_odoo(nombre, email, telefono):
+def registrar_cliente_odoo(nombre, email, telefono, lugar):
     try:
         url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': 'App AgTech Multiagro'}])
+            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgTech Multiagro | Provincia: {lugar}'}])
     except: return None
 
-def enviar_aviso_email(nombre, email, tel):
+def enviar_aviso_email(nombre, email, tel, lugar):
     try:
         rem, pas = st.secrets["EMAIL_SENDER"], st.secrets["EMAIL_PASSWORD"]
         msg = MIMEMultipart()
         msg['From'], msg['To'], msg['Subject'] = rem, st.secrets["EMAIL_RECEIVER"], f"🚀 Nuevo Registro: {nombre}"
-        msg.attach(MIMEText(f"Nombre: {nombre}\nEmail: {email}\nTel: {tel}", 'plain'))
+        msg.attach(MIMEText(f"Nombre: {nombre}\nEmail: {email}\nTel: {tel}\nProvincia: {lugar}", 'plain'))
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls(); server.login(rem, pas); server.send_message(msg); server.quit()
         return True
@@ -163,13 +162,11 @@ with mid:
 todos_los_prods = get_odoo_prods()
 
 # 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA)
-# --- MODIFICACIÓN: REEMPLAZO DEL st.markdown ORIGINAL POR EL HERO BANNER ---
 st.markdown("""
     <div class="hero-banner">
         <h1 class="hero-title">🔍 Diagnóstico Experto</h1>
     </div>
 """, unsafe_allow_html=True)
-# -------------------------------------------------------------------------
 
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
@@ -240,15 +237,21 @@ if mostrar:
 # 5. REGISTRO
 st.divider()
 st.markdown("### 👤 Registro de Productor")
+
+# CAMBIO 2: LISTA DE LAS 32 PROVINCIAS DE RD
+provincias_rd = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
+
 if 'reg_ok' not in st.session_state:
     with st.form("form_registro"):
         nom = st.text_input("Nombre completo *")
         ema = st.text_input("Correo electrónico")
         tel = st.text_input("WhatsApp / Teléfono *")
+        lugar = st.selectbox("Lugar (Provincia) *", provincias_rd) # MENÚ DESPLEGABLE
+        
         if st.form_submit_button("✅ Regístrame"):
-            if nom and tel:
-                if registrar_cliente_odoo(nom, ema, tel):
-                    enviar_aviso_email(nom, ema, tel)
+            if nom and tel and lugar:
+                if registrar_cliente_odoo(nom, ema, tel, lugar):
+                    enviar_aviso_email(nom, ema, tel, lugar)
                     st.session_state['reg_ok'] = nom
                     st.rerun()
 else:
