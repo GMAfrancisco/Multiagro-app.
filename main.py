@@ -28,8 +28,7 @@ st.markdown("""
         color: #000000 !important;
     }
 
-    /* 2. BOTONES: TEXTO NEGRO TOTAL (Cotizar, Regístrame, Iniciar) */
-    /* Apuntamos al párrafo interno del botón para anular el estilo de Streamlit */
+    /* 2. BOTONES: TEXTO NEGRO TOTAL */
     [data-testid="stBaseButton-secondary"] p, 
     [data-testid="stBaseButton-primary"] p,
     .stButton button p,
@@ -78,17 +77,19 @@ st.markdown("""
         margin: 40px 0;
     }
 
-    /* 5. Contenedor de Logos Inferiores */
+    /* 5. Contenedor de Logos Inferiores (CORREGIDO TAMAÑO) */
     .logo-container { 
         display: flex; justify-content: center; align-items: center; 
         height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px;
     }
+    /* CAMBIO AQUI: Altura fija de 60px para uniformidad, ancho automático */
+    .logo-container img { height: 60px; width: auto; object-fit: contain; }
     
     /* Visibilidad de etiquetas generales */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input, .stSelectbox>div>div>div { background-color: #161B22; color: white; border-radius: 15px; }
 
-    /* --- HERO BANNER CON TÍTULO SUPERPUESTO --- */
+    /* --- HERO BANNER CON TÍTULO CENTRADO --- */
     .hero-banner {
         background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80');
         background-size: cover;
@@ -100,7 +101,7 @@ st.markdown("""
         margin-bottom: 30px;
         display: flex;
         align-items: center; 
-        justify-content: center; /* CAMBIO 1: CENTRADO DE LA FRASE */
+        justify-content: center; /* Título centrado */
     }
     
     .hero-title {
@@ -119,7 +120,7 @@ st.markdown("""
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
-# --- FUNCIONES DE INTEGRACIÓN (ACTUALIZADAS CON PROVINCIA) ---
+# --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS) ---
 def get_odoo_prods():
     try:
         url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
@@ -138,6 +139,7 @@ def registrar_cliente_odoo(nombre, email, telefono, lugar):
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
+            # Se envía la provincia en el campo 'comment' (notas)
             return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgTech Multiagro | Provincia: {lugar}'}])
     except: return None
 
@@ -161,7 +163,7 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA)
+# 3. SECCIÓN: DIAGNÓSTICO EXPERTO
 st.markdown("""
     <div class="hero-banner">
         <h1 class="hero-title">🔍 Diagnóstico Experto</h1>
@@ -238,7 +240,7 @@ if mostrar:
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 
-# CAMBIO 2: LISTA DE LAS 32 PROVINCIAS DE RD
+# Lista de provincias (sin cambios)
 provincias_rd = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
 
 if 'reg_ok' not in st.session_state:
@@ -246,7 +248,7 @@ if 'reg_ok' not in st.session_state:
         nom = st.text_input("Nombre completo *")
         ema = st.text_input("Correo electrónico")
         tel = st.text_input("WhatsApp / Teléfono *")
-        lugar = st.selectbox("Lugar (Provincia) *", provincias_rd) # MENÚ DESPLEGABLE
+        lugar = st.selectbox("Lugar (Provincia) *", provincias_rd)
         
         if st.form_submit_button("✅ Regístrame"):
             if nom and tel and lugar:
@@ -259,6 +261,9 @@ else:
 
 # 6. LOGOS FINALES
 st.divider()
+# CAMBIO AQUI: Se agregó el título centrado antes de los logos
+st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
+
 l_cols = st.columns(5)
 logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
 for i, l_file in enumerate(logos_list):
