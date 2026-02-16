@@ -46,6 +46,19 @@ st.markdown("""
         margin-bottom: 25px;
     }
 
+    /* BOTONES: TEXTO NEGRO FORZADO */
+    /* Botones de Streamlit (Cotizar y Regístrame) */
+    div.stButton > button, div.stFormSubmitButton > button {
+        color: #000000 !important;
+        font-weight: bold !important;
+    }
+    
+    /* Botones de enlace (Cotizar en tarjetas) */
+    a[data-testid="stBaseButton-secondary"] {
+        color: #000000 !important;
+        font-weight: bold !important;
+    }
+
     /* Contenedor de Logos Inferiores */
     .logo-container { 
         display: flex; 
@@ -111,7 +124,7 @@ def enviar_aviso_email(nombre, email, tel):
 
 # --- CUERPO DE LA APP ---
 
-# 2. ENCABEZADO (LOGO PRINCIPAL RE-INSTALADO)
+# 2. ENCABEZADO (LOGO PRINCIPAL)
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in sorted(os.listdir(".")):
@@ -191,11 +204,12 @@ if mostrar:
                     <p style='color: #007BFF; font-weight: bold;'>RD$ {p['list_price']:,.2f}</p>
                 </div>
             """, unsafe_allow_html=True)
-            st.link_button("WhatsApp", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
+            # CAMBIO: Texto de botón a "Cotizar"
+            st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
 st.link_button("👨‍🌾 Hablar con un Técnico", "https://wa.me/18295624653", use_container_width=True)
 
-# 5. REGISTRO DE PRODUCTOR (RESTABLECIDO)
+# 5. REGISTRO DE PRODUCTOR
 st.divider()
 st.markdown("### 👤 Registro de Productor")
 if 'reg_ok' not in st.session_state:
@@ -203,7 +217,8 @@ if 'reg_ok' not in st.session_state:
         nom = st.text_input("Nombre completo *")
         ema = st.text_input("Correo electrónico")
         tel = st.text_input("WhatsApp / Teléfono *")
-        if st.form_submit_button("✅ Registrarme"):
+        # CAMBIO: Texto de botón a "Regístrame"
+        if st.form_submit_button("✅ Regístrame"):
             if nom and tel:
                 if registrar_cliente_odoo(nom, ema, tel):
                     enviar_aviso_email(nom, ema, tel)
@@ -212,7 +227,7 @@ if 'reg_ok' not in st.session_state:
             else: st.error("Completa los campos obligatorios (*)")
 else: st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
 
-# 6. LOGOS FINALES (ALINEACIÓN Y PROPORCIÓN RESTAURADA)
+# 6. LOGOS FINALES
 st.divider()
 st.markdown("<p style='text-align:center; font-weight:bold; color:#555;'>Empresas de Grupo Multiagro</p>", unsafe_allow_html=True)
 l_cols = st.columns(5)
