@@ -43,7 +43,7 @@ st.markdown("""
     .login-box { 
         background-color: #1E1E26; 
         border-radius: 25px; 
-        padding: 0px; /* Sin padding general para que la imagen toque los bordes */
+        padding: 0px; 
         border: 1px solid #3E3E4A; 
         text-align: center; 
         margin-top: 50px; 
@@ -158,18 +158,16 @@ if not st.session_state.authenticated:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
                 st.image(f, use_container_width=True)
         
-        # Abre la tarjeta de login
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
 
-        # 1. Header con imagen y textos (sin margen inferior extra)
+        # --- CAMBIO AQUI: Textos centrados (text-align: center) ---
         st.markdown("""
-            <div style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;">
-                <h2 style='color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgTech Multiagro</h2>
-                <p style='color: #DDDDDD; margin-top: 10px; margin-bottom: 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); font-size: 1.1rem;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>
+            <div style="text-align: center; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;">
+                <h2 style='text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgTech Multiagro</h2>
+                <p style='text-align: center; color: #DDDDDD; margin-top: 10px; margin-bottom: 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); font-size: 1.1rem;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>
             </div>
         """, unsafe_allow_html=True)
 
-        # 2. Contenedor para los inputs (con padding superior reducido para evitar el hueco)
         st.markdown('<div style="padding: 30px; padding-top: 15px;">', unsafe_allow_html=True)
         
         email_input = st.text_input("Correo Electrónico", placeholder="ejemplo@correo.com", label_visibility="collapsed")
@@ -193,7 +191,6 @@ if not st.session_state.authenticated:
             else:
                 st.error("Por favor, ingresa un correo electrónico válido.")
         
-        # Cierra el contenedor de inputs y la tarjeta principal
         st.markdown('</div></div>', unsafe_allow_html=True)
 
 else:
