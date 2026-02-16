@@ -160,7 +160,6 @@ if not st.session_state.authenticated:
         
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
 
-        # --- CAMBIO AQUI: Textos centrados (text-align: center) ---
         st.markdown("""
             <div style="text-align: center; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;">
                 <h2 style='text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgTech Multiagro</h2>
@@ -275,7 +274,9 @@ else:
 
     if st.session_state.chat_history:
         st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
-        st.chat_input("¿Dudas sobre el manejo?")
+        
+        # --- CAMBIO AQUÍ: Reemplazo de st.chat_input para evitar el salto de pantalla automático ---
+        st.text_input("💬 ¿Dudas sobre el manejo o el diagnóstico?", placeholder="Escribe tu pregunta aquí...", key="dudas_input")
 
     # 4. TIENDA DINÁMICA
     st.divider()
