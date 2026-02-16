@@ -8,8 +8,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import urllib.parse
 import base64
-from datetime import date # NUEVO: Para saber qué día es hoy
-from supabase import create_client, Client # NUEVO: Conexión a Supabase
+from datetime import date, datetime, timedelta # ACTUALIZADO: Para calcular los 60 días
+from supabase import create_client, Client
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
@@ -50,9 +50,7 @@ if "authenticated" not in st.session_state: st.session_state.authenticated = Fal
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
 
-# --- FUNCIONES DE INTEGRACIÓN ---
-
-# NUEVO: INICIALIZAR SUPABASE
+# --- FUNCIONES DE INTEGRACIÓN SUPABASE Y ODOO ---
 @st.cache_resource
 def init_supabase():
     url = st.secrets["SUPABASE_URL"]
@@ -61,35 +59,27 @@ def init_supabase():
 
 supabase: Client = init_supabase()
 
-# NUEVO: CONTROL DE LÍMITES EN SUPABASE
 def puede_consultar(email, tier):
-    if tier == "collaborator" or tier == "vip": return True
-    
+    if tier in ["collaborator", "vip"]: return True # Acceso Ilimitado
     hoy = str(date.today())
     try:
-        # Busca al usuario
         res = supabase.table("uso_diario").select("*").eq("email", email).execute()
-        
         if not res.data:
-            # Si no existe, lo crea con 0 consultas
             supabase.table("uso_diario").insert({"email": email, "conteo": 0, "fecha_ultimo_uso": hoy}).execute()
             conteo, fecha = 0, hoy
         else:
             conteo, fecha = res.data[0]["conteo"], res.data[0]["fecha_ultimo_uso"]
             
-        # Si cambió de día, reseteamos el contador a 0
         if fecha != hoy:
             conteo = 0
             supabase.table("uso_diario").update({"conteo": 0, "fecha_ultimo_uso": hoy}).eq("email", email).execute()
             
-        # Determina límite según el nivel
         limite = 5 if tier == "registered" else 2
         return conteo < limite
-    except Exception as e:
-        return True # En caso de error de conexión, no bloqueamos al usuario
+    except: return True
 
 def registrar_uso(email, tier):
-    if tier == "collaborator" or tier == "vip": return
+    if tier in ["collaborator", "vip"]: return
     try:
         res = supabase.table("uso_diario").select("conteo").eq("email", email).execute()
         if res.data:
@@ -97,7 +87,6 @@ def registrar_uso(email, tier):
             supabase.table("uso_diario").update({"conteo": nuevo_conteo}).eq("email", email).execute()
     except: pass
 
-# (Odoo Funciones Preservadas)
 def get_odoo_prods():
     try:
         url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
@@ -118,6 +107,34 @@ def registrar_cliente_odoo(nombre, email, telefono, lugar):
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
             return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgTech Multiagro | Provincia: {lugar}'}])
     except: return None
+
+# NUEVO: VALIDADOR DE CLIENTE VIP EN ODOO (COMPRAS EN ÚLTIMOS 60 DÍAS)
+def es_cliente_vip_odoo(email):
+    try:
+        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
+        common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
+        uid = common.authenticate(db, user, key, {})
+        if uid:
+            models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
+            
+            # 1. Buscar si el correo existe como contacto en Odoo
+            partner_ids = models.execute_kw(db, uid, key, 'res.partner', 'search', [[['email', '=', email]]])
+            if not partner_ids:
+                return False
+                
+            # 2. Calcular la fecha de hace 60 días
+            fecha_hace_60_dias = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d %H:%M:%S')
+            
+            # 3. Buscar órdenes de venta confirmadas para ese cliente en ese rango de fecha
+            order_ids = models.execute_kw(db, uid, key, 'sale.order', 'search', [[
+                ['partner_id', 'in', partner_ids],
+                ['state', 'in', ['sale', 'done']], # Órdenes confirmadas o entregadas
+                ['date_order', '>=', fecha_hace_60_dias]
+            ]])
+            
+            return len(order_ids) > 0
+    except:
+        return False
 
 def enviar_aviso_email(nombre, email, tel, lugar):
     try:
@@ -150,11 +167,15 @@ if not st.session_state.authenticated:
                 st.session_state.user_email = email_lower
                 st.session_state.authenticated = True
                 
-                dominio = email_lower.split('@')[-1]
-                if dominio in ["grupomultiagro.com", "mundoagricola.net"]:
-                    st.session_state.user_tier = "collaborator"
-                else:
-                    st.session_state.user_tier = "free"
+                # --- LÓGICA DE ASIGNACIÓN DE NIVELES ---
+                with st.spinner("Verificando credenciales..."):
+                    dominio = email_lower.split('@')[-1]
+                    if dominio in ["grupomultiagro.com", "mundoagricola.net"]:
+                        st.session_state.user_tier = "collaborator"
+                    elif es_cliente_vip_odoo(email_lower): # REVISA SI COMPRÓ HACE POCO
+                        st.session_state.user_tier = "vip"
+                    else:
+                        st.session_state.user_tier = "free" # Luego puede subir a "registered"
                 
                 st.rerun()
             else:
@@ -166,10 +187,13 @@ else:
     # --- INICIO DEL CÓDIGO MAESTRO DE LA APP ---
     # =========================================================================
     
+    # --- MOSTRAR EL ESTATUS DEL USUARIO ---
     if st.session_state.user_tier == "collaborator":
         st.sidebar.success(f"👑 Acceso Ilimitado (Staff)\n{st.session_state.user_email}")
+    elif st.session_state.user_tier == "vip":
+        st.sidebar.success(f"🌟 Cliente VIP (Ilimitado)\n¡Gracias por preferir a Grupo Multiagro!\n{st.session_state.user_email}")
     elif st.session_state.user_tier == "registered":
-        st.sidebar.success(f"✅ Usuario Registrado (5 Consultas)\n{st.session_state.user_email}")
+        st.sidebar.info(f"✅ Usuario Registrado (5 Consultas)\n{st.session_state.user_email}")
     else:
         st.sidebar.info(f"👤 Usuario Gratuito (2 Consultas)\n{st.session_state.user_email}")
 
@@ -198,13 +222,12 @@ else:
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
             
-            # --- VALIDACIÓN DE LÍMITES SUPABASE ---
+            # --- VALIDACIÓN DE LÍMITES ---
             if not puede_consultar(st.session_state.user_email, st.session_state.user_tier):
                 st.error("⚠️ Has alcanzado tu límite de diagnósticos por hoy.")
                 if st.session_state.user_tier == "free":
                     st.info("💡 Desliza hacia abajo y regístrate como Productor para obtener **5 consultas diarias** gratis.")
             else:
-                # --- LÓGICA DE ANÁLISIS FIJA ---
                 with st.spinner("Analizando..."):
                     try:
                         nombres_odoo = [p['name'] for p in todos_los_prods] if todos_los_prods else []
@@ -235,7 +258,7 @@ else:
                         st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
                         st.session_state.prods_filtrados = sugeridos
                         
-                        # --- REGISTRAMOS EL USO EXITOSO EN SUPABASE ---
+                        # --- REGISTRAR USO EN SUPABASE ---
                         registrar_uso(st.session_state.user_email, st.session_state.user_tier)
                         
                         st.rerun()
@@ -272,19 +295,23 @@ else:
     provincias_rd = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
 
     if 'reg_ok' not in st.session_state:
-        with st.form("form_registro"):
-            nom = st.text_input("Nombre completo *")
-            ema = st.text_input("Correo electrónico", value=st.session_state.user_email)
-            tel = st.text_input("WhatsApp / Teléfono *")
-            lugar = st.selectbox("Lugar (Provincia) *", provincias_rd)
-            
-            if st.form_submit_button("✅ Regístrame"):
-                if nom and tel and lugar:
-                    if registrar_cliente_odoo(nom, ema, tel, lugar):
-                        enviar_aviso_email(nom, ema, tel, lugar)
-                        st.session_state['reg_ok'] = nom
-                        st.session_state.user_tier = "registered" # El usuario sube de nivel
-                        st.rerun()
+        # Solo mostrar el formulario si no es VIP ni Colaborador, porque ellos ya tienen acceso total
+        if st.session_state.user_tier in ["free", "registered"]:
+            with st.form("form_registro"):
+                nom = st.text_input("Nombre completo *")
+                ema = st.text_input("Correo electrónico", value=st.session_state.user_email)
+                tel = st.text_input("WhatsApp / Teléfono *")
+                lugar = st.selectbox("Lugar (Provincia) *", provincias_rd)
+                
+                if st.form_submit_button("✅ Regístrame (Sube a 5 consultas/día)"):
+                    if nom and tel and lugar:
+                        if registrar_cliente_odoo(nom, ema, tel, lugar):
+                            enviar_aviso_email(nom, ema, tel, lugar)
+                            st.session_state['reg_ok'] = nom
+                            st.session_state.user_tier = "registered"
+                            st.rerun()
+        else:
+            st.success("¡Tu cuenta tiene acceso ilimitado! No necesitas registrarte.")
     else:
         st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
