@@ -12,31 +12,44 @@ import base64
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
-# --- BLOQUE DE APARIENCIA (AJUSTES DE REDONDEO Y GROSOR) ---
+# --- BLOQUE DE APARIENCIA (AJUSTES DE COLOR, REDONDEO Y VISIBILIDAD) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     
-    /* 1. Tarjetas de Productos con Esquinas Redondeadas (25px) */
+    /* 1. TEXTO NEGRO EN EL CARGADOR DE ARCHIVOS (DRAG & DROP) */
+    [data-testid="stFileUploadDropzone"] div, 
+    [data-testid="stFileUploadDropzone"] label, 
+    [data-testid="stFileUploadDropzone"] small,
+    [data-testid="stFileUploadDropzone"] span {
+        color: #000000 !important; /* TEXTO NEGRO SOLICITADO */
+    }
+    [data-testid="stFileUploadDropzone"] {
+        background-color: #F0F2F6 !important; /* Fondo claro para contraste */
+        border-radius: 25px;
+        border: 2px dashed #007BFF;
+    }
+
+    /* 2. Tarjetas de Productos con Esquinas Redondeadas */
     .product-card {
         background-color: #1E1E26;
-        border-radius: 25px; /* Bordes más redondeados */
+        border-radius: 25px;
         padding: 25px;
         border: 1px solid #3E3E4A;
         text-align: center;
         margin-bottom: 20px;
         transition: transform 0.3s ease;
     }
-    .product-card:hover { transform: translateY(-5px); } /* Efecto sutil al pasar el mouse */
+    .product-card:hover { transform: translateY(-5px); }
     
     .product-img { 
         width: 100%; height: 180px; object-fit: contain; 
         background-color: white; 
-        border-radius: 20px; /* Redondeo de la imagen interna */
+        border-radius: 20px; 
         padding: 10px; margin-bottom: 15px; 
     }
 
-    /* 2. Caja de Diagnóstico con Bordes Suaves */
+    /* 3. Caja de Diagnóstico */
     .diag-box {
         background: #161B22;
         border-left: 8px solid #007BFF;
@@ -45,19 +58,11 @@ st.markdown("""
         margin-bottom: 30px;
     }
 
-    /* 3. Líneas de Separación (Más finas y elegantes) */
-    hr {
-        border: 0;
-        height: 1px;
-        background: linear-gradient(to right, transparent, #3E3E4A, transparent);
-        margin: 40px 0;
-    }
-
     /* 4. BOTONES: TEXTO NEGRO Y BORDES REDONDEADOS */
     div.stButton > button, div.stFormSubmitButton > button {
         background-color: #007BFF !important;
-        color: #000000 !important; /* TEXTO NEGRO */
-        border-radius: 30px !important; /* Botón tipo píldora */
+        color: #000000 !important; /* TEXTO NEGRO SOLICITADO */
+        border-radius: 30px !important;
         padding: 12px 30px !important;
         border: none !important;
         font-weight: bold !important;
@@ -65,7 +70,7 @@ st.markdown("""
     
     a[data-testid="stBaseButton-secondary"] {
         background-color: #007BFF !important;
-        color: #000000 !important; /* TEXTO NEGRO */
+        color: #000000 !important; /* TEXTO NEGRO EN BOTÓN COTIZAR */
         border-radius: 30px !important;
         font-weight: bold !important;
     }
@@ -74,7 +79,15 @@ st.markdown("""
         font-weight: bold !important;
     }
 
-    /* 5. Logos con Fondo Blanco Suave */
+    /* 5. Líneas de Separación Elegantes */
+    hr {
+        border: 0;
+        height: 1px;
+        background: linear-gradient(to right, transparent, #3E3E4A, transparent);
+        margin: 40px 0;
+    }
+
+    /* 6. Logos con Fondo Blanco Suave */
     .logo-container { 
         display: flex; justify-content: center; align-items: center; 
         height: 100px; background: #FFFFFF; 
@@ -83,6 +96,7 @@ st.markdown("""
     }
     .logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; }
     
+    /* Forzar visibilidad de etiquetas generales */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
     </style>
@@ -91,7 +105,7 @@ st.markdown("""
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
-# --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS) ---
+# --- FUNCIONES DE INTEGRACIÓN ---
 def get_odoo_prods():
     try:
         url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
@@ -215,7 +229,8 @@ if 'reg_ok' not in st.session_state:
                     enviar_aviso_email(nom, ema, tel)
                     st.session_state['reg_ok'] = nom
                     st.rerun()
-else: st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
+else: 
+    st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
 
 # 6. LOGOS FINALES
 st.divider()
