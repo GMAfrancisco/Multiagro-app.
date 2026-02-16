@@ -9,8 +9,11 @@ from email.mime.multipart import MIMEMultipart
 import urllib.parse
 import base64
 
-# 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
+
+# URL de imagen profesional
+URL_FONDO_HOJAS = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80"
 
 # --- BLOQUE DE APARIENCIA (CSS BLINDADO) ---
 st.markdown(f"""
@@ -20,10 +23,14 @@ st.markdown(f"""
     
     /* BANNER DEL ENCABEZADO */
     .header-banner {{
-        background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
-        url("https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80");
-        background-size: cover; background-position: center;
-        padding: 60px 20px; border-radius: 15px; text-align: center; margin-bottom: 30px; border: 1px solid #3E3E4A;
+        background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("{URL_FONDO_HOJAS}");
+        background-size: cover;
+        background-position: center;
+        padding: 60px 20px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 30px;
+        border: 1px solid #3E3E4A;
     }}
     
     /* Forzar textos blancos en la App */
@@ -33,15 +40,21 @@ st.markdown(f"""
     
     /* TARJETAS DE PRODUCTOS */
     .product-card {{
-        background-color: #1E1E26; border-radius: 15px; padding: 20px;
-        border: 1px solid #3E3E4A; text-align: center; margin-bottom: 10px;
+        background-color: #1E1E26;
+        border-radius: 15px;
+        padding: 20px;
+        border: 1px solid #3E3E4A;
+        text-align: center;
+        margin-bottom: 10px;
     }}
+    
     .product-img {{ 
         width: 100%; height: 180px; object-fit: contain; 
-        background-color: white; border-radius: 10px; padding: 5px; margin-bottom: 10px; 
+        background-color: white; border-radius: 10px; 
+        padding: 5px; margin-bottom: 10px; 
     }}
 
-    /* BOTONES: TEXTO NEGRO FORZADO SOBRE AZUL */
+    /* BOTONES: TEXTO NEGRO FORZADO */
     div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"] {{
         background-color: #007BFF !important;
         color: #000000 !important; /* TEXTO NEGRO */
@@ -58,8 +71,11 @@ st.markdown(f"""
 
     /* CAJA DE DIAGNÓSTICO */
     .diag-box {{
-        background: #161B22; border-left: 5px solid #007BFF;
-        padding: 20px; border-radius: 10px; margin-bottom: 25px;
+        background: #161B22;
+        border-left: 5px solid #007BFF;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
     }}
 
     /* LOGOS INFERIORES */
@@ -72,7 +88,6 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- INICIALIZACIÓN DE ESTADOS ---
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 
@@ -117,7 +132,7 @@ def enviar_aviso_email(nombre, email, tel):
 
 # --- CUERPO DE LA APP ---
 
-# LOGO PRINCIPAL
+# 2. ENCABEZADO CON LOGO
 _, mid, _ = st.columns([1, 2, 1])
 with mid:
     for f in sorted(os.listdir(".")):
@@ -126,7 +141,7 @@ with mid:
 
 todos_los_prods = get_odoo_prods()
 
-# BANNER
+# 3. BANNER
 st.markdown(f"""
     <div class="header-banner">
         <h1 style="color: white; margin: 0; font-size: 3rem;">🔍 Diagnóstico Experto</h1>
@@ -150,7 +165,7 @@ if img is not None:
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 
-                # LA ESENCIA DEL ANÁLISIS NO SE TOCA
+                # LA ESENCIA DEL ANÁLISIS SE MANTIENE INTACTA
                 prompt = f"RESPONDE EN ESPAÑOL. Eres experto de Multiagro. Analiza plaga/hongo en {cultivo_input}. Recomienda 4 de {nombres_inv} en NEGRITAS. Indica labores culturales y haz 2 preguntas."
                 res = model.generate_content([prompt, Image.open(img)])
                 
@@ -170,7 +185,7 @@ if img is not None:
 
 if st.session_state.chat_history:
     st.markdown("---")
-    st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
+    st.info(st.session_state.chat_history[-1]["parts"][0])
 
 # 4. SOLUCIONES SUGERIDAS (COTIZAR)
 st.divider()
@@ -182,7 +197,6 @@ if mostrar:
         with cols[i]:
             img_b64 = f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">' if p.get('image_128') else ""
             st.markdown(f'<div class="product-card">{img_b64}<h4 style="font-size:0.9rem;">{p["name"].split("(")[0].strip()}</h4><p style="color:#007BFF; font-weight:bold;">RD$ {p["list_price"]:,.2f}</p></div>', unsafe_allow_html=True)
-            # BOTÓN COTIZAR CON TEXTO NEGRO
             st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
 # 5. REGISTRO (REGÍSTRAME)
@@ -193,7 +207,6 @@ if 'reg_ok' not in st.session_state:
         nom = st.text_input("Nombre completo *")
         ema = st.text_input("Correo electrónico")
         tel = st.text_input("WhatsApp / Teléfono *")
-        # BOTÓN REGÍSTRAME CON TEXTO NEGRO
         if st.form_submit_button("✅ Regístrame"):
             if nom and tel:
                 if registrar_cliente_odoo(nom, ema, tel):
