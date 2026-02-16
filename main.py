@@ -8,8 +8,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import urllib.parse
 import base64
+from datetime import date # NUEVO: Para saber qué día es hoy
+from supabase import create_client, Client # NUEVO: Conexión a Supabase
 
-# 1. CONFIGURACIÓN DE PÁGINA (Debe ser la primera instrucción)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
 
 # --- BLOQUE DE APARIENCIA (VISIBILIDAD EXTREMA Y DISEÑO MODERNO) ---
@@ -17,111 +19,27 @@ st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     
-    /* 1. CARGADOR DE ARCHIVOS: FORZAR TEXTO NEGRO EN TODAS LAS CAPAS */
-    [data-testid="stFileUploadDropzone"] {
-        background-color: #F0F2F6 !important;
-        border-radius: 20px;
-        border: 2px dashed #007BFF !important;
-    }
-    [data-testid="stFileUploadDropzone"] * {
-        color: #000000 !important;
-    }
+    [data-testid="stFileUploadDropzone"] { background-color: #F0F2F6 !important; border-radius: 20px; border: 2px dashed #007BFF !important; }
+    [data-testid="stFileUploadDropzone"] * { color: #000000 !important; }
 
-    /* 2. BOTONES: TEXTO NEGRO TOTAL */
-    [data-testid="stBaseButton-secondary"] p, 
-    [data-testid="stBaseButton-primary"] p,
-    .stButton button p,
-    .stFormSubmitButton button p {
-        color: #000000 !important;
-        font-weight: bold !important;
-        margin-bottom: 0px !important;
-    }
-    
-    div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"] {
-        background-color: #007BFF !important;
-        color: #000000 !important;
-        border-radius: 30px !important;
-        font-weight: bold !important;
-        border: none !important;
-        height: 45px !important;
-    }
+    [data-testid="stBaseButton-secondary"] p, [data-testid="stBaseButton-primary"] p, .stButton button p, .stFormSubmitButton button p { color: #000000 !important; font-weight: bold !important; margin-bottom: 0px !important; }
+    div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"] { background-color: #007BFF !important; color: #000000 !important; border-radius: 30px !important; font-weight: bold !important; border: none !important; height: 45px !important; }
 
-    /* 3. Tarjetas de Productos y Diagnóstico */
-    .product-card {
-        background-color: #1E1E26;
-        border-radius: 25px;
-        padding: 25px;
-        border: 1px solid #3E3E4A;
-        text-align: center;
-        margin-bottom: 20px;
-        transition: transform 0.3s ease;
-    }
+    .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; transition: transform 0.3s ease; }
     .product-card:hover { transform: translateY(-5px); } 
-    
-    .product-img { 
-        width: 100%; height: 180px; object-fit: contain; 
-        background-color: white; border-radius: 20px; 
-        padding: 10px; margin-bottom: 15px; 
-    }
-    .diag-box {
-        background: #161B22; border-left: 8px solid #007BFF;
-        padding: 25px; border-radius: 20px; margin-bottom: 30px;
-    }
+    .product-img { width: 100%; height: 180px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
+    .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; }
 
-    /* 4. Líneas de Separación Elegantes */
-    hr {
-        border: 0; height: 1px;
-        background: linear-gradient(to right, transparent, #3E3E4A, transparent);
-        margin: 40px 0;
-    }
-
-    /* 5. Contenedor de Logos Inferiores */
-    .logo-container { 
-        display: flex; justify-content: center; align-items: center; 
-        height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px;
-    }
+    hr { border: 0; height: 1px; background: linear-gradient(to right, transparent, #3E3E4A, transparent); margin: 40px 0; }
+    .logo-container { display: flex; justify-content: center; align-items: center; height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px; }
     .logo-container img { height: 60px; width: auto; object-fit: contain; }
     
-    /* Visibilidad de etiquetas generales */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input, .stSelectbox>div>div>div { background-color: #161B22; color: white; border-radius: 15px; }
 
-    /* 6. HERO BANNER CON TÍTULO CENTRADO */
-    .hero-banner {
-        background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80');
-        background-size: cover;
-        background-position: center 30%;
-        width: 100%;
-        height: 220px;
-        border-radius: 15px;
-        margin-top: 15px;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center; 
-        justify-content: center;
-    }
-    
-    .hero-title {
-        color: #FFFFFF !important;
-        font-size: 3rem;
-        font-weight: bold;
-        margin: 0;
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
-        display: flex;
-        align-items: center;
-        gap: 15px; 
-    }
-
-    /* --- NUEVO: ESTILO PANTALLA LOGIN --- */
-    .login-box {
-        background-color: #1E1E26;
-        border-radius: 25px;
-        padding: 40px;
-        border: 1px solid #3E3E4A;
-        text-align: center;
-        margin-top: 50px;
-        box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
-    }
+    .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
+    .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
+    .login-box { background-color: #1E1E26; border-radius: 25px; padding: 40px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); }
     </style>
     """, unsafe_allow_html=True)
 
@@ -132,7 +50,54 @@ if "authenticated" not in st.session_state: st.session_state.authenticated = Fal
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
 
-# --- FUNCIONES DE INTEGRACIÓN (PRESERVADAS) ---
+# --- FUNCIONES DE INTEGRACIÓN ---
+
+# NUEVO: INICIALIZAR SUPABASE
+@st.cache_resource
+def init_supabase():
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
+
+supabase: Client = init_supabase()
+
+# NUEVO: CONTROL DE LÍMITES EN SUPABASE
+def puede_consultar(email, tier):
+    if tier == "collaborator" or tier == "vip": return True
+    
+    hoy = str(date.today())
+    try:
+        # Busca al usuario
+        res = supabase.table("uso_diario").select("*").eq("email", email).execute()
+        
+        if not res.data:
+            # Si no existe, lo crea con 0 consultas
+            supabase.table("uso_diario").insert({"email": email, "conteo": 0, "fecha_ultimo_uso": hoy}).execute()
+            conteo, fecha = 0, hoy
+        else:
+            conteo, fecha = res.data[0]["conteo"], res.data[0]["fecha_ultimo_uso"]
+            
+        # Si cambió de día, reseteamos el contador a 0
+        if fecha != hoy:
+            conteo = 0
+            supabase.table("uso_diario").update({"conteo": 0, "fecha_ultimo_uso": hoy}).eq("email", email).execute()
+            
+        # Determina límite según el nivel
+        limite = 5 if tier == "registered" else 2
+        return conteo < limite
+    except Exception as e:
+        return True # En caso de error de conexión, no bloqueamos al usuario
+
+def registrar_uso(email, tier):
+    if tier == "collaborator" or tier == "vip": return
+    try:
+        res = supabase.table("uso_diario").select("conteo").eq("email", email).execute()
+        if res.data:
+            nuevo_conteo = res.data[0]["conteo"] + 1
+            supabase.table("uso_diario").update({"conteo": nuevo_conteo}).eq("email", email).execute()
+    except: pass
+
+# (Odoo Funciones Preservadas)
 def get_odoo_prods():
     try:
         url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
@@ -165,12 +130,10 @@ def enviar_aviso_email(nombre, email, tel, lugar):
         return True
     except: return False
 
-# --- LOGICA DE AUTENTICACIÓN Y ENRUTAMIENTO ---
+# --- LOGICA DE AUTENTICACIÓN ---
 if not st.session_state.authenticated:
-    # --- PANTALLA DE LOGIN ---
-    _, mid, _ = st.columns([1, 1.5, 1]) # Columna central un poco más ancha para el login
+    _, mid, _ = st.columns([1, 1.5, 1])
     with mid:
-        # Mostrar logo en el login
         for f in sorted(os.listdir(".")):
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
                 st.image(f, use_container_width=True)
@@ -187,30 +150,29 @@ if not st.session_state.authenticated:
                 st.session_state.user_email = email_lower
                 st.session_state.authenticated = True
                 
-                # VALIDACIÓN DE DOMINIOS DE COLABORADORES
                 dominio = email_lower.split('@')[-1]
                 if dominio in ["grupomultiagro.com", "mundoagricola.net"]:
                     st.session_state.user_tier = "collaborator"
                 else:
-                    st.session_state.user_tier = "free" # Usuario estándar (2 consultas)
+                    st.session_state.user_tier = "free"
                 
-                st.rerun() # Recarga la página para entrar a la app
+                st.rerun()
             else:
                 st.error("Por favor, ingresa un correo electrónico válido.")
         st.markdown('</div>', unsafe_allow_html=True)
 
 else:
     # =========================================================================
-    # --- INICIO DEL CÓDIGO MAESTRO DE LA APP (AQUÍ EMPIEZA LA APP REAL) ---
+    # --- INICIO DEL CÓDIGO MAESTRO DE LA APP ---
     # =========================================================================
     
-    # Mostrar badge si es colaborador (Opcional, para que el vendedor sepa que tiene acceso full)
     if st.session_state.user_tier == "collaborator":
-        st.sidebar.success(f"👑 Acceso Ilimitado\nUsuario interno:\n{st.session_state.user_email}")
+        st.sidebar.success(f"👑 Acceso Ilimitado (Staff)\n{st.session_state.user_email}")
+    elif st.session_state.user_tier == "registered":
+        st.sidebar.success(f"✅ Usuario Registrado (5 Consultas)\n{st.session_state.user_email}")
     else:
-        st.sidebar.info(f"👤 Usuario:\n{st.session_state.user_email}")
+        st.sidebar.info(f"👤 Usuario Gratuito (2 Consultas)\n{st.session_state.user_email}")
 
-    # 2. LOGO PRINCIPAL
     _, mid, _ = st.columns([1, 2, 1])
     with mid:
         for f in sorted(os.listdir(".")):
@@ -219,7 +181,6 @@ else:
 
     todos_los_prods = get_odoo_prods()
 
-    # 3. SECCIÓN: DIAGNÓSTICO EXPERTO
     st.markdown("""
         <div class="hero-banner">
             <h1 class="hero-title">🔍 Diagnóstico Experto</h1>
@@ -236,38 +197,50 @@ else:
 
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
-            with st.spinner("Analizando..."):
-                try:
-                    nombres_odoo = [p['name'] for p in todos_los_prods] if todos_los_prods else []
-                    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-                    model = genai.GenerativeModel('gemini-2.0-flash-lite')
-                    
-                    prompt = f"""
-                    RESPONDE 100% EN ESPAÑOL. Eres Fitopatólogo y Entomólogo de Multiagro. 
-                    CULTIVO: {cultivo_input if cultivo_input else 'No especificado'}.
-                    1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico de la plaga/hongo con % de certeza.
-                    2. MANEJO QUÍMICO: Elige los 4 mejores de esta lista: {nombres_odoo}. Pon nombres en NEGRITAS.
-                    3. SEGURIDAD: Advierte leer la etiqueta del fabricante para dosis y periodos de carencia.
-                    4. LABORES CULTURALES: Describe labores de campo específicas para erradicar esto.
-                    5. INTERACCIÓN: Haz 2 preguntas clave para confirmar el diagnóstico.
-                    """
-                    
-                    res = model.generate_content([prompt, Image.open(img)])
-                    
-                    texto_ia_lower = res.text.lower()
-                    sugeridos, vistos = [], set()
-                    if todos_los_prods:
-                        for p in todos_los_prods:
-                            primera_palabra = p['name'].split()[0].lower()
-                            if primera_palabra in texto_ia_lower and primera_palabra not in vistos and len(primera_palabra) > 3:
-                                sugeridos.append(p); vistos.add(primera_palabra)
-                            if len(sugeridos) >= 4: break
-                    
-                    st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
-                    st.session_state.prods_filtrados = sugeridos
-                    st.rerun()
-                except Exception as e:
-                    if "rerun" not in str(e).lower(): st.error(f"Error: {e}")
+            
+            # --- VALIDACIÓN DE LÍMITES SUPABASE ---
+            if not puede_consultar(st.session_state.user_email, st.session_state.user_tier):
+                st.error("⚠️ Has alcanzado tu límite de diagnósticos por hoy.")
+                if st.session_state.user_tier == "free":
+                    st.info("💡 Desliza hacia abajo y regístrate como Productor para obtener **5 consultas diarias** gratis.")
+            else:
+                # --- LÓGICA DE ANÁLISIS FIJA ---
+                with st.spinner("Analizando..."):
+                    try:
+                        nombres_odoo = [p['name'] for p in todos_los_prods] if todos_los_prods else []
+                        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+                        model = genai.GenerativeModel('gemini-2.0-flash-lite')
+                        
+                        prompt = f"""
+                        RESPONDE 100% EN ESPAÑOL. Eres Fitopatólogo y Entomólogo de Multiagro. 
+                        CULTIVO: {cultivo_input if cultivo_input else 'No especificado'}.
+                        1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico de la plaga/hongo con % de certeza.
+                        2. MANEJO QUÍMICO: Elige los 4 mejores de esta lista: {nombres_odoo}. Pon nombres en NEGRITAS.
+                        3. SEGURIDAD: Advierte leer la etiqueta del fabricante para dosis y periodos de carencia.
+                        4. LABORES CULTURALES: Describe labores de campo específicas para erradicar esto.
+                        5. INTERACCIÓN: Haz 2 preguntas clave para confirmar el diagnóstico.
+                        """
+                        
+                        res = model.generate_content([prompt, Image.open(img)])
+                        
+                        texto_ia_lower = res.text.lower()
+                        sugeridos, vistos = [], set()
+                        if todos_los_prods:
+                            for p in todos_los_prods:
+                                primera_palabra = p['name'].split()[0].lower()
+                                if primera_palabra in texto_ia_lower and primera_palabra not in vistos and len(primera_palabra) > 3:
+                                    sugeridos.append(p); vistos.add(primera_palabra)
+                                if len(sugeridos) >= 4: break
+                        
+                        st.session_state.chat_history = [{"role": "model", "parts": [res.text]}]
+                        st.session_state.prods_filtrados = sugeridos
+                        
+                        # --- REGISTRAMOS EL USO EXITOSO EN SUPABASE ---
+                        registrar_uso(st.session_state.user_email, st.session_state.user_tier)
+                        
+                        st.rerun()
+                    except Exception as e:
+                        if "rerun" not in str(e).lower(): st.error(f"Error: {e}")
 
     if st.session_state.chat_history:
         st.markdown(f"<div class='diag-box'>{st.session_state.chat_history[-1]['parts'][0]}</div>", unsafe_allow_html=True)
@@ -301,19 +274,19 @@ else:
     if 'reg_ok' not in st.session_state:
         with st.form("form_registro"):
             nom = st.text_input("Nombre completo *")
-            ema = st.text_input("Correo electrónico", value=st.session_state.user_email) # Auto-rellena con el correo del login
+            ema = st.text_input("Correo electrónico", value=st.session_state.user_email)
             tel = st.text_input("WhatsApp / Teléfono *")
             lugar = st.selectbox("Lugar (Provincia) *", provincias_rd)
             
-            if st.form_submit_button("✅ Regístrame (Obtén 5 consultas diarias)"):
+            if st.form_submit_button("✅ Regístrame"):
                 if nom and tel and lugar:
                     if registrar_cliente_odoo(nom, ema, tel, lugar):
                         enviar_aviso_email(nom, ema, tel, lugar)
                         st.session_state['reg_ok'] = nom
-                        st.session_state.user_tier = "registered" # El usuario pasa al Nivel 2 (5 consultas)
+                        st.session_state.user_tier = "registered" # El usuario sube de nivel
                         st.rerun()
     else:
-        st.success(f"¡Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
+        st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
     # 6. LOGOS FINALES
     st.divider()
@@ -326,7 +299,3 @@ else:
             if os.path.exists(l_file):
                 with open(l_file, "rb") as f: b64_logo = base64.b64encode(f.read()).decode()
                 st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
-    
-    # =========================================================================
-    # --- FIN DEL CÓDIGO MAESTRO DE LA APP ---
-    # =========================================================================
