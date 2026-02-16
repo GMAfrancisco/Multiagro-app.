@@ -84,16 +84,6 @@ st.markdown("""
     /* Visibilidad de etiquetas generales */
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
     .stTextInput>div>div>input { background-color: #161B22; color: white; border-radius: 15px; }
-    
-    /* --- NUEVO CSS: IMAGEN ESTÉTICA SIN ELONGACIÓN --- */
-    .hero-image {
-        width: 100%;
-        height: 300px;
-        object-fit: cover;
-        border-radius: 20px;
-        margin-bottom: 25px;
-        border: 1px solid #3E3E4A;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -152,11 +142,6 @@ todos_los_prods = get_odoo_prods()
 
 # 3. SECCIÓN: DIAGNÓSTICO EXPERTO (LÓGICA FIJA E INTACTA)
 st.markdown("<h2 style='color: #007BFF;'>🔍 Diagnóstico Experto</h2>", unsafe_allow_html=True)
-
-# --- NUEVO: IMAGEN ESTÉTICA ---
-st.markdown('<img src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" class="hero-image">', unsafe_allow_html=True)
-
-
 cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
 tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
@@ -240,8 +225,7 @@ if 'reg_ok' not in st.session_state:
                     enviar_aviso_email(nom, ema, tel)
                     st.session_state['reg_ok'] = nom
                     st.rerun()
-else:
-    st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
+else: st.success(f"Bienvenido, {st.session_state['reg_ok']}!")
 
 # 6. LOGOS FINALES
 st.divider()
