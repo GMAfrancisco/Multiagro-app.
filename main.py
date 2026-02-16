@@ -316,7 +316,6 @@ else:
         
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         
-        # --- NUEVO: BOTÓN DE WHATSAPP PARA CONSULTAR TÉCNICO ---
         st.markdown("<br>", unsafe_allow_html=True)
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgTech Multiagro y necesito consultar a un técnico sobre mi cultivo.")
         st.link_button("👨‍🌾 Consultar a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_wa}", type="secondary", use_container_width=True)
@@ -377,3 +376,11 @@ else:
             if os.path.exists(l_file):
                 with open(l_file, "rb") as f: b64_logo = base64.b64encode(f.read()).decode()
                 st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
+
+    # --- NUEVO: PIE DE PÁGINA (DERECHOS RESERVADOS) ---
+    st.markdown("""
+        <div style='text-align: center; color: #666666; font-size: 0.85rem; margin-top: 50px; padding-bottom: 20px; font-weight: 500;'>
+            &copy; 2026 Grupo Multiagro. Todos los derechos reservados.<br>
+            Desarrollado con Inteligencia Artificial.
+        </div>
+    """, unsafe_allow_html=True)
