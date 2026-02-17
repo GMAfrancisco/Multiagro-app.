@@ -21,26 +21,29 @@ st.markdown("""
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     label, .stMarkdown, p, span { color: #FFFFFF !important; }
 
-    /* 1. CORRECCIÓN: CARGADOR DE IMAGEN (FILE UPLOADER) */
+    /* 1. CORRECCIÓN: TEXTOS DE LA CAJA DE SUBIR IMAGEN */
     /* Mantiene el título "Subir imagen" en blanco */
-    div[data-testid="stFileUploader"] label p {
+    div[data-testid="stFileUploader"] > label > p {
         color: #FFFFFF !important;
         font-size: 1rem !important;
     }
-    /* Zona interna de arrastrar y soltar: Fondo gris claro, iconos y texto negros */
-    [data-testid="stFileUploadDropzone"] {
+    /* Caja fondo gris claro */
+    div[data-testid="stFileUploadDropzone"] {
         background-color: #F0F2F6 !important;
         border-radius: 20px !important;
         border: 2px dashed #007BFF !important;
     }
-    [data-testid="stFileUploadDropzone"] * {
+    /* FUERZA EL TEXTO INTERNO A NEGRO (Apunta a los 'span' y 'small' específicos de Streamlit) */
+    div[data-testid="stFileUploadDropzone"] span, 
+    div[data-testid="stFileUploadDropzone"] small,
+    div[data-testid="stFileUploadDropzone"] div,
+    div[data-testid="stFileUploadDropzone"] svg {
         color: #000000 !important;
         fill: #000000 !important;
         font-weight: bold !important;
     }
 
     /* 2. CORRECCIÓN: BOTONES NORMALES Y "COTIZAR" VISIBLES */
-    /* Botones primarios y secundarios */
     div.stButton > button, 
     div.stFormSubmitButton > button { 
         background-color: #007BFF !important; 
@@ -53,7 +56,7 @@ st.markdown("""
         color: #000000 !important;
         font-weight: 900 !important;
     }
-    /* Botón específico de Cotizar (st.link_button) */
+    /* Botón específico de Cotizar */
     [data-testid="stLinkButton"] a {
         background-color: #007BFF !important;
         border-radius: 30px !important;
@@ -63,16 +66,18 @@ st.markdown("""
         align-items: center;
         justify-content: center;
     }
-    [data-testid="stLinkButton"] a p {
-        color: #000000 !important; /* Fuerza el texto de Cotizar a negro */
+    [data-testid="stLinkButton"] a p, 
+    [data-testid="stLinkButton"] a span {
+        color: #000000 !important; 
         font-weight: 900 !important;
     }
 
-    /* 3. CORRECCIÓN: NAVEGACIÓN Y SCROLL MÓVIL (PULL-TO-REFRESH) */
-    /* El valor "contain" permite hacer scroll arriba y abajo libremente, 
-       pero bloquea el gesto de recargar la página del navegador */
-    body {
-        overscroll-behavior-y: contain !important; 
+    /* 3. CORRECCIÓN DE NAVEGACIÓN MÓVIL: LIBERAR EL SCROLL */
+    /* Quitamos cualquier bloqueo para devolver el movimiento natural de arrastre al celular */
+    html, body, [data-testid="stAppViewContainer"], .main, .block-container {
+        overscroll-behavior: auto !important;
+        overflow-y: auto !important;
+        touch-action: auto !important;
     }
 
     /* ESTILOS DE TARJETAS Y ESTRUCTURA GENERAL */
