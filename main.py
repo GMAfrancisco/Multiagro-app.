@@ -17,68 +17,41 @@ st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="wide")
 # --- BLOQUE DE APARIENCIA CORREGIDO PARA MÓVILES ---
 st.markdown("""
 <style>
-    /* 0. TEMA OSCURO BASE Y TEXTOS GLOBALES */
+    /* 0. TEMA OSCURO GENERAL */
     .stApp { background-color: #0E1117; color: #FFFFFF; }
-    label, .stMarkdown, p, span { color: #FFFFFF !important; }
-
-    /* 1. CORRECCIÓN: TEXTOS DE LA CAJA DE SUBIR IMAGEN */
-    /* Mantiene el título "Subir imagen" en blanco */
-    div[data-testid="stFileUploader"] > label > p {
-        color: #FFFFFF !important;
-        font-size: 1rem !important;
-    }
-    /* Caja fondo gris claro */
-    div[data-testid="stFileUploadDropzone"] {
+    
+    /* 1. CAJA DE SUBIR ARCHIVOS (FONDO CLARO, TEXTO E ICONOS NEGROS) */
+    [data-testid="stFileUploadDropzone"] {
         background-color: #F0F2F6 !important;
         border-radius: 20px !important;
         border: 2px dashed #007BFF !important;
     }
-    /* FUERZA EL TEXTO INTERNO A NEGRO (Apunta a los 'span' y 'small' específicos de Streamlit) */
-    div[data-testid="stFileUploadDropzone"] span, 
-    div[data-testid="stFileUploadDropzone"] small,
-    div[data-testid="stFileUploadDropzone"] div,
-    div[data-testid="stFileUploadDropzone"] svg {
+    /* Esta es la orden definitiva para que el texto "Drag and drop..." sea negro */
+    [data-testid="stFileUploadDropzone"] * {
         color: #000000 !important;
         fill: #000000 !important;
-        font-weight: bold !important;
     }
 
-    /* 2. CORRECCIÓN: BOTONES NORMALES Y "COTIZAR" VISIBLES */
+    /* 2. BOTONES NORMALES Y COTIZAR (AZULES CON TEXTO NEGRO) */
     div.stButton > button, 
-    div.stFormSubmitButton > button { 
-        background-color: #007BFF !important; 
-        border-radius: 30px !important; 
-        border: none !important; 
-        height: 45px !important; 
-    }
-    div.stButton > button p, 
-    div.stFormSubmitButton > button p {
-        color: #000000 !important;
-        font-weight: 900 !important;
-    }
-    /* Botón específico de Cotizar */
-    [data-testid="stLinkButton"] a {
+    div.stFormSubmitButton > button,
+    a[data-testid="stLinkButton"] {
         background-color: #007BFF !important;
         border-radius: 30px !important;
         border: none !important;
-        text-decoration: none !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        height: 45px !important;
     }
-    [data-testid="stLinkButton"] a p, 
-    [data-testid="stLinkButton"] a span {
-        color: #000000 !important; 
+    /* Obliga a que cualquier texto dentro de un botón sea negro */
+    div.stButton > button *, 
+    div.stFormSubmitButton > button *,
+    a[data-testid="stLinkButton"] * {
+        color: #000000 !important;
         font-weight: 900 !important;
     }
 
-    /* 3. CORRECCIÓN DE NAVEGACIÓN MÓVIL: LIBERAR EL SCROLL */
-    /* Quitamos cualquier bloqueo para devolver el movimiento natural de arrastre al celular */
-    html, body, [data-testid="stAppViewContainer"], .main, .block-container {
-        overscroll-behavior: auto !important;
-        overflow-y: auto !important;
-        touch-action: auto !important;
-    }
+    /* 3. SCROLL REPARADO: 
+       Se eliminó TODO el código que bloqueaba la pantalla. 
+       El celular volverá a desplazarse arriba y abajo libremente. */
 
     /* ESTILOS DE TARJETAS Y ESTRUCTURA GENERAL */
     .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; }
@@ -88,11 +61,12 @@ st.markdown("""
     .logo-container { display: flex; justify-content: center; align-items: center; height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px; }
     .logo-container img { height: 60px; width: auto; object-fit: contain; }
     
-    .stTextInput>div>div>input, .stSelectbox>div>div>div { background-color: #161B22; color: white; border-radius: 15px; }
+    /* Cajas de texto de ingreso */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div { background-color: #161B22 !important; color: white !important; border-radius: 15px; }
     
+    /* Banners y Cajas */
     .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
     .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
-    
     .login-box { background-color: #1E1E26; border-radius: 25px; padding: 0px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
     </style>
     """, unsafe_allow_html=True)
