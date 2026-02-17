@@ -11,20 +11,24 @@ import base64
 from datetime import date, datetime, timedelta
 from supabase import create_client, Client
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="wide")
+# 1. CONFIGURACIÓN DE PÁGINA (¡LA SOLUCIÓN! Cambiado de "wide" a "centered")
+st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="centered", initial_sidebar_state="collapsed")
 
-# --- BLOQUE DE APARIENCIA (PURIFICADO - SIN HACKS QUE ROMPAN ANDROID) ---
+# --- BLOQUE DE APARIENCIA (CON PROTECCIÓN CONTRA EL BLOQUEO DE ANDROID) ---
 st.markdown("""
     <style>
-    /* SOLO MANTENEMOS ESTILOS PARA NUESTROS ELEMENTOS PERSONALIZADOS (Tarjetas, Banners, Logos) */
+    /* LA VACUNA PARA ANDROID: Oculta el desbordamiento horizontal invisible que traba el scroll */
+    [data-testid="stAppViewContainer"], .main, .block-container {
+        overflow-x: hidden !important; 
+    }
+
+    /* MANTENEMOS TUS ELEMENTOS VISUALES INTACTOS */
     .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; transition: transform 0.3s ease; }
-    .product-card:hover { transform: translateY(-5px); } 
     .product-img { width: 100%; height: 180px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; }
     hr { border: 0; height: 1px; background: linear-gradient(to right, transparent, #3E3E4A, transparent); margin: 40px 0; }
-    .logo-container { display: flex; justify-content: center; align-items: center; height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px; }
-    .logo-container img { height: 60px; width: auto; object-fit: contain; }
+    .logo-container { display: flex; justify-content: center; align-items: center; height: 80px; background: #FFFFFF; border-radius: 15px; padding: 10px; margin-bottom: 15px; }
+    .logo-container img { height: 50px; width: auto; object-fit: contain; }
     
     .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
     .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
@@ -344,14 +348,25 @@ else:
     else:
         st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
-    # 6. LOGOS FINALES Y DERECHOS DE AUTOR
+    # 6. LOGOS FINALES (ACTUALIZADO A COLUMNAS MÁS SEGURAS PARA CELULAR)
     st.divider()
     st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
 
-    l_cols = st.columns(5)
+    # Cambié las 5 columnas por algo que se adapta perfectamente a la pantalla del Android
     logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
-    for i, l_file in enumerate(logos_list):
-        with l_cols[i]:
+    
+    # Se muestran los logos en 2 filas y columnas adaptables para no romper la pantalla
+    cols1 = st.columns(3)
+    cols2 = st.columns(2)
+    
+    for i, l_file in enumerate(logos_list[:3]):
+        with cols1[i]:
+            if os.path.exists(l_file):
+                with open(l_file, "rb") as f: b64_logo = base64.b64encode(f.read()).decode()
+                st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
+                
+    for i, l_file in enumerate(logos_list[3:]):
+        with cols2[i]:
             if os.path.exists(l_file):
                 with open(l_file, "rb") as f: b64_logo = base64.b64encode(f.read()).decode()
                 st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
