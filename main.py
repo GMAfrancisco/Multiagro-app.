@@ -11,21 +11,48 @@ import base64
 from datetime import date, datetime, timedelta
 from supabase import create_client, Client
 
-# 1. CONFIGURACIÓN DE PÁGINA (¡LA SOLUCIÓN! Cambiado de "wide" a "centered")
+# 1. CONFIGURACIÓN DE PÁGINA (Layout centrado para evitar desbordamiento en móviles)
 st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="centered", initial_sidebar_state="collapsed")
 
-# --- BLOQUE DE APARIENCIA (CON PROTECCIÓN CONTRA EL BLOQUEO DE ANDROID) ---
+# --- BLOQUE DE APARIENCIA (ESTABLE, LIMPIO Y CON DIAGNÓSTICO LEGIBLE) ---
 st.markdown("""
     <style>
-    /* LA VACUNA PARA ANDROID: Oculta el desbordamiento horizontal invisible que traba el scroll */
+    /* VACUNA PARA ANDROID: Oculta el desbordamiento horizontal invisible */
     [data-testid="stAppViewContainer"], .main, .block-container {
         overflow-x: hidden !important; 
     }
 
-    /* MANTENEMOS TUS ELEMENTOS VISUALES INTACTOS */
+    /* CAJA DE DIAGNÓSTICO DE LA IA (TEXTO BLANCO BRILLANTE Y LEGIBLE) */
+    .diag-box { 
+        background: #161B22; 
+        border-left: 8px solid #007BFF; 
+        padding: 25px; 
+        border-radius: 20px; 
+        margin-bottom: 30px; 
+        color: #FFFFFF !important; 
+        font-size: 1.05rem; 
+        line-height: 1.6; 
+    }
+    
+    /* Aseguramos que cualquier texto dentro de la caja sea blanco puro */
+    .diag-box p, 
+    .diag-box span, 
+    .diag-box li, 
+    .diag-box div {
+        color: #FFFFFF !important;
+    }
+    
+    /* Pinta de azul claro los productos (Negritas) para que resalten */
+    .diag-box strong, 
+    .diag-box b {
+        color: #4DA3FF !important; 
+    }
+
+    /* ELEMENTOS VISUALES INTACTOS */
     .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; transition: transform 0.3s ease; }
+    .product-card:hover { transform: translateY(-5px); } 
     .product-img { width: 100%; height: 180px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
-    .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; }
+    
     hr { border: 0; height: 1px; background: linear-gradient(to right, transparent, #3E3E4A, transparent); margin: 40px 0; }
     .logo-container { display: flex; justify-content: center; align-items: center; height: 80px; background: #FFFFFF; border-radius: 15px; padding: 10px; margin-bottom: 15px; }
     .logo-container img { height: 50px; width: auto; object-fit: contain; }
@@ -352,10 +379,8 @@ else:
     st.divider()
     st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
 
-    # Cambié las 5 columnas por algo que se adapta perfectamente a la pantalla del Android
     logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
     
-    # Se muestran los logos en 2 filas y columnas adaptables para no romper la pantalla
     cols1 = st.columns(3)
     cols2 = st.columns(2)
     
