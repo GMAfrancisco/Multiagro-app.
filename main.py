@@ -14,48 +14,17 @@ from supabase import create_client, Client
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="wide")
 
-# --- BLOQUE DE APARIENCIA CORREGIDO PARA MÓVILES ---
+# --- BLOQUE DE APARIENCIA (PURIFICADO - SIN HACKS QUE ROMPAN ANDROID) ---
 st.markdown("""
-<style>
-    /* 1. FONDO OSCURO Y TEXTO BLANCO */
-    .stApp { background-color: #0E1117; color: #FFFFFF; }
-    p, span, label, h1, h2, h3, h4, h5, h6 { color: #FFFFFF; }
-
-    /* 2. CAJA DE CARGAR (FONDO GRIS CON TEXTO NEGRO) */
-    [data-testid="stFileUploadDropzone"] { 
-        background-color: #F0F2F6 !important; 
-        border-radius: 20px !important; 
-        border: 2px dashed #007BFF !important; 
-    }
-    [data-testid="stFileUploadDropzone"] * { 
-        color: #000000 !important; 
-        fill: #000000 !important; 
-    }
-
-    /* 3. BOTONES Y COTIZAR (FONDO AZUL CON TEXTO NEGRO) */
-    div.stButton > button, 
-    div.stFormSubmitButton > button, 
-    [data-testid="stLinkButton"] a { 
-        background-color: #007BFF !important; 
-        border-radius: 30px !important; 
-        border: none !important; 
-    }
-    div.stButton > button *, 
-    div.stFormSubmitButton > button *, 
-    [data-testid="stLinkButton"] a * { 
-        color: #000000 !important; 
-        font-weight: 900 !important; 
-        text-decoration: none !important; 
-    }
-
-    /* 4. TARJETAS Y ESTRUCTURA */
-    .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; }
+    <style>
+    /* SOLO MANTENEMOS ESTILOS PARA NUESTROS ELEMENTOS PERSONALIZADOS (Tarjetas, Banners, Logos) */
+    .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; transition: transform 0.3s ease; }
+    .product-card:hover { transform: translateY(-5px); } 
     .product-img { width: 100%; height: 180px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; }
     hr { border: 0; height: 1px; background: linear-gradient(to right, transparent, #3E3E4A, transparent); margin: 40px 0; }
     .logo-container { display: flex; justify-content: center; align-items: center; height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px; }
     .logo-container img { height: 60px; width: auto; object-fit: contain; }
-    .stTextInput>div>div>input, .stSelectbox>div>div>div { background-color: #161B22 !important; color: white !important; border-radius: 15px; }
     
     .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
     .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
@@ -387,7 +356,6 @@ else:
                 with open(l_file, "rb") as f: b64_logo = base64.b64encode(f.read()).decode()
                 st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
 
-    # --- PIE DE PÁGINA (DERECHOS RESERVADOS) ---
     st.markdown("""
         <div style='text-align: center; color: #666666; font-size: 0.85rem; margin-top: 50px; padding-bottom: 20px; font-weight: 500;'>
             &copy; 2026 Grupo Multiagro. Todos los derechos reservados.<br>
