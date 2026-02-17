@@ -17,23 +17,33 @@ st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="wide")
 # --- BLOQUE DE APARIENCIA CORREGIDO PARA MÓVILES ---
 st.markdown("""
 <style>
-    /* 1. FONDO OSCURO Y TEXTO GLOBAL BLANCO */
+    /* 1. APAGAR EL "TIRAR PARA ACTUALIZAR" DE ANDROID CHROME */
+    /* Esto evita que el navegador secuestre tu dedo al intentar subir */
+    html, body {
+        overscroll-behavior-y: none !important;
+    }
+    /* Esto le devuelve la "inercia" al scroll para que resbale suavemente */
+    [data-testid="stAppViewContainer"] {
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* 2. FONDO OSCURO Y TEXTO GLOBAL BLANCO */
     .stApp { background-color: #0E1117; color: #FFFFFF; }
     p, span, label, h1, h2, h3, h4, h5, h6 { color: #FFFFFF; }
 
-    /* 2. CAJA DE SUBIR ARCHIVOS (FONDO GRIS, TEXTO NEGRO) */
+    /* 3. CAJA DE SUBIR ARCHIVOS (FONDO GRIS, TEXTO NEGRO) */
     [data-testid="stFileUploadDropzone"] {
         background-color: #F0F2F6 !important;
         border-radius: 20px !important;
         border: 2px dashed #007BFF !important;
     }
-    /* Todo lo que esté adentro de la caja gris ES NEGRO */
     [data-testid="stFileUploadDropzone"] * {
         color: #000000 !important;
         fill: #000000 !important;
     }
 
-    /* 3. TODOS LOS BOTONES Y ENLACES (FONDO AZUL, TEXTO NEGRO) */
+    /* 4. BOTONES Y ENLACES (FONDO AZUL, TEXTO NEGRO) */
     div.stButton > button, 
     div.stFormSubmitButton > button, 
     [data-testid="stLinkButton"] a {
@@ -41,7 +51,6 @@ st.markdown("""
         border-radius: 30px !important;
         border: none !important;
     }
-    /* Todo el texto adentro de botones ES NEGRO y GORDO */
     div.stButton > button *, 
     div.stFormSubmitButton > button *, 
     [data-testid="stLinkButton"] a * {
@@ -50,7 +59,7 @@ st.markdown("""
         text-decoration: none !important;
     }
 
-    /* 4. ESTRUCTURA VISUAL DE TARJETAS Y BANNER */
+    /* 5. TARJETAS Y ESTRUCTURA GENERAL */
     .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; }
     .product-img { width: 100%; height: 180px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; }
