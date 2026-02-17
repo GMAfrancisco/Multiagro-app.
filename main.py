@@ -11,20 +11,65 @@ import base64
 from datetime import date, datetime, timedelta
 from supabase import create_client, Client
 
-# 1. CONFIGURACIÓN DE PÁGINA (ACTUALIZADO AL NUEVO NOMBRE)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="wide")
 
-# --- BLOQUE DE APARIENCIA (VISIBILIDAD EXTREMA Y DISEÑO MODERNO) ---
+# --- BLOQUE DE APARIENCIA CORREGIDO PARA MÓVILES ---
 st.markdown("""
     <style>
+    /* Tema General Oscuro */
     .stApp { background-color: #0E1117; color: #FFFFFF; }
-    
-    [data-testid="stFileUploadDropzone"] { background-color: #F0F2F6 !important; border-radius: 20px; border: 2px dashed #007BFF !important; }
-    [data-testid="stFileUploadDropzone"] * { color: #000000 !important; }
 
-    [data-testid="stBaseButton-secondary"] p, [data-testid="stBaseButton-primary"] p, .stButton button p, .stFormSubmitButton button p { color: #000000 !important; font-weight: bold !important; margin-bottom: 0px !important; }
-    div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"] { background-color: #007BFF !important; color: #000000 !important; border-radius: 30px !important; font-weight: bold !important; border: none !important; height: 45px !important; }
+    /* --- CORRECCIÓN 1: VISIBILIDAD DEL CARGADOR DE ARCHIVOS --- */
+    /* Fuerza el fondo claro y asegura que TODO el texto e iconos dentro sean negros */
+    [data-testid="stFileUploadDropzone"] { 
+        background-color: #F0F2F6 !important; 
+        border-radius: 20px; 
+        border: 2px dashed #007BFF !important; 
+    }
+    [data-testid="stFileUploadDropzone"] div,
+    [data-testid="stFileUploadDropzone"] span,
+    [data-testid="stFileUploadDropzone"] small,
+    [data-testid="stFileUploadDropzone"] p,
+    [data-testid="stFileUploadDropzone"] svg {
+        color: #000000 !important;
+        fill: #000000 !important; /* Para los iconos SVG */
+    }
 
+    /* --- CORRECCIÓN 2: VISIBILIDAD DE BOTONES --- */
+    /* Asegura texto negro en botones primarios, secundarios y de enlace (Cotizar) */
+    [data-testid="stBaseButton-secondary"],
+    [data-testid="stBaseButton-primary"],
+    .stButton button,
+    .stFormSubmitButton button,
+    a[data-testid="stLinkButton"] { 
+        background-color: #007BFF !important; 
+        border-radius: 30px !important; 
+        border: none !important; 
+        height: 45px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    /* Fuerza el color del texto dentro de cualquier tipo de botón a negro */
+    [data-testid="stBaseButton-secondary"] *,
+    [data-testid="stBaseButton-primary"] *,
+    .stButton button *,
+    .stFormSubmitButton button *,
+    a[data-testid="stLinkButton"] * {
+        color: #000000 !important;
+        font-weight: bold !important;
+        margin-bottom: 0px !important;
+        text-decoration: none !important;
+    }
+
+    /* --- CORRECCIÓN 3: NAVEGACIÓN MÓVIL (EVITAR RECARGAS ACCIDENTALES) --- */
+    /* Bloquea el gesto de "tirar para actualizar" en móviles que causa desconexiones */
+    html, body {
+        overscroll-behavior-y: none !important;
+    }
+
+    /* Estilos de Tarjetas y Layout (Sin cambios mayores) */
     .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; transition: transform 0.3s ease; }
     .product-card:hover { transform: translateY(-5px); } 
     .product-img { width: 100%; height: 180px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
@@ -116,7 +161,6 @@ def registrar_cliente_odoo(nombre, email, telefono, lugar):
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            # ACTUALIZADO: Mensaje en Odoo
             return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgroDiagnóstico Multiagro | Provincia: {lugar}'}])
     except: return None
 
@@ -183,14 +227,12 @@ def enviar_pregunta():
 if not st.session_state.authenticated:
     _, mid, _ = st.columns([1, 1.5, 1])
     with mid:
-        # Nota para el ícono: Nombra tu archivo de la "M" tricolor como "grupo_multiagro_logo.png" para que aparezca aquí automáticamente
         for f in sorted(os.listdir(".")):
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
                 st.image(f, use_container_width=True)
         
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
 
-        # ACTUALIZADO: Nombre en el banner de Login
         st.markdown("""
             <div style="text-align: center; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;">
                 <h2 style='text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgroDiagnóstico Multiagro</h2>
@@ -320,7 +362,6 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         
         st.markdown("<br>", unsafe_allow_html=True)
-        # ACTUALIZADO: Texto para WhatsApp con el nuevo nombre
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre mi cultivo.")
         st.link_button("👨‍🌾 Consultar a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_wa}", type="secondary", use_container_width=True)
 
