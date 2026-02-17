@@ -63,14 +63,6 @@ st.markdown("""
     .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
     .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
     .login-box { background-color: #1E1E26; border-radius: 25px; padding: 0px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
-
-    /* 5. EL ANTÍDOTO PARA EL SCROLL MÓVIL (NUEVO) */
-    /* Forzamos a que todas las capas maestras permitan arrastre táctil en Y (Vertical) */
-    html, body, [data-testid="stAppViewContainer"], .main, .block-container {
-        touch-action: pan-y !important;
-        -webkit-overflow-scrolling: touch !important; 
-        overflow-y: auto !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 
