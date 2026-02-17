@@ -17,57 +17,40 @@ st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="wide")
 # --- BLOQUE DE APARIENCIA CORREGIDO PARA MÓVILES ---
 st.markdown("""
 <style>
-    /* 1. TEMA OSCURO Y TEXTOS GLOBALES (BLANCO) */
-    .stApp { background-color: #0E1117; }
-    
-    /* Hacemos que por defecto TODO el texto principal sea blanco */
-    p, span, label, .stMarkdown, div[data-baseweb="tab"] p, h1, h2, h3, h4, h5, h6 { 
-        color: #FFFFFF !important; 
-    }
+    /* 1. FONDO OSCURO Y TEXTO GLOBAL BLANCO */
+    .stApp { background-color: #0E1117; color: #FFFFFF; }
+    p, span, label, h1, h2, h3, h4, h5, h6 { color: #FFFFFF; }
 
-    /* 2. EXCEPCIÓN 1: CAJA DE CARGAR ARCHIVO (FONDO GRIS, TEXTO NEGRO) */
+    /* 2. CAJA DE SUBIR ARCHIVOS (FONDO GRIS, TEXTO NEGRO) */
     [data-testid="stFileUploadDropzone"] {
         background-color: #F0F2F6 !important;
         border-radius: 20px !important;
         border: 2px dashed #007BFF !important;
     }
-    /* Apuntamos exactamente a los textos DENTRO de la caja de subir para forzar negro */
-    [data-testid="stFileUploadDropzone"] p,
-    [data-testid="stFileUploadDropzone"] span,
-    [data-testid="stFileUploadDropzone"] small,
-    [data-testid="stFileUploadDropzone"] svg {
+    /* ORDEN NUCLEAR: Todo lo que esté adentro de la caja gris ES NEGRO */
+    [data-testid="stFileUploadDropzone"] * {
         color: #000000 !important;
         fill: #000000 !important;
     }
 
-    /* 3. EXCEPCIÓN 2: TODOS LOS BOTONES (FONDO AZUL, TEXTO NEGRO) */
+    /* 3. TODOS LOS BOTONES Y ENLACES (FONDO AZUL, TEXTO NEGRO) */
     div.stButton > button, 
-    div.stFormSubmitButton > button,
-    [data-testid="stLinkButton"] > a {
+    div.stFormSubmitButton > button, 
+    [data-testid="stLinkButton"] a {
         background-color: #007BFF !important;
         border-radius: 30px !important;
         border: none !important;
-        height: 45px !important;
-        text-decoration: none !important;
     }
-    /* Apuntamos a los textos DENTRO de los botones para forzar negro */
-    div.stButton > button p, 
-    div.stButton > button span,
-    div.stFormSubmitButton > button p,
-    [data-testid="stLinkButton"] p,
-    [data-testid="stLinkButton"] span {
+    /* ORDEN NUCLEAR: Todo el texto adentro de botones ES NEGRO y GORDO */
+    div.stButton > button *, 
+    div.stFormSubmitButton > button *, 
+    [data-testid="stLinkButton"] a * {
         color: #000000 !important;
         font-weight: 900 !important;
+        text-decoration: none !important;
     }
 
-    /* 4. DESTRABAR EL SCROLL EN CELULARES (Toque táctil nativo) */
-    .main, .block-container, [data-testid="stAppViewContainer"] {
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important; /* Devuelve la suavidad al iPhone */
-        touch-action: pan-y !important; /* Habilita el arrastre vertical del dedo */
-    }
-
-    /* 5. TARJETAS Y ESTRUCTURA GENERAL */
+    /* 4. ESTRUCTURA VISUAL DE TARJETAS Y BANNER */
     .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; }
     .product-img { width: 100%; height: 180px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; }
