@@ -10,9 +10,33 @@ import urllib.parse
 import base64
 from datetime import date, datetime, timedelta
 from supabase import create_client, Client
+import streamlit.components.v1 as components
 
 # 1. CONFIGURACIÓN DE PÁGINA (Layout centrado para evitar desbordamiento en móviles)
 st.set_page_config(page_title="AgroDiagnóstico Multiagro", layout="centered", initial_sidebar_state="collapsed")
+
+# --- AUTO-RECONEXIÓN MÓVIL (ANTÍDOTO PARA ERROR 500 POR INACTIVIDAD) ---
+# Este código invisible detecta si el productor minimizó la app por más de 15 minutos. 
+# Si es así, auto-recarga la página limpiamente al volver para evitar el pantallazo de error.
+components.html("""
+    <script>
+    let tiempoOculto;
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            // Guarda la hora exacta en la que la app se fue al fondo
+            tiempoOculto = new Date().getTime();
+        } else {
+            if (tiempoOculto) {
+                let tiempoFuera = new Date().getTime() - tiempoOculto;
+                // Si pasaron más de 15 minutos (900,000 milisegundos), fuerza recarga
+                if (tiempoFuera > 900000) {
+                    window.parent.location.reload();
+                }
+            }
+        }
+    });
+    </script>
+""", height=0, width=0)
 
 # --- BLOQUE DE APARIENCIA (ESTABLE, LIMPIO Y CON DIAGNÓSTICO LEGIBLE) ---
 st.markdown("""
