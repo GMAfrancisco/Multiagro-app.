@@ -40,7 +40,7 @@ components.html("""
 """, height=0, width=0)
 
 # =========================================================================
-# 2. BLOQUE DE APARIENCIA (CSS CORREGIDO PARA TEXTO BLANCO BRILLANTE)
+# 2. BLOQUE DE APARIENCIA (CSS)
 # =========================================================================
 st.markdown("""
     <style>
@@ -50,25 +50,8 @@ st.markdown("""
     .diag-box p, .diag-box span, .diag-box li, .diag-box div { color: #FFFFFF !important; }
     .diag-box strong, .diag-box b { color: #4DA3FF !important; }
     
-    /* TARJETAS DE PRODUCTOS CON TEXTO BLANCO OBLIGATORIO */
-    .product-card { 
-        background-color: #1E1E26; 
-        border-radius: 25px; 
-        padding: 20px; 
-        border: 1px solid #3E3E4A; 
-        text-align: center; 
-        margin-bottom: 20px; 
-        display: flex; 
-        flex-direction: column; 
-        justify-content: space-between; 
-        height: 100%; 
-        position: relative;
-        color: #FFFFFF !important; 
-    }
-    .product-card h4 {
-        color: #FFFFFF !important;
-    }
-    
+    .product-card { background-color: #1E1E26; border-radius: 25px; padding: 20px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative;}
+    .product-card h4 { color: #FFFFFF !important; }
     .product-img { width: 100%; height: 140px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     
     .badge-fav { position: absolute; top: 10px; right: 10px; background-color: #FFD700; color: #000; font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
@@ -82,6 +65,9 @@ st.markdown("""
     .login-box { background-color: #1E1E26; border-radius: 25px; padding: 0px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
     
     .cart-box { background-color: #007BFF; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; margin-bottom: 20px; position: sticky; bottom: 10px; z-index: 999; box-shadow: 0px -5px 15px rgba(0,0,0,0.5); }
+    
+    /* Efecto hover para botones HTML */
+    .btn-wa:hover { opacity: 0.8; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -381,7 +367,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP (ENLACES CORREGIDOS)
+    # MOSTRAR EL CHAT Y LOS BOTONES (¡AQUÍ ESTÁ EL BOTÓN WHATSAPP CORREGIDO A HTML!)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -396,11 +382,17 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Enlace oficial de WhatsApp (Funciona mejor en apps móviles)
+        # BOTÓN HTML PARA WHATSAPP (Rompe el bloqueo de WebIntoApp)
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
-        enlace_wa_general = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_wa}"
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", enlace_wa_general, type="secondary", use_container_width=True)
-        st.markdown("<br>", unsafe_allow_html=True)
+        enlace_wa_general = f"https://wa.me/18295624653?text={mensaje_wa}"
+        
+        st.markdown(f"""
+            <a href="{enlace_wa_general}" target="_blank" style="text-decoration: none;">
+                <div class="btn-wa" style="background-color: #3E3E4A; border: 1px solid #4DA3FF; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 25px;">
+                    👨‍🌾 Consultar dudas a un técnico por WhatsApp
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas para este caso:</h4>", unsafe_allow_html=True)
@@ -412,7 +404,6 @@ else:
                     nombre_corto = p['name'].split('(')[0].strip()
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
-                    # FUERZA EL TEXTO A COLOR BLANCO DIRECTAMENTE EN LA TARJETA
                     st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
                     
                     if nombre_corto in st.session_state.carrito: 
@@ -459,7 +450,6 @@ else:
                     nombre_corto = p['name'].split('(')[0].strip()
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
-                    # FUERZA EL TEXTO A COLOR BLANCO DIRECTAMENTE EN LA TARJETA
                     st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
                     
                     if nombre_corto in st.session_state.carrito: 
@@ -477,7 +467,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE (ENLACE CORREGIDO)
+    # CARRITO DE WHATSAPP FLOTANTE (BOTÓN HTML CORREGIDO)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -491,9 +481,16 @@ else:
         texto_ws += f"\nQuedo atento a disponibilidad y precios. Mi usuario es: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # Enlace profundo de WhatsApp para evitar errores en móviles
-        enlace_wa_carrito = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_codificado}"
-        st.link_button("📲 Enviar Cotización a un Asesor", enlace_wa_carrito, type="primary", use_container_width=True)
+        # BOTÓN HTML VERDE WHATSAPP PARA EL CARRITO
+        enlace_wa_carrito = f"https://wa.me/18295624653?text={mensaje_codificado}"
+        
+        st.markdown(f"""
+            <a href="{enlace_wa_carrito}" target="_blank" style="text-decoration: none;">
+                <div class="btn-wa" style="background-color: #25D366; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);">
+                    📲 Enviar Cotización por WhatsApp
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
         
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
@@ -502,7 +499,7 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # FORMULARIO DE REGISTRO Y LOGOS
+    # FORMULARIO DE REGISTRO
     # =========================================================================
     st.divider()
     st.markdown("### 👤 Registro de Productor")
@@ -529,6 +526,9 @@ else:
     else: 
         st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
+    # =========================================================================
+    # LOGOS
+    # =========================================================================
     st.divider()
     st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
     
