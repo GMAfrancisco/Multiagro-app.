@@ -40,7 +40,7 @@ components.html("""
 """, height=0, width=0)
 
 # =========================================================================
-# 2. BLOQUE DE APARIENCIA (CSS CON TEXTO BLANCO)
+# 2. BLOQUE DE APARIENCIA (CSS)
 # =========================================================================
 st.markdown("""
     <style>
@@ -365,7 +365,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y BOTÓN WHATSAPP 1 (CON TARGET=_TOP PARA ROMPER EL BLOQUEO)
+    # MOSTRAR EL CHAT Y BOTÓN WHATSAPP 1 (CON PROTOCOLO NATIVO)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -380,9 +380,9 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # BOTÓN 1: EL TRUCO _TOP
+        # EL TRUCO NATIVO DE WHATSAPP (whatsapp://send?phone=...)
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
-        enlace_wa_general = f"https://wa.me/18295624653?text={mensaje_wa}"
+        enlace_wa_general = f"whatsapp://send?phone=18295624653&text={mensaje_wa}"
         
         st.markdown(f"""
             <a href="{enlace_wa_general}" target="_top" style="text-decoration: none;">
@@ -465,7 +465,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE (BOTÓN 2: EL TRUCO _TOP)
+    # CARRITO DE WHATSAPP FLOTANTE (BOTÓN 2: PROTOCOLO NATIVO)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -479,8 +479,8 @@ else:
         texto_ws += f"\nQuedo atento a disponibilidad y precios. Mi usuario es: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # BOTÓN 2: EL TRUCO _TOP
-        enlace_wa_carrito = f"https://wa.me/18295624653?text={mensaje_codificado}"
+        # EL TRUCO NATIVO DE WHATSAPP (whatsapp://send?phone=...)
+        enlace_wa_carrito = f"whatsapp://send?phone=18295624653&text={mensaje_codificado}"
         
         st.markdown(f"""
             <a href="{enlace_wa_carrito}" target="_top" style="text-decoration: none;">
