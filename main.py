@@ -394,7 +394,7 @@ else:
                         st.error(f"Error: {e}")
 
     # =========================================================================
-    # CHAT Y BOTÓN WHATSAPP DEL TÉCNICO (HACK: META-REFRESH REDIRECT)
+    # CHAT Y BOTÓN WHATSAPP DEL TÉCNICO (HACK INTENT ANDROID)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -407,11 +407,25 @@ else:
 
         st.text_input("💬 Escribe tu duda al asistente IA:", key="input_duda", on_change=enviar_pregunta)
         
-        # HACK: Al presionar este botón, se inyecta un comando de redirección forzosa al navegador interno
-        if st.button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", use_container_width=True):
-            msg_tecnico = urllib.parse.quote("Hola, necesito consultar a un técnico sobre un diagnóstico.")
-            url_w_tec = f"https://wa.me/18295624653?text={msg_tecnico}"
-            st.markdown(f'<meta http-equiv="refresh" content="0; url={url_w_tec}">', unsafe_allow_html=True)
+        # --- LOS BOTONES DE WHATSAPP ANTI-BLOQUEO ---
+        mensaje_tecnico = urllib.parse.quote("Hola, necesito consultar a un técnico sobre un diagnóstico.")
+        intent_tec = f"intent://send?phone=18295624653&text={mensaje_tecnico}#Intent;scheme=whatsapp;package=com.whatsapp;end"
+        web_tec = f"https://wa.me/18295624653?text={mensaje_tecnico}"
+        
+        st.markdown(f"""
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; margin-top: 10px;">
+                <a href="{intent_tec}" style="text-decoration: none;">
+                    <div style="background-color: #25D366; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);">
+                        🟢 Consultar técnico (Solo Celulares)
+                    </div>
+                </a>
+                <a href="{web_tec}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                    <div style="background-color: #3E3E4A; color: white; padding: 8px; border-radius: 8px; text-align: center; font-size: 0.85rem;">
+                        🌐 Usar enlace alternativo (PC / iPhone)
+                    </div>
+                </a>
+            </div>
+        """, unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas:</h4>", unsafe_allow_html=True)
@@ -479,7 +493,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP (HACK META-REFRESH + CAJA DE RESUMEN ELEGANTE)
+    # CARRITO DE WHATSAPP (HACK INTENT ANDROID + CAJA DE RESUMEN ELEGANTE)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -493,15 +507,28 @@ else:
         texto_ws += f"\nUsuario: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # CAJA ELEGANTE DE RESUMEN POR SI FALLA LA REDIRECCIÓN
-        st.text_area("📋 Resumen de tu pedido (Puedes copiar este texto):", value=texto_ws, height=140)
+        # CAJA ELEGANTE DE RESUMEN POR SI EL CLIENTE NECESITA COPIAR MANUALMENTE
+        st.text_area("📋 Resumen de tu pedido:", value=texto_ws, height=140)
         
-        # HACK: Botón de Streamlit que inyecta la redirección directa al WebView
-        if st.button("📲 Abrir WhatsApp y Enviar", type="primary", use_container_width=True):
-            url_w_carrito = f"https://wa.me/18295624653?text={mensaje_codificado}"
-            st.markdown(f'<meta http-equiv="refresh" content="0; url={url_w_carrito}">', unsafe_allow_html=True)
+        # --- LOS BOTONES DE WHATSAPP ANTI-BLOQUEO ---
+        intent_wa = f"intent://send?phone=18295624653&text={mensaje_codificado}#Intent;scheme=whatsapp;package=com.whatsapp;end"
+        web_wa = f"https://wa.me/18295624653?text={mensaje_codificado}"
+
+        st.markdown(f"""
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                <a href="{intent_wa}" style="text-decoration: none;">
+                    <div style="background-color: #25D366; color: white; padding: 12px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
+                        🟢 Enviar Cotización (Solo Celulares)
+                    </div>
+                </a>
+                <a href="{web_wa}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                    <div style="background-color: #3E3E4A; color: white; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 0.9rem;">
+                        🌐 Usar enlace alternativo (PC / iPhone)
+                    </div>
+                </a>
+            </div>
+        """, unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
             st.rerun()
