@@ -93,7 +93,6 @@ if "authenticated" not in st.session_state: st.session_state.authenticated = Fal
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
 if "inventario_odoo" not in st.session_state: st.session_state.inventario_odoo = []  
-if "carrito" not in st.session_state: st.session_state.carrito = []
 
 kw_fito = ["ACIDO", "AMINOACIDO", "BACTERICIDA", "COADYUVANTE", "ENRAIZADOR", "FERTILIZANTE", "FUNGICIDA", "HERBICIDA", "HORMONA", "INOCULANTE", "INSECTICIDA", "NUTRICION", "FOLIAR"]
 kw_semillas = ["AJI", "AROMATICA", "CALABAZA", "CILANTRO", "MAIZ", "PEPINO", "SANDIA", "TOMATE", "SEMILLA", "CEBOLLA", "LECHUGA", "MELON", "ZANAHORIA", "BERENJENA"]
@@ -191,10 +190,6 @@ def enviar_aviso_email(nombre, email, tel, lugar):
         server.quit()
         return True
     except: return False
-
-def agregar_al_carrito(nombre_producto):
-    if nombre_producto not in st.session_state.carrito:
-        st.session_state.carrito.append(nombre_producto)
 
 def enviar_pregunta():
     duda = st.session_state.input_duda
@@ -380,7 +375,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP
+    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP 
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -395,13 +390,8 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # EL ENLACE APLICADO CON LA ESTRUCTURA EXACTA DEL CÓDIGO VIEJO (ESPACIOS SUSTITUIDOS MANUALMENTE)
-        url_tecnico = "https://wa.me/18295624653?text=Hola,%20acabo%20de%20usar%20la%20app%20AgroDiagnostico%20Multiagro%20y%20necesito%20consultar%20a%20un%20tecnico%20sobre%20un%20diagnostico"
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", url_tecnico, type="secondary", use_container_width=True)
-        st.markdown("<br>", unsafe_allow_html=True)
-
         if st.session_state.prods_filtrados:
-            st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas para este caso:</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='color: #4DA3FF;'>🛒 Soluciones Sugeridas:</h4>", unsafe_allow_html=True)
             cols_ia = st.columns(2) 
             
             for i, p in enumerate(st.session_state.prods_filtrados):
@@ -410,15 +400,13 @@ else:
                     nombre_corto = p['name'].split('(')[0].strip()
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
-                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4><p style='color: #007BFF; font-weight: bold;'>RD$ {p['list_price']:,.2f}</p></div>", unsafe_allow_html=True)
                     
-                    if nombre_corto in st.session_state.carrito: 
-                        st.button("✅ Agregado", key=f"rec_ok_{p['id']}", disabled=True)
-                    else: 
-                        st.button("➕ Agregar a Cotización", key=f"rec_{p['id']}", on_click=agregar_al_carrito, args=(nombre_corto,))
+                    # =============== EL BOTÓN EXACTO DEL CÓDIGO VIEJO ===============
+                    st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
     # =========================================================================
-    # CATÁLOGO E-COMMERCE 
+    # CATÁLOGO E-COMMERCE (MÁS BOTONES INDIVIDUALES)
     # =========================================================================
     st.divider()
     st.markdown("<h2 style='text-align: center; color: #FFFFFF;'>🏪 Catálogo Multiagro</h2>", unsafe_allow_html=True)
@@ -456,12 +444,10 @@ else:
                     nombre_corto = p['name'].split('(')[0].strip()
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
-                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4><p style='color: #007BFF; font-weight: bold;'>RD$ {p['list_price']:,.2f}</p></div>", unsafe_allow_html=True)
                     
-                    if nombre_corto in st.session_state.carrito: 
-                        st.button("✅ Agregado", key=f"cat_ok_{tab_key}_{p['id']}", disabled=True)
-                    else: 
-                        st.button("➕ Agregar", key=f"cat_{tab_key}_{p['id']}", on_click=agregar_al_carrito, args=(nombre_corto,))
+                    # =============== EL BOTÓN EXACTO DEL CÓDIGO VIEJO ===============
+                    st.link_button("Cotizar", f"https://wa.me/18295624653?text=Info: {p['name']}", use_container_width=True)
 
     with tab_fito: 
         mostrar_catalogo(prods_medicina, "fito", busqueda_catalogo)
@@ -472,27 +458,6 @@ else:
     with tab_eq: 
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
-    # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE (ESTILO DEL CÓDIGO VIEJO)
-    # =========================================================================
-    if st.session_state.carrito:
-        st.markdown("<br><br><br>", unsafe_allow_html=True) 
-        st.markdown('<div class="cart-box">', unsafe_allow_html=True)
-        st.markdown(f"🛒 <b>Tu Cotización Actual ({len(st.session_state.carrito)} artículos)</b>", unsafe_allow_html=True)
-        
-        # LA ESTRUCTURA DEL CÓDIGO VIEJO: Convertir la lista a un solo string con espacios codificados manualmente
-        correo_limpio = st.session_state.user_email.replace("@", "%40").replace(".", "%2E")
-        productos_unidos = "%20-%20".join(st.session_state.carrito).replace(" ", "%20")
-        
-        url_carrito = f"https://wa.me/18295624653?text=Hola%20Multiagro,%20mi%20correo%20es%20{correo_limpio}%20y%20me%20interesa%20cotizar%20lo%20siguiente:%20{productos_unidos}"
-        
-        st.link_button("📲 Enviar Cotización a un Asesor", url_carrito, type="primary", use_container_width=True)
-        
-        if st.button("🗑️ Vaciar Carrito", use_container_width=True):
-            st.session_state.carrito = []
-            st.rerun()
-            
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
     # FORMULARIO DE REGISTRO
@@ -523,26 +488,19 @@ else:
         st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
     # =========================================================================
-    # LOGOS
+    # LOGOS (DISTRIBUCIÓN EN 5 COLUMNAS DEL CÓDIGO VIEJO)
     # =========================================================================
     st.divider()
     st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
     
+    l_cols = st.columns(5)
     logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
-    cols1 = st.columns(3)
-    cols2 = st.columns(2)
-    
-    for i, l_file in enumerate(logos_list[:3]):
-        with cols1[i]:
+    for i, l_file in enumerate(logos_list):
+        with l_cols[i]:
             if os.path.exists(l_file):
                 with open(l_file, "rb") as f: 
-                    st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{base64.b64encode(f.read()).decode()}"></div>', unsafe_allow_html=True)
-                    
-    for i, l_file in enumerate(logos_list[3:]):
-        with cols2[i]:
-            if os.path.exists(l_file):
-                with open(l_file, "rb") as f: 
-                    st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{base64.b64encode(f.read()).decode()}"></div>', unsafe_allow_html=True)
+                    b64_logo = base64.b64encode(f.read()).decode()
+                st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
                 
     st.markdown("""
         <div style='text-align: center; color: #666666; font-size: 0.85rem; margin-top: 50px; padding-bottom: 20px;'>
