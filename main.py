@@ -12,19 +12,26 @@ from supabase import create_client, Client
 import streamlit.components.v1 as components
 
 # =========================================================================
-# 1. CONFIGURACIÓN DE PÁGINA
+# 1. CONFIGURACIÓN DE PÁGINA Y ANTI-ERROR 500
 # =========================================================================
-st.set_page_config(page_title="Grupo Multiagro | AgTech", layout="wide")
+st.set_page_config(
+    page_title="AgroDiagnóstico Multiagro", 
+    layout="centered", 
+    initial_sidebar_state="collapsed"
+)
 
 components.html("""
     <script>
     let tiempoOculto;
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden) { tiempoOculto = new Date().getTime(); } 
-        else {
+        if (document.hidden) { 
+            tiempoOculto = new Date().getTime(); 
+        } else {
             if (tiempoOculto) {
                 let tiempoFuera = new Date().getTime() - tiempoOculto;
-                if (tiempoFuera > 900000) { window.parent.location.reload(); }
+                if (tiempoFuera > 900000) { 
+                    window.parent.location.reload(); 
+                }
             }
         }
     });
@@ -32,55 +39,60 @@ components.html("""
 """, height=0, width=0)
 
 # =========================================================================
-# 2. BLOQUE DE APARIENCIA (CSS DEL CÓDIGO VIEJO)
+# 2. BLOQUE DE APARIENCIA (CSS CORREGIDO PARA TEXTO BLANCO BRILLANTE)
 # =========================================================================
 st.markdown("""
     <style>
-    .stApp { background-color: #0E1117; color: #FFFFFF; }
+    [data-testid="stAppViewContainer"], .main, .block-container { overflow-x: hidden !important; }
     
-    [data-testid="stFileUploadDropzone"] { background-color: #F0F2F6 !important; border-radius: 20px; border: 2px dashed #007BFF !important; }
-    [data-testid="stFileUploadDropzone"] * { color: #000000 !important; }
-
-    [data-testid="stBaseButton-secondary"] p, [data-testid="stBaseButton-primary"] p, .stButton button p, .stFormSubmitButton button p { color: #000000 !important; font-weight: bold !important; margin-bottom: 0px !important; }
-    div.stButton > button, div.stFormSubmitButton > button, a[data-testid="stBaseButton-secondary"], a[data-testid="stBaseButton-primary"] { background-color: #007BFF !important; color: #000000 !important; border-radius: 30px !important; font-weight: bold !important; border: none !important; height: 45px !important; }
-
-    .product-card { background-color: #1E1E26; border-radius: 25px; padding: 25px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; transition: transform 0.3s ease; position: relative; display: flex; flex-direction: column; justify-content: space-between; height: 100%;}
-    .product-card:hover { transform: translateY(-5px); } 
-    .product-card h4 { color: #FFFFFF !important; font-size: 0.9rem; margin-top: 10px; margin-bottom: 5px;}
+    .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; color: #FFFFFF !important; font-size: 1.05rem; line-height: 1.6; }
+    .diag-box p, .diag-box span, .diag-box li, .diag-box div { color: #FFFFFF !important; }
+    .diag-box strong, .diag-box b { color: #4DA3FF !important; }
+    
+    /* TARJETAS DE PRODUCTOS CON TEXTO BLANCO OBLIGATORIO */
+    .product-card { 
+        background-color: #1E1E26; 
+        border-radius: 25px; 
+        padding: 20px; 
+        border: 1px solid #3E3E4A; 
+        text-align: center; 
+        margin-bottom: 20px; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between; 
+        height: 100%; 
+        position: relative;
+        color: #FFFFFF !important; 
+    }
+    .product-card h4 {
+        color: #FFFFFF !important;
+    }
+    
     .product-img { width: 100%; height: 140px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     
     .badge-fav { position: absolute; top: 10px; right: 10px; background-color: #FFD700; color: #000; font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
-    .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; color: white !important;}
-    .diag-box p, .diag-box li, .diag-box span { color: white !important; }
-    .diag-box strong, .diag-box b { color: #4DA3FF !important; }
-
     hr { border: 0; height: 1px; background: linear-gradient(to right, transparent, #3E3E4A, transparent); margin: 40px 0; }
-    .logo-container { display: flex; justify-content: center; align-items: center; height: 100px; background: #FFFFFF; border-radius: 20px; padding: 15px; margin-bottom: 15px;}
-    .logo-container img { height: 60px; width: auto; object-fit: contain; }
+    .logo-container { display: flex; justify-content: center; align-items: center; height: 80px; background: #FFFFFF; border-radius: 15px; padding: 10px; margin-bottom: 15px; }
+    .logo-container img { height: 50px; width: auto; object-fit: contain; }
     
-    label, .stMarkdown, p, span { color: #FFFFFF !important; }
-    .stTextInput>div>div>input, .stSelectbox>div>div>div { background-color: #161B22; color: white; border-radius: 15px; }
-
     .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
     .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
-    
     .login-box { background-color: #1E1E26; border-radius: 25px; padding: 0px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
     
-    .cart-box { background-color: #007BFF; color: white; padding: 20px; border-radius: 20px; text-align: center; font-weight: bold; margin-bottom: 20px; position: sticky; bottom: 10px; z-index: 999; box-shadow: 0px -5px 15px rgba(0,0,0,0.5); }
-    .cart-box p, .cart-box b, .cart-box h3 { color: white !important; }
+    .cart-box { background-color: #007BFF; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; margin-bottom: 20px; position: sticky; bottom: 10px; z-index: 999; box-shadow: 0px -5px 15px rgba(0,0,0,0.5); }
     </style>
     """, unsafe_allow_html=True)
 
 # =========================================================================
-# 3. INICIALIZACIÓN DE VARIABLES DE SESIÓN
+# 3. VARIABLES DE SESIÓN
 # =========================================================================
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 if "authenticated" not in st.session_state: st.session_state.authenticated = False
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
-if "inventario_odoo" not in st.session_state: st.session_state.inventario_odoo = [] 
+if "inventario_odoo" not in st.session_state: st.session_state.inventario_odoo = []  
 if "carrito" not in st.session_state: st.session_state.carrito = []
 
 kw_fito = ["ACIDO", "AMINOACIDO", "BACTERICIDA", "COADYUVANTE", "ENRAIZADOR", "FERTILIZANTE", "FUNGICIDA", "HERBICIDA", "HORMONA", "INOCULANTE", "INSECTICIDA", "NUTRICION", "FOLIAR"]
@@ -89,13 +101,11 @@ kw_riego = ["ACCESORIO", "ASPERSOR", "CINTA", "CONECTOR", "BOMBEO", "FILTRAD", "
 kw_equipos = ["BANDEJA", "DAEWOO", "EQUIPO", "FUMIGADOR", "GERMINACION", "HERRAMIENTA", "LANZA", "LIQUIDACION", "JARDIN", "MALLA", "MATERIAL", "PIEZA", "PLASTICO", "SARAN", "SIRFRAN", "SUBSTRATO", "SUSTRATO"]
 
 # =========================================================================
-# 4. FUNCIONES DE INTEGRACIÓN SUPABASE Y ODOO
+# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO
 # =========================================================================
 @st.cache_resource
 def init_supabase():
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
-    return create_client(url, key)
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 supabase: Client = init_supabase()
 
@@ -109,7 +119,7 @@ def puede_consultar(email, tier):
             conteo, fecha = 0, hoy
         else:
             conteo, fecha = res.data[0]["conteo"], res.data[0]["fecha_ultimo_uso"]
-            
+        
         if fecha != hoy:
             conteo = 0
             supabase.table("uso_diario").update({"conteo": 0, "fecha_ultimo_uso": hoy}).eq("email", email).execute()
@@ -123,8 +133,7 @@ def registrar_uso(email, tier):
     try:
         res = supabase.table("uso_diario").select("conteo").eq("email", email).execute()
         if res.data:
-            nuevo_conteo = res.data[0]["conteo"] + 1
-            supabase.table("uso_diario").update({"conteo": nuevo_conteo}).eq("email", email).execute()
+            supabase.table("uso_diario").update({"conteo": res.data[0]["conteo"] + 1}).eq("email", email).execute()
     except: pass
 
 def get_odoo_prods():
@@ -135,8 +144,13 @@ def get_odoo_prods():
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 2000})
-            productos = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id', 'priority', 'description']})
-            productos.sort(key=lambda x: 1 if str(x.get('priority', '0')) == '1' else 0, reverse=True)
+            
+            productos = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id', 'priority', 'description', 'description_sale']})
+            
+            def es_favorito(p):
+                return 1 if str(p.get('priority', '0')) == '1' else 0
+                
+            productos.sort(key=es_favorito, reverse=True)
             return productos
     except: return None
 
@@ -147,7 +161,7 @@ def registrar_cliente_odoo(nombre, email, telefono, lugar):
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgTech Multiagro | Provincia: {lugar}'}])
+            return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgroDiagnóstico | Prov: {lugar}'}])
     except: return None
 
 def es_cliente_vip_odoo(email):
@@ -171,7 +185,10 @@ def enviar_aviso_email(nombre, email, tel, lugar):
         msg['From'], msg['To'], msg['Subject'] = rem, st.secrets["EMAIL_RECEIVER"], f"🚀 Nuevo Registro: {nombre}"
         msg.attach(MIMEText(f"Nombre: {nombre}\nEmail: {email}\nTel: {tel}\nProvincia: {lugar}", 'plain'))
         server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls(); server.login(rem, pas); server.send_message(msg); server.quit()
+        server.starttls()
+        server.login(rem, pas)
+        server.send_message(msg)
+        server.quit()
         return True
     except: return False
 
@@ -193,20 +210,20 @@ def enviar_pregunta():
         st.session_state.input_duda = ""
 
 # =========================================================================
-# 5. LOGICA DE AUTENTICACIÓN
+# 5. LÓGICA DE AUTENTICACIÓN (LOGIN)
 # =========================================================================
 if not st.session_state.authenticated:
     _, mid, _ = st.columns([1, 1.5, 1])
     with mid:
         for f in sorted(os.listdir(".")):
-            if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
+            if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
                 st.image(f, use_container_width=True)
-        
+                
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
         st.markdown("""
             <div style="text-align: center; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;">
-                <h2 style='text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgTech Multiagro</h2>
-                <p style='text-align: center; color: #DDDDDD; margin-top: 10px; margin-bottom: 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.9); font-size: 1.1rem;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>
+                <h2 style='text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgroDiagnóstico Multiagro</h2>
+                <p style='text-align: center; color: #DDDDDD; margin-top: 10px; margin-bottom: 0; font-size: 1.1rem;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -221,219 +238,263 @@ if not st.session_state.authenticated:
                 
                 with st.spinner("Verificando credenciales..."):
                     dominio = email_lower.split('@')[-1]
-                    if dominio in ["grupomultiagro.com", "mundoagricola.net"]:
+                    if dominio in ["grupomultiagro.com", "mundoagricola.net"]: 
                         st.session_state.user_tier = "collaborator"
-                    elif es_cliente_vip_odoo(email_lower):
+                    elif es_cliente_vip_odoo(email_lower): 
                         st.session_state.user_tier = "vip"
-                    else:
+                    else: 
                         st.session_state.user_tier = "free"
                 st.rerun()
-            else:
-                st.error("Por favor, ingresa un correo electrónico válido.")
+            else: 
+                st.error("Por favor, ingresa un correo válido.")
         st.markdown('</div></div>', unsafe_allow_html=True)
 
 else:
     # =========================================================================
-    # 6. INICIO DEL CÓDIGO MAESTRO DE LA APP
+    # 6. INICIO DE LA APLICACIÓN PRINCIPAL
     # =========================================================================
-    
-    if st.session_state.user_tier == "collaborator":
+    if st.session_state.user_tier == "collaborator": 
         st.sidebar.success(f"👑 Acceso Ilimitado (Staff)\n{st.session_state.user_email}")
-    elif st.session_state.user_tier == "vip":
-        st.sidebar.success(f"🌟 Cliente VIP (Ilimitado)\n¡Gracias por preferir a Grupo Multiagro!\n{st.session_state.user_email}")
-    elif st.session_state.user_tier == "registered":
+    elif st.session_state.user_tier == "vip": 
+        st.sidebar.success(f"🌟 Cliente VIP\n{st.session_state.user_email}")
+    elif st.session_state.user_tier == "registered": 
         st.sidebar.info(f"✅ Usuario Registrado (5 Consultas)\n{st.session_state.user_email}")
-    else:
+    else: 
         st.sidebar.info(f"👤 Usuario Gratuito (2 Consultas)\n{st.session_state.user_email}")
         
     st.sidebar.divider()
     if st.sidebar.button("🔄 Actualizar Catálogo Odoo"):
-        with st.spinner("Descargando catálogo..."):
+        with st.spinner("Descargando el 100% de los productos..."):
             st.session_state.inventario_odoo = get_odoo_prods() or []
-        st.sidebar.success("¡Actualizado!")
+        st.sidebar.success("¡Catálogo actualizado con éxito!")
 
     _, mid, _ = st.columns([1, 2, 1])
     with mid:
         for f in sorted(os.listdir(".")):
-            if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"):
+            if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
                 st.image(f, use_container_width=True)
 
     if not st.session_state.inventario_odoo:
         st.session_state.inventario_odoo = get_odoo_prods() or []
 
-    # Clasificación robusta
-    p_med, p_sem, p_rie, p_equ = [], [], [], []
+    prods_medicina = []
+    prods_semillas = []
+    prods_riego = []
+    prods_equipos = []
+    
     for p in st.session_state.inventario_odoo:
-        cat = p.get('categ_id')
-        if isinstance(cat, list) and len(cat) > 1:
-            cn = str(cat[1]).upper() 
-            if any(k in cn for k in kw_fito): p_med.append(p)
-            elif any(k in cn for k in kw_semillas): p_sem.append(p)
-            elif any(k in cn for k in kw_riego): p_rie.append(p)
-            elif any(k in cn for k in kw_equipos): p_equ.append(p)
+        categoria = p.get('categ_id')
+        if isinstance(categoria, list) and len(categoria) > 1:
+            cat_name = str(categoria[1]).upper() 
+            
+            if any(kw in cat_name for kw in kw_fito): prods_medicina.append(p)
+            elif any(kw in cat_name for kw in kw_semillas): prods_semillas.append(p)
+            elif any(kw in cat_name for kw in kw_riego): prods_riego.append(p)
+            elif any(kw in cat_name for kw in kw_equipos): prods_equipos.append(p)
 
-    st.markdown("""
-        <div class="hero-banner">
-            <h1 class="hero-title">🔍 Diagnóstico Experto</h1>
-        </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown("""<div class="hero-banner"><h1 class="hero-title">🔍 Diagnóstico Experto</h1></div>""", unsafe_allow_html=True)
+    
     cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
     tab_gal, tab_cam = st.tabs(["📁 GALERÍA", "📸 CÁMARA"])
-    with tab_gal: img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
-    with tab_cam: img_cam = st.camera_input("Tomar foto")
+    with tab_gal: 
+        img_gal = st.file_uploader("Subir imagen", type=['png', 'jpg', 'jpeg'], key="uploader_gal")
+    with tab_cam: 
+        img_cam = st.camera_input("Tomar foto")
 
     img = img_cam if img_cam else img_gal
 
-    # LÓGICA DE IA MEJORADA (CON INGREDIENTES ACTIVOS)
+    # =========================================================================
+    # LÓGICA DE INTELIGENCIA ARTIFICIAL 
+    # =========================================================================
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
             if not puede_consultar(st.session_state.user_email, st.session_state.user_tier):
                 st.error("⚠️ Has alcanzado tu límite de diagnósticos por hoy.")
-                if st.session_state.user_tier == "free":
-                    st.info("💡 Desliza hacia abajo y regístrate como Productor para obtener **5 consultas diarias** gratis.")
             else:
-                with st.spinner("Analizando químicamente..."):
+                with st.spinner("Analizando..."):
                     try:
-                        inv_ia = ""
-                        for p in p_med:
-                            nota = str(p.get('description') or "Sin detalles").replace('\n', ' ').strip()
-                            inv_ia += f"[{str(p.get('categ_id', [''])[1]).upper()}] - {p['name']} (Ingrediente: {nota})\n"
+                        inventario_ia = "INVENTARIO DISPONIBLE:\n"
+                        for p in prods_medicina:
+                            cat_nombre = p['categ_id'][1] if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "OTROS"
+                            nota = str(p.get('description') or p.get('description_sale') or "Sin detalles").replace('\n', ' ').strip()
+                            
+                            inventario_ia += f"[{cat_nombre.upper()}] - Nombre Comercial: {p['name']} (Ingredientes/Notas: {nota})\n"
 
                         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                         model = genai.GenerativeModel('gemini-2.0-flash-lite')
                         
                         prompt = f"""
-                        RESPONDE 100% EN ESPAÑOL. Eres Fitopatólogo y Entomólogo de Multiagro. 
-                        CULTIVO: {cultivo_input if cultivo_input else 'No especificado'}.
-                        1. IDENTIFICACIÓN POSITIVA: Nombre común y técnico de la plaga/hongo.
-                        2. MANEJO QUÍMICO: RECOMIENDA EXACTAMENTE 4 productos diferentes de esta lista basándote en que su "Ingrediente" actúe contra el problema: \n{inv_ia[:4000]}
-                        Pon nombres comerciales en NEGRITAS.
-                        3. SEGURIDAD: Advierte leer la etiqueta del fabricante.
-                        4. LABORES CULTURALES: Describe labores de campo específicas.
+                        RESPONDE 100% EN ESPAÑOL. Eres Ing. Agrónomo y Fitopatólogo de Multiagro. 
+                        Analiza la planta: {cultivo_input if cultivo_input else 'No especificado'}.
+                        
+                        1. DIAGNÓSTICO: Identifica la plaga, hongo, bacteria o deficiencia nutricional.
+                        2. RECETA EXACTA: ESTÁS OBLIGADO a recomendar EXACTAMENTE 4 productos diferentes de la lista de abajo. 
+                        REGLA VITAL: Lee atentamente los "Ingredientes/Notas" de cada producto en el inventario. Usa tu conocimiento científico para saber qué ingrediente activo de nuestra lista erradica el problema diagnosticado. Fíjate que la categoría entre corchetes coincida (ej. no recetes INSECTICIDA para un hongo).
+                        
+                        {inventario_ia}
+                        
+                        Escribe el Nombre Comercial de los 4 productos recomendados en NEGRITAS.
+                        3. APLICACIÓN: Explica brevemente cómo el ingrediente activo actúa sobre el problema y da labores culturales.
                         """
                         
                         res = model.generate_content([prompt, Image.open(img)])
                         texto_ia_lower = res.text.lower()
-                        sugeridos, vistos = [], set()
+                        sugeridos = []
+                        vistos = set()
                         
-                        ignorar = ["fungicida", "insecticida", "herbicida", "fertilizante", "litro", "galon", "sc", "ec"]
-                        for p in p_med:
-                            nl = p['name'].split('(')[0].strip().lower()
-                            pclave = next((w for w in nl.split() if w not in ignorar and len(w)>2), nl.split()[0] if nl else "")
-                            if pclave and (pclave in texto_ia_lower or nl in texto_ia_lower) and pclave not in vistos:
-                                sugeridos.append(p); vistos.add(pclave)
-                            if len(sugeridos) >= 4: break
+                        palabras_ignoradas = ["fungicida", "insecticida", "herbicida", "fertilizante", "bactericida", "litro", "litros", "ml", "kg", "gr", "gramos", "galon", "galones", "sc", "ec", "sl", "wg", "wp", "agroquimico"]
+                        
+                        for p in prods_medicina:
+                            nombre_limpio = p['name'].split('(')[0].strip().lower()
+                            partes_nombre = nombre_limpio.split()
+                            
+                            palabra_clave = ""
+                            for palabra in partes_nombre:
+                                if palabra not in palabras_ignoradas and len(palabra) > 2:
+                                    palabra_clave = palabra
+                                    break
+                            
+                            if not palabra_clave and partes_nombre:
+                                palabra_clave = partes_nombre[0]
+                                
+                            if palabra_clave and (palabra_clave in texto_ia_lower or nombre_limpio in texto_ia_lower):
+                                if palabra_clave not in vistos:
+                                    sugeridos.append(p)
+                                    vistos.add(palabra_clave)
+                                    
+                            if len(sugeridos) >= 4: 
+                                break
                         
                         st.session_state.chat_history = [
-                            {"role": "user", "parts": [f"Contexto oculto: Realizaste análisis inicial de {cultivo_input}."]},
+                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar 4 productos leyendo sus ingredientes activos: \n{inventario_ia}"]},
                             {"role": "model", "parts": [res.text]}
                         ]
+                        
                         st.session_state.prods_filtrados = sugeridos
                         registrar_uso(st.session_state.user_email, st.session_state.user_tier)
                         st.rerun()
+                        
                     except Exception as e:
-                        if "rerun" not in str(e).lower(): st.error(f"Error: {e}")
-
-    # RENDERIZADO VISUAL DEL CHAT
-    if st.session_state.chat_history:
-        for i, msj in enumerate(st.session_state.chat_history):
-            if i == 0: continue 
-            if msj["role"] == "model":
-                st.markdown(f"<div class='diag-box'>🤖 {msj['parts'][0]}</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<div style='text-align: right; background-color: #007BFF; color: white; padding: 15px; border-radius: 20px; margin-bottom: 25px; margin-left: 15%; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);'>👤 <b>Tú:</b><br>{msj['parts'][0]}</div>", unsafe_allow_html=True)
-        
-        st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
-        
-        # =====================================================================
-        # SOLUCIÓN WHATSAPP EXACTA AL CÓDIGO VIEJO (Texto plano, sin quote)
-        # =====================================================================
-        enlace_wa_tecnico = "https://wa.me/18295624653?text=Hola, necesito consultar a un tecnico sobre un diagnostico en la app"
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", enlace_wa_tecnico, type="secondary", use_container_width=True)
-
-        if st.session_state.prods_filtrados:
-            st.markdown("<h4 style='color: #007BFF; margin-top:20px;'>🛒 Soluciones Sugeridas</h4>", unsafe_allow_html=True)
-            cols = st.columns(2)
-            for i, p in enumerate(st.session_state.prods_filtrados):
-                with cols[i % 2]:
-                    img_b64 = f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">' if p.get('image_128') else ""
-                    nc = p['name'].split('(')[0].strip()
-                    st.markdown(f"""
-                        <div class="product-card">
-                            {img_b64}
-                            <h4>{nc}</h4>
-                            <p style='color: #007BFF; font-weight: bold; margin: 0;'>RD$ {p['list_price']:,.2f}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    if nc in st.session_state.carrito: st.button("✅ Agregado", key=f"rec_ok_{p['id']}", disabled=True)
-                    else: st.button("➕ Agregar a Cotización", key=f"rec_{p['id']}", on_click=agregar_al_carrito, args=(nc,))
+                        if "rerun" not in str(e).lower(): 
+                            st.error(f"Error: {e}")
 
     # =========================================================================
-    # 7. CATÁLOGO E-COMMERCE (PESTAÑAS + CARRITO + BUSCADOR)
+    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP 
+    # =========================================================================
+    if st.session_state.chat_history:
+        for i, msj in enumerate(st.session_state.chat_history):
+            if i == 0: 
+                continue 
+                
+            if msj["role"] == "model": 
+                st.markdown(f"<div class='diag-box'>🤖 {msj['parts'][0]}</div>", unsafe_allow_html=True)
+            else: 
+                st.markdown(f"<div style='text-align: right; background-color: #007BFF; color: white; padding: 15px; border-radius: 20px; margin-bottom: 25px; margin-left: 15%;'>👤 <b>Tú:</b><br>{msj['parts'][0]}</div>", unsafe_allow_html=True)
+
+        st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # EL ENLACE APLICADO CON LA ESTRUCTURA DEL CÓDIGO VIEJO (TEXTO PLANO, SIN LIBRERÍA URLLIB)
+        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", "https://wa.me/18295624653?text=Hola, acabo de usar la app AgroDiagnostico Multiagro y necesito consultar a un tecnico sobre un diagnostico.", type="secondary", use_container_width=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if st.session_state.prods_filtrados:
+            st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas para este caso:</h4>", unsafe_allow_html=True)
+            cols_ia = st.columns(2) 
+            
+            for i, p in enumerate(st.session_state.prods_filtrados):
+                with cols_ia[i % 2]:
+                    img_b64 = f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">' if p.get('image_128') else ""
+                    nombre_corto = p['name'].split('(')[0].strip()
+                    badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
+                    
+                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
+                    
+                    if nombre_corto in st.session_state.carrito: 
+                        st.button("✅ Agregado", key=f"rec_ok_{p['id']}", disabled=True)
+                    else: 
+                        st.button("➕ Agregar a Cotización", key=f"rec_{p['id']}", on_click=agregar_al_carrito, args=(nombre_corto,))
+
+    # =========================================================================
+    # CATÁLOGO E-COMMERCE 
     # =========================================================================
     st.divider()
     st.markdown("<h2 style='text-align: center; color: #FFFFFF;'>🏪 Catálogo Multiagro</h2>", unsafe_allow_html=True)
-    busqueda = st.text_input("🔍 Buscar por nombre o ingrediente activo...")
     
-    t1, t2, t3, t4 = st.tabs(["🧪 Fito/Nutri", "🌱 Semillas", "💧 Riego", "🛠️ Equipos"])
+    busqueda_catalogo = st.text_input("🔍 Buscar productos en el catálogo...", placeholder="Ej: Abono, Cinta, Manguera, Tomate, o Ingrediente...")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    tab_fito, tab_sem, tab_riego, tab_eq = st.tabs(["🧪 Fito & Nutrición", "🌱 Semillas", "💧 Riego", "🛠️ Equipos"])
     
-    def render_cat(lista, q):
-        if q:
-            q = q.lower()
-            lf = [p for p in lista if q in p['name'].lower() or q in str(p.get('description','')).lower()]
-        else: lf = lista
-        
-        if not lf: st.info("No hay productos.")
+    def mostrar_catalogo(lista_productos, tab_key, busqueda):
+        if busqueda:
+            q = busqueda.lower()
+            lista_filtrada = [
+                p for p in lista_productos 
+                if q in p['name'].lower() 
+                or q in str(p.get('description', '')).lower() 
+                or q in str(p.get('description_sale', '')).lower()
+                or (isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 and q in p['categ_id'][1].lower())
+            ]
         else:
+            lista_filtrada = lista_productos
+            
+        if not lista_filtrada: 
+            if busqueda:
+                st.warning(f"No se encontraron productos relacionados con '{busqueda}' en esta pestaña.")
+            else:
+                st.info("No hay productos en esta categoría por el momento.")
+        else:
+            mostrar = lista_filtrada[:4]
             cols = st.columns(2)
-            for idx, p in enumerate(lf[:4]):
-                with cols[idx % 2]:
+            
+            for i, p in enumerate(mostrar):
+                with cols[i % 2]:
                     img_b64 = f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">' if p.get('image_128') else ""
-                    badge = '<div class="badge-fav">⭐ Destacado</div>' if str(p.get('priority','0')) == '1' else ""
-                    nc = p['name'].split('(')[0].strip()
-                    st.markdown(f"""
-                        <div class="product-card">
-                            {badge}
-                            {img_b64}
-                            <h4>{nc}</h4>
-                            <p style='color: #007BFF; font-weight: bold; margin: 0;'>RD$ {p['list_price']:,.2f}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    if nc in st.session_state.carrito: st.button("✅ Agregado", key=f"c_ok_{p['id']}", disabled=True)
-                    else: st.button("➕ Agregar", key=f"c_{p['id']}", on_click=agregar_al_carrito, args=(nc,))
+                    nombre_corto = p['name'].split('(')[0].strip()
+                    badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
+                    
+                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
+                    
+                    if nombre_corto in st.session_state.carrito: 
+                        st.button("✅ Agregado", key=f"cat_ok_{tab_key}_{p['id']}", disabled=True)
+                    else: 
+                        st.button("➕ Agregar", key=f"cat_{tab_key}_{p['id']}", on_click=agregar_al_carrito, args=(nombre_corto,))
 
-    with t1: render_cat(p_med, busqueda)
-    with t2: render_cat(p_sem, busqueda)
-    with t3: render_cat(p_rie, busqueda)
-    with t4: render_cat(p_equ, busqueda)
+    with tab_fito: 
+        mostrar_catalogo(prods_medicina, "fito", busqueda_catalogo)
+    with tab_sem: 
+        mostrar_catalogo(prods_semillas, "sem", busqueda_catalogo)
+    with tab_riego: 
+        mostrar_catalogo(prods_riego, "riego", busqueda_catalogo)
+    with tab_eq: 
+        mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
-    # CARRITO DE COMPRAS FLOTANTE
+    # =========================================================================
+    # CARRITO DE WHATSAPP FLOTANTE (ESTILO DEL CÓDIGO VIEJO)
+    # =========================================================================
     if st.session_state.carrito:
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br><br><br>", unsafe_allow_html=True) 
         st.markdown('<div class="cart-box">', unsafe_allow_html=True)
-        st.markdown(f"<h3>🛒 Tu Cotización ({len(st.session_state.carrito)})</h3>", unsafe_allow_html=True)
+        st.markdown(f"🛒 <b>Tu Cotización Actual ({len(st.session_state.carrito)} artículos)</b>", unsafe_allow_html=True)
         
-        # =====================================================================
-        # SOLUCIÓN WHATSAPP EXACTA AL CÓDIGO VIEJO (Texto plano, 1 sola línea)
-        # =====================================================================
+        # LA ESTRUCTURA DEL CÓDIGO VIEJO: Convertir la lista a un solo string separado por guiones y mandarlo plano
         productos_unidos = " - ".join(st.session_state.carrito)
-        enlace_wa_carrito = f"https://wa.me/18295624653?text=Hola Multiagro, deseo cotizar los siguientes productos: {productos_unidos}"
-        
-        st.link_button("📲 ENVIAR COTIZACIÓN A WHATSAPP", enlace_wa_carrito, type="primary", use_container_width=True)
+        st.link_button("📲 Enviar Cotización a un Asesor", f"https://wa.me/18295624653?text=Hola Multiagro, mi correo es {st.session_state.user_email} y me interesa cotizar lo siguiente: {productos_unidos}", type="primary", use_container_width=True)
         
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
             st.rerun()
+            
         st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # 8. REGISTRO
+    # FORMULARIO DE REGISTRO
     # =========================================================================
     st.divider()
     st.markdown("### 👤 Registro de Productor")
-
+    
     provincias_rd = ["Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte", "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez", "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samaná", "Sánchez Ramírez", "San Cristóbal", "San José de Ocoa", "San Juan", "San Pedro de Macorís", "Santiago", "Santiago Rodríguez", "Santo Domingo", "Valverde"]
 
     if 'reg_ok' not in st.session_state:
@@ -457,19 +518,26 @@ else:
         st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
     # =========================================================================
-    # 9. LOGOS FINALES (DISEÑO ORIGINAL DE 5 COLUMNAS)
+    # LOGOS
     # =========================================================================
     st.divider()
     st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
-
-    l_cols = st.columns(5)
+    
     logos_list = ["LogoMundoAgricola.png", "LogoMultisemillas.png", "LogoMultiriegos.png", "LogoFortius.png", "LogoAgroservicios.png"]
-    for i, l_file in enumerate(logos_list):
-        with l_cols[i]:
+    cols1 = st.columns(3)
+    cols2 = st.columns(2)
+    
+    for i, l_file in enumerate(logos_list[:3]):
+        with cols1[i]:
             if os.path.exists(l_file):
                 with open(l_file, "rb") as f: 
-                    b64_logo = base64.b64encode(f.read()).decode()
-                st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}"></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{base64.b64encode(f.read()).decode()}"></div>', unsafe_allow_html=True)
+                    
+    for i, l_file in enumerate(logos_list[3:]):
+        with cols2[i]:
+            if os.path.exists(l_file):
+                with open(l_file, "rb") as f: 
+                    st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{base64.b64encode(f.read()).decode()}"></div>', unsafe_allow_html=True)
                 
     st.markdown("""
         <div style='text-align: center; color: #666666; font-size: 0.85rem; margin-top: 50px; padding-bottom: 20px;'>
