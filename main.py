@@ -40,7 +40,7 @@ components.html("""
 """, height=0, width=0)
 
 # =========================================================================
-# 2. BLOQUE DE APARIENCIA (CSS CON TEXTO BLANCO)
+# 2. BLOQUE DE APARIENCIA (CSS)
 # =========================================================================
 st.markdown("""
     <style>
@@ -50,7 +50,6 @@ st.markdown("""
     .diag-box p, .diag-box span, .diag-box li, .diag-box div { color: #FFFFFF !important; }
     .diag-box strong, .diag-box b { color: #4DA3FF !important; }
     
-    /* TARJETAS CON TEXTO BLANCO OBLIGATORIO */
     .product-card { 
         background-color: #1E1E26; 
         border-radius: 25px; 
@@ -65,9 +64,7 @@ st.markdown("""
         position: relative; 
         color: #FFFFFF !important; 
     }
-    .product-card h4 { 
-        color: #FFFFFF !important; 
-    }
+    .product-card h4 { color: #FFFFFF !important; }
     
     .product-img { width: 100%; height: 140px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     
@@ -154,20 +151,14 @@ def get_odoo_prods():
         db = st.secrets["ODOO_DB"]
         user = st.secrets["ODOO_USER"]
         key = st.secrets["ODOO_API_KEY"]
-        
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
-        
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
-            # LIMITE DE 2000 PRODUCTOS PARA QUE NO SE QUEDE NINGUNO FUERA
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 2000})
-            
             productos = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id', 'priority', 'description', 'description_sale']})
-            
             def es_favorito(p):
                 return 1 if str(p.get('priority', '0')) == '1' else 0
-                
             productos.sort(key=es_favorito, reverse=True)
             return productos
     except: 
@@ -403,7 +394,7 @@ else:
                         st.error(f"Error: {e}")
 
     # =========================================================================
-    # CHAT Y BOTÓN WHATSAPP DEL TÉCNICO
+    # CHAT Y BOTÓN WHATSAPP DEL TÉCNICO (NATIVO CON TARGET _SELF)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -416,9 +407,17 @@ else:
 
         st.text_input("💬 Escribe tu duda al asistente IA:", key="input_duda", on_change=enviar_pregunta)
         
-        # EL BOTÓN ORIGINAL DE STREAMLIT
+        # LA SOLUCIÓN PROFESIONAL: Botón HTML usando API oficial y target=_self
         mensaje_tecnico = urllib.parse.quote("Hola, necesito consultar a un técnico sobre un diagnóstico.")
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_tecnico}", type="secondary", use_container_width=True)
+        url_api_tecnico = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_tecnico}"
+        
+        st.markdown(f"""
+            <a href="{url_api_tecnico}" target="_self" style="text-decoration: none;">
+                <div style="background-color: #3E3E4A; border: 1px solid #4DA3FF; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 25px; margin-top: 15px;">
+                    👨‍🌾 Consultar dudas a un técnico por WhatsApp
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas:</h4>", unsafe_allow_html=True)
@@ -486,7 +485,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE Y EL "PLAN B (SALVAVIDAS)"
+    # CARRITO DE WHATSAPP FLOTANTE (NATIVO CON TARGET _SELF)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -500,14 +499,16 @@ else:
         texto_ws += f"\nUsuario: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # EL BOTÓN ORIGINAL (El que funcionaba al principio)
-        st.link_button("📲 Enviar Cotización por WhatsApp", f"https://wa.me/18295624653?text={mensaje_codificado}", type="primary", use_container_width=True)
+        # LA SOLUCIÓN PROFESIONAL PARA EL CARRITO: API Oficial de WhatsApp con target=_self
+        url_api_carrito = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_codificado}"
         
-        # === EL PLAN B (LA CAJA AMARILLA SALVAVIDAS) ===
-        with st.expander("⚠️ ¿Tu celular bloquea el botón y no abre WhatsApp? Toca aquí"):
-            st.warning("Tu aplicación o celular tiene alta seguridad y no permite saltar a WhatsApp. Por favor, toca el ícono de las dos hojitas arriba a la derecha del cuadro negro para copiar el texto, y envíalo manualmente a nuestro número: **+1 829-562-4653**")
-            st.code(texto_ws, language="text")
-        # ===============================================
+        st.markdown(f"""
+            <a href="{url_api_carrito}" target="_self" style="text-decoration: none;">
+                <div style="background-color: #25D366; color: white; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
+                    📲 Enviar Cotización a WhatsApp
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
         
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
