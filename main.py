@@ -40,7 +40,7 @@ components.html("""
 """, height=0, width=0)
 
 # =========================================================================
-# 2. BLOQUE DE APARIENCIA (CSS)
+# 2. BLOQUE DE APARIENCIA (CSS CON TEXTO BLANCO)
 # =========================================================================
 st.markdown("""
     <style>
@@ -78,7 +78,7 @@ st.markdown("""
     .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
     .login-box { background-color: #1E1E26; border-radius: 25px; padding: 0px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
     
-    .cart-box { background-color: #007BFF; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; margin-bottom: 20px; position: sticky; bottom: 10px; z-index: 999; box-shadow: 0px -5px 15px rgba(0,0,0,0.5); }
+    .cart-box { background-color: #007BFF; color: white; padding: 15px; border-radius: 15px; font-weight: bold; margin-bottom: 20px; position: sticky; bottom: 10px; z-index: 999; box-shadow: 0px -5px 15px rgba(0,0,0,0.5); }
     </style>
     """, unsafe_allow_html=True)
 
@@ -330,7 +330,7 @@ else:
     img = img_cam if img_cam else img_gal
 
     # =========================================================================
-    # LÓGICA DE INTELIGENCIA ARTIFICIAL (LEYENDO NOTAS)
+    # LÓGICA DE INTELIGENCIA ARTIFICIAL 
     # =========================================================================
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
@@ -394,7 +394,7 @@ else:
                         st.error(f"Error: {e}")
 
     # =========================================================================
-    # CHAT Y BOTÓN WHATSAPP DEL TÉCNICO (NATIVO CON TARGET _SELF)
+    # CHAT Y BOTÓN WHATSAPP DEL TÉCNICO (CLÁSICO NATIVO)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -407,17 +407,9 @@ else:
 
         st.text_input("💬 Escribe tu duda al asistente IA:", key="input_duda", on_change=enviar_pregunta)
         
-        # LA SOLUCIÓN PROFESIONAL: Botón HTML usando API oficial y target=_self
+        # Botón Nativo Oficial (Funciona con Enable System User-Agent activo en WebIntoApp)
         mensaje_tecnico = urllib.parse.quote("Hola, necesito consultar a un técnico sobre un diagnóstico.")
-        url_api_tecnico = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_tecnico}"
-        
-        st.markdown(f"""
-            <a href="{url_api_tecnico}" target="_self" style="text-decoration: none;">
-                <div style="background-color: #3E3E4A; border: 1px solid #4DA3FF; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 25px; margin-top: 15px;">
-                    👨‍🌾 Consultar dudas a un técnico por WhatsApp
-                </div>
-            </a>
-        """, unsafe_allow_html=True)
+        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_tecnico}", type="secondary", use_container_width=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas:</h4>", unsafe_allow_html=True)
@@ -485,12 +477,12 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE (NATIVO CON TARGET _SELF)
+    # CARRITO DE WHATSAPP (BOTÓN + CAJA ELEGANTE DE RESUMEN)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
         st.markdown('<div class="cart-box">', unsafe_allow_html=True)
-        st.markdown(f"🛒 <b>Cotización ({len(st.session_state.carrito)} artículos)</b>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color:white; margin-top:0px;'>🛒 Tu Cotización ({len(st.session_state.carrito)} artículos)</h3>", unsafe_allow_html=True)
         
         texto_ws = "Hola Multiagro, estoy interesado en cotizar:\n\n"
         for idx, item in enumerate(st.session_state.carrito): 
@@ -499,17 +491,13 @@ else:
         texto_ws += f"\nUsuario: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # LA SOLUCIÓN PROFESIONAL PARA EL CARRITO: API Oficial de WhatsApp con target=_self
-        url_api_carrito = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_codificado}"
+        # CAJA ELEGANTE DE RESUMEN (Permite copiar el texto visualmente)
+        st.text_area("📋 Resumen de tu pedido (Puedes copiar este texto):", value=texto_ws, height=140)
         
-        st.markdown(f"""
-            <a href="{url_api_carrito}" target="_self" style="text-decoration: none;">
-                <div style="background-color: #25D366; color: white; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
-                    📲 Enviar Cotización a WhatsApp
-                </div>
-            </a>
-        """, unsafe_allow_html=True)
+        # EL BOTÓN NATIVO
+        st.link_button("📲 Abrir WhatsApp y Enviar", f"https://wa.me/18295624653?text={mensaje_codificado}", type="primary", use_container_width=True)
         
+        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
             st.rerun()
