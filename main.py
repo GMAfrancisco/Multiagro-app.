@@ -66,7 +66,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =========================================================================
-# 3. VARIABLES DE SESIÓN Y ESCÁNER DE CATEGORÍAS
+# 3. VARIABLES DE SESIÓN Y DICCIONARIO EXACTO DE ODOO
 # =========================================================================
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
@@ -76,11 +76,11 @@ if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
 if "todos_los_prods" not in st.session_state: st.session_state.todos_los_prods = [] 
 if "carrito" not in st.session_state: st.session_state.carrito = []
 
-# Se agregó "fingicida" para cubrir posibles errores de tipeo en Odoo
-kw_fito = ["fungicida", "fingicida", "bactericida", "herbicida", "insecticida", "inoculante", "coadyuvante", "regulador", "ácido", "acido", "aminoácido", "aminoacido", "enraizador", "hormona", "fertilizante"]
-kw_semillas = ["ajies", "ají", "calabaza", "pepino", "sandia", "sandía", "tomate", "aromatica", "aromática", "berenjena", "cebolla", "cilantro", "lechuga", "maiz", "maíz", "melon", "melón", "zanahoria", "semilla"]
-kw_riego = ["riego", "aspersor", "goteo", "conector", "filtrado", "layflat", "microaspersor", "tuberia", "tubería", "valvula", "válvula"]
-kw_equipos = ["bandeja", "dewoo", "fumigadora", "herramienta", "jardin", "jardín", "lanza", "malla", "invernadero", "plastico", "plástico", "saran", "sirfran", "substrato", "sustrato", "equipo"]
+# CATEGORÍAS LITERALES EXTRAÍDAS DE TU IMAGEN
+cat_fito = ["ACIDOS HUMICOS/AMINOACIDOS", "BACTERICIDAS", "COADYUVANTES", "ENRAIZADOR", "FERTILIZANTE GRANULAR", "FERTILIZANTES HIDROSOLUBLES", "FUNGICIDAS", "HERBICIDAS", "HORMONAS", "INOCULANTES BIOLOGICOS", "INSECTICIDAS"]
+cat_semillas = ["AJIES", "AROMATICAS", "CALABAZAS", "CILANTRO", "MAIZ", "PEPINO", "SANDIA", "TOMATES"]
+cat_riego = ["ACCESORIOS DE RIEGO", "ASPERSORES", "CINTA DE GOTEO", "CONECTORES ALTA PRESION MANGUERA PE", "CONECTORES MANGUERAS PE", "CONECTORES TIPO VALVULAS DE CINTAS DE GOTEO", "EQUIPOS DE BOMBEO DE AGUA", "FILTRADO", "MANGUERA DE LAYFLAT", "MICROASPERSORES", "RIEGO JARDINERIA", "TUBERIA DE GOTERO TURBULENTO", "TUBERIA DE POLIETILENO", "TUBERIA MULTIBAR", "VALVULAS DE RIEGO", "RIEGO"]
+cat_equipos = ["BANDEJA DE SIEMBRA", "DAEWOO", "EQUIPOS MR", "FUMIGADORA A MOTOR", "FUMIGADORA MANUAL", "GERMINACION", "HERRAMIENTAS DE PODA", "LANZA FUMIGACIÓN", "LIQUIDACIONES", "LÍNEA JARDÍN", "MALLAS P/ INVERNADERO", "MATERIALES PARA INVERNADEROS", "MATERIALES PVC", "PIEZAS", "PLASTICO AGRICOLA DE INVERNADERO", "PLASTICO AGRICOLA DE SUELO", "PLASTICO AGRICOLA MR", "SARAN", "SIRFRAN", "SUBSTRATO"]
 
 # =========================================================================
 # 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO
@@ -92,8 +92,7 @@ def init_supabase():
 supabase: Client = init_supabase()
 
 def puede_consultar(email, tier):
-    if tier in ["collaborator", "vip"]: 
-        return True 
+    if tier in ["collaborator", "vip"]: return True 
     hoy = str(date.today())
     try:
         res = supabase.table("uso_diario").select("*").eq("email", email).execute()
@@ -109,8 +108,7 @@ def puede_consultar(email, tier):
             
         limite = 5 if tier == "registered" else 2
         return conteo < limite
-    except: 
-        return True
+    except: return True
 
 def registrar_uso(email, tier):
     if tier in ["collaborator", "vip"]: return
@@ -122,10 +120,7 @@ def registrar_uso(email, tier):
 
 def get_odoo_prods():
     try:
-        url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"]
-        user = st.secrets["ODOO_USER"]
-        key = st.secrets["ODOO_API_KEY"]
+        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
         if uid:
@@ -253,7 +248,7 @@ else:
     if not st.session_state.todos_los_prods:
         st.session_state.todos_los_prods = get_odoo_prods() or []
 
-    # CLASIFICACIÓN CON EL NUEVO ESCÁNER DE PALABRAS CLAVE
+    # CLASIFICACIÓN CON EL ESCÁNER MEJORADO Y EXACTO
     prods_medicina = []
     prods_semillas = []
     prods_riego = []
@@ -262,16 +257,13 @@ else:
     for p in st.session_state.todos_los_prods:
         categoria = p.get('categ_id')
         if isinstance(categoria, list) and len(categoria) > 1:
-            cat_name = categoria[1].lower() 
+            # Convertimos la categoría a mayúsculas para igualar con tu lista
+            cat_name = str(categoria[1]).upper() 
             
-            if any(kw in cat_name for kw in kw_fito):
-                prods_medicina.append(p)
-            elif any(kw in cat_name for kw in kw_semillas):
-                prods_semillas.append(p)
-            elif any(kw in cat_name for kw in kw_riego):
-                prods_riego.append(p)
-            elif any(kw in cat_name for kw in kw_equipos):
-                prods_equipos.append(p)
+            if any(kw in cat_name for kw in cat_fito): prods_medicina.append(p)
+            elif any(kw in cat_name for kw in cat_semillas): prods_semillas.append(p)
+            elif any(kw in cat_name for kw in cat_riego): prods_riego.append(p)
+            elif any(kw in cat_name for kw in cat_equipos): prods_equipos.append(p)
 
     st.markdown("""<div class="hero-banner"><h1 class="hero-title">🔍 Diagnóstico Experto</h1></div>""", unsafe_allow_html=True)
     
@@ -286,7 +278,7 @@ else:
     img = img_cam if img_cam else img_gal
 
     # =========================================================================
-    # LÓGICA DE INTELIGENCIA ARTIFICIAL ("EL MALETÍN MÉDICO")
+    # LÓGICA DE INTELIGENCIA ARTIFICIAL ("EL MALETÍN MÉDICO PRECISO")
     # =========================================================================
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
@@ -295,11 +287,17 @@ else:
             else:
                 with st.spinner("Analizando..."):
                     try:
-                        # LISTA INTELIGENTE PARA LA IA 
-                        inventario_ia = "INVENTARIO DISPONIBLE:\n"
+                        # LE ENSEÑAMOS EL INVENTARIO AGRUPADO A LA IA
+                        inventario_agrupado = {}
                         for p in prods_medicina:
-                            cat_nombre = p['categ_id'][1] if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "Otros"
-                            inventario_ia += f"[{cat_nombre.upper()}] - {p['name']}\n"
+                            cat = p['categ_id'][1].upper() if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "OTROS"
+                            if cat not in inventario_agrupado:
+                                inventario_agrupado[cat] = []
+                            inventario_agrupado[cat].append(p['name'])
+                        
+                        inventario_ia = ""
+                        for cat, prods in inventario_agrupado.items():
+                            inventario_ia += f"Categoría [{cat}]: {', '.join(prods)}\n"
 
                         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                         model = genai.GenerativeModel('gemini-2.0-flash-lite')
@@ -310,9 +308,12 @@ else:
                         
                         1. DIAGNÓSTICO: Identifica la plaga, hongo o enfermedad.
                         2. RECETA EXACTA: De la lista de abajo, elige los 4 productos más efectivos. 
-                        REGLA VITAL: Fíjate en la categoría entre corchetes []. Si es hongo o enfermedad fúngica, usa los que digan FUNGICIDA o FUNGICIDAS. Si es insecto, INSECTICIDA.
+                        REGLA VITAL: Si identificas un hongo, busca exclusivamente dentro de la Categoría [FUNGICIDAS]. Si es insecto, busca en [INSECTICIDAS].
+                        
+                        INVENTARIO:
                         {inventario_ia}
-                        Menciona los nombres comerciales EXACTOS de los productos recomendados en NEGRITAS.
+                        
+                        Escribe el nombre comercial de los productos recomendados en NEGRITAS.
                         3. APLICACIÓN: Explica brevemente cómo usarlos y labores culturales.
                         """
                         
@@ -321,14 +322,14 @@ else:
                         sugeridos = []
                         vistos = set()
                         
-                        # MEJORA EN LA DETECCIÓN DE RECOMENDACIONES (FILTRO DE NOMBRE COMERCIAL)
-                        palabras_ignoradas = ["fungicida", "fungicidas", "insecticida", "insecticidas", "herbicida", "herbicidas", "fertilizante", "bactericida", "bactericidas", "litro", "litros"]
+                        # FILTRO MEJORADO DE EXTRACCIÓN
+                        palabras_ignoradas = ["fungicida", "insecticida", "herbicida", "fertilizante", "bactericida", "litro", "litros", "ml", "kg", "gr", "gramos", "galon", "galones", "sc", "ec", "sl", "wg", "wp", "agroquimico"]
                         
                         for p in prods_medicina:
                             nombre_limpio = p['name'].split('(')[0].strip().lower()
                             partes_nombre = nombre_limpio.split()
                             
-                            # Buscar la primera palabra que sea el verdadero nombre comercial (ej. saltar "Fungicida")
+                            # Buscar la palabra clave principal que no sea genérica
                             palabra_clave = ""
                             for palabra in partes_nombre:
                                 if palabra not in palabras_ignoradas and len(palabra) > 2:
@@ -338,7 +339,6 @@ else:
                             if not palabra_clave and partes_nombre:
                                 palabra_clave = partes_nombre[0]
                                 
-                            # Verifica si la IA mencionó el nombre completo o la palabra clave
                             if palabra_clave and (palabra_clave in texto_ia_lower or nombre_limpio in texto_ia_lower):
                                 if palabra_clave not in vistos:
                                     sugeridos.append(p)
@@ -348,7 +348,7 @@ else:
                                 break
                         
                         st.session_state.chat_history = [
-                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar 4 productos de este inventario: \n{inventario_ia}"]},
+                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar de este inventario: \n{inventario_ia}"]},
                             {"role": "model", "parts": [res.text]}
                         ]
                         
@@ -373,16 +373,13 @@ else:
             else: 
                 st.markdown(f"<div style='text-align: right; background-color: #007BFF; color: white; padding: 15px; border-radius: 20px; margin-bottom: 25px; margin-left: 15%;'>👤 <b>Tú:</b><br>{msj['parts'][0]}</div>", unsafe_allow_html=True)
 
-        # LA BARRA DE CHAT PARA SEGUIR PREGUNTANDO
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # EL BOTÓN ORIGINAL DE WHATSAPP 
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
         st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_wa}", type="secondary", use_container_width=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # MOSTRAR HASTA 4 TARJETAS RECOMENDADAS POR LA IA
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas para este caso:</h4>", unsafe_allow_html=True)
             cols_ia = st.columns(2) 
