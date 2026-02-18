@@ -365,7 +365,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y BOTÓN WHATSAPP 1 (DOBLE ESTRATEGIA)
+    # MOSTRAR EL CHAT Y EL TEST DE LOS 3 BOTONES
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -380,14 +380,21 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # EL BOTÓN NATIVO RESTAURADO EXACTAMENTE COMO ESTABA
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
-        url_btn_1 = f"https://wa.me/18295624653?text={mensaje_wa}"
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", url_btn_1, type="secondary", use_container_width=True)
         
-        # EL ENLACE DIRECTO (SACA DE APUROS SI LA APP BLOQUEA EL BOTÓN)
-        url_directa_1 = f"whatsapp://send?phone=18295624653&text={mensaje_wa}"
-        st.markdown(f"<div style='text-align:center; padding-top:5px; margin-bottom:30px;'><a href='{url_directa_1}' style='color:#4DA3FF; font-size:0.9rem; text-decoration:underline;'>¿El botón no abre? Toca este enlace directo</a></div>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align:center;'>⬇️ PRUEBA DE BOTONES ⬇️</h4>", unsafe_allow_html=True)
+        
+        # PRUEBA 1: Botón Nativo (El Clásico)
+        st.link_button("👉 PRUEBA 1: Botón Normal", f"https://wa.me/18295624653?text={mensaje_wa}", use_container_width=True)
+        
+        # PRUEBA 2: Enlace de Texto Puro (El Seguro)
+        st.markdown(f"<div style='text-align:center; padding:15px; background-color:#1E1E26; border-radius:10px; margin-bottom:15px;'><a href='https://wa.me/18295624653?text={mensaje_wa}' style='color:#25D366; font-size:1.1rem; font-weight:bold; text-decoration:none;'>👉 PRUEBA 2: Toca este texto para WhatsApp</a></div>", unsafe_allow_html=True)
+        
+        # PRUEBA 3: El Forzador de Android (El Hack)
+        intent_url = f"intent://send?phone=18295624653&text={mensaje_wa}#Intent;scheme=whatsapp;package=com.whatsapp;action=android.intent.action.VIEW;end"
+        st.markdown(f"<div style='text-align:center; padding:15px; background-color:#1E1E26; border-radius:10px;'><a href='{intent_url}' style='color:#4DA3FF; font-size:1.1rem; font-weight:bold; text-decoration:none;'>👉 PRUEBA 3: Toca para forzar App Android</a></div>", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas para este caso:</h4>", unsafe_allow_html=True)
@@ -462,7 +469,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE (DOBLE ESTRATEGIA)
+    # CARRITO DE WHATSAPP FLOTANTE
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -476,14 +483,9 @@ else:
         texto_ws += f"\nQuedo atento a disponibilidad y precios. Mi usuario es: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # EL BOTÓN NATIVO RESTAURADO EXACTAMENTE COMO ESTABA
-        url_btn_2 = f"https://wa.me/18295624653?text={mensaje_codificado}"
-        st.link_button("📲 Enviar Cotización por WhatsApp", url_btn_2, type="primary", use_container_width=True)
+        # DEJAMOS EL BOTÓN 1 COMO PREDETERMINADO AQUÍ ABAJO PARA QUE NO ESTORBE
+        st.link_button("📲 Enviar Cotización por WhatsApp", f"https://wa.me/18295624653?text={mensaje_codificado}", type="primary", use_container_width=True)
         
-        # EL ENLACE DIRECTO (SACA DE APUROS SI LA APP BLOQUEA EL BOTÓN)
-        url_directa_2 = f"whatsapp://send?phone=18295624653&text={mensaje_codificado}"
-        st.markdown(f"<div style='text-align:center; padding-top:5px; padding-bottom:15px;'><a href='{url_directa_2}' style='color:#FFFFFF; font-size:0.9rem; text-decoration:underline;'>¿El botón no abre? Toca este enlace directo</a></div>", unsafe_allow_html=True)
-
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
             st.rerun()
