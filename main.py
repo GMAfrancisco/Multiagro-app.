@@ -380,7 +380,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP 
+    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -395,8 +395,9 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # EL ENLACE APLICADO CON LA ESTRUCTURA DEL CÓDIGO VIEJO (TEXTO PLANO, SIN LIBRERÍA URLLIB)
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", "https://wa.me/18295624653?text=Hola, acabo de usar la app AgroDiagnostico Multiagro y necesito consultar a un tecnico sobre un diagnostico.", type="secondary", use_container_width=True)
+        # EL ENLACE APLICADO CON LA ESTRUCTURA EXACTA DEL CÓDIGO VIEJO (ESPACIOS SUSTITUIDOS MANUALMENTE)
+        url_tecnico = "https://wa.me/18295624653?text=Hola,%20acabo%20de%20usar%20la%20app%20AgroDiagnostico%20Multiagro%20y%20necesito%20consultar%20a%20un%20tecnico%20sobre%20un%20diagnostico"
+        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", url_tecnico, type="secondary", use_container_width=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
@@ -479,9 +480,13 @@ else:
         st.markdown('<div class="cart-box">', unsafe_allow_html=True)
         st.markdown(f"🛒 <b>Tu Cotización Actual ({len(st.session_state.carrito)} artículos)</b>", unsafe_allow_html=True)
         
-        # LA ESTRUCTURA DEL CÓDIGO VIEJO: Convertir la lista a un solo string separado por guiones y mandarlo plano
-        productos_unidos = " - ".join(st.session_state.carrito)
-        st.link_button("📲 Enviar Cotización a un Asesor", f"https://wa.me/18295624653?text=Hola Multiagro, mi correo es {st.session_state.user_email} y me interesa cotizar lo siguiente: {productos_unidos}", type="primary", use_container_width=True)
+        # LA ESTRUCTURA DEL CÓDIGO VIEJO: Convertir la lista a un solo string con espacios codificados manualmente
+        correo_limpio = st.session_state.user_email.replace("@", "%40").replace(".", "%2E")
+        productos_unidos = "%20-%20".join(st.session_state.carrito).replace(" ", "%20")
+        
+        url_carrito = f"https://wa.me/18295624653?text=Hola%20Multiagro,%20mi%20correo%20es%20{correo_limpio}%20y%20me%20interesa%20cotizar%20lo%20siguiente:%20{productos_unidos}"
+        
+        st.link_button("📲 Enviar Cotización a un Asesor", url_carrito, type="primary", use_container_width=True)
         
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
