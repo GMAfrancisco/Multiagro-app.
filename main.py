@@ -164,7 +164,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =========================================================================
-# 3. VARIABLES DE SESIÓN Y CATEGORÍAS
+# 3. VARIABLES DE SESIÓN Y ESCÁNER DE CATEGORÍAS
 # =========================================================================
 if "chat_history" not in st.session_state: 
     st.session_state.chat_history = []
@@ -181,14 +181,14 @@ if "todos_los_prods" not in st.session_state:
 if "carrito" not in st.session_state: 
     st.session_state.carrito = []
 
-# Clasificación para Odoo
-cat_fito = ["Fungicidas", "Bactericidas", "Herbicidas", "Insecticidas", "Inoculantes biologicos", "Coadyuvantes", "Regulador PH", "Ácidos Húmicos/Aminoácidos", "Enraizador", "Hormonas", "Fertilizantes hidrosolubles", "Fertilizante granular"]
-cat_semillas = ["Ajies", "Calabazas", "Pepinos", "Sandia", "Tomates", "Aromaticas", "Berenjena", "Cebolla", "Cilantro", "Lechuga", "Maiz", "Melon", "Zanahoria"]
-cat_riego = ["Accesorios de riego", "Aspersores", "Cintas de goteo", "Conectores alta presión manguera", "Conectores mangueras PE", "Conectores tipo válvulas de cintas de goteo", "Filtrado", "Manguera de Layflat", "Maquinas de riego", "Microaspersores", "Riego jardinería", "Tubería de gotero turbulento", "Tubería de polietileno", "Tubería multibar", "Valvulas de riego"]
-cat_equipos = ["Bandeja de siembra", "DEWOO", "Fumigadora a motor", "Fumigadora manual", "Herramientas de poda", "Herramientas de jardín", "Línea jardín", "Lanza fumigación", "Mallas P/Invernadero", "Materiales para invernadero", "Plástico agrícola", "Plastico agrícola de invernadero", "Plastico agrícola de suelo", "Saran", "Sirfran", "Substrato"]
+# EL NUEVO ESCÁNER: Busca estas palabras clave dentro de la ruta de Odoo para no fallar nunca
+kw_fito = ["fungicida", "bactericida", "herbicida", "insecticida", "inoculante", "coadyuvante", "regulador", "ácido", "acido", "aminoácido", "aminoacido", "enraizador", "hormona", "fertilizante"]
+kw_semillas = ["ajies", "ají", "calabaza", "pepino", "sandia", "sandía", "tomate", "aromatica", "aromática", "berenjena", "cebolla", "cilantro", "lechuga", "maiz", "maíz", "melon", "melón", "zanahoria", "semilla"]
+kw_riego = ["riego", "aspersor", "goteo", "conector", "filtrado", "layflat", "microaspersor", "tuberia", "tubería", "valvula", "válvula"]
+kw_equipos = ["bandeja", "dewoo", "fumigadora", "herramienta", "jardin", "jardín", "lanza", "malla", "invernadero", "plastico", "plástico", "saran", "sirfran", "substrato", "sustrato", "equipo"]
 
 # =========================================================================
-# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN
+# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO
 # =========================================================================
 @st.cache_resource
 def init_supabase():
@@ -384,10 +384,11 @@ else:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
                 st.image(f, use_container_width=True)
 
-    # TRAER TODOS LOS PRODUCTOS UNA SOLA VEZ Y CLASIFICARLOS
+    # TRAER PRODUCTOS DE ODOO
     if not st.session_state.todos_los_prods:
         st.session_state.todos_los_prods = get_odoo_prods() or []
 
+    # CLASIFICACIÓN CON EL NUEVO ESCÁNER DE PALABRAS CLAVE
     prods_medicina = []
     prods_semillas = []
     prods_riego = []
@@ -396,14 +397,16 @@ else:
     for p in st.session_state.todos_los_prods:
         categoria = p.get('categ_id')
         if isinstance(categoria, list) and len(categoria) > 1:
-            nombre_cat = categoria[1]
-            if nombre_cat in cat_fito: 
+            # Convierte la categoría de Odoo a minúsculas (ej: "all / agroquímicos / insecticidas")
+            cat_name = categoria[1].lower() 
+            
+            if any(kw in cat_name for kw in kw_fito):
                 prods_medicina.append(p)
-            elif nombre_cat in cat_semillas: 
+            elif any(kw in cat_name for kw in kw_semillas):
                 prods_semillas.append(p)
-            elif nombre_cat in cat_riego: 
+            elif any(kw in cat_name for kw in kw_riego):
                 prods_riego.append(p)
-            elif nombre_cat in cat_equipos: 
+            elif any(kw in cat_name for kw in kw_equipos):
                 prods_equipos.append(p)
 
     st.markdown("""<div class="hero-banner"><h1 class="hero-title">🔍 Diagnóstico Experto</h1></div>""", unsafe_allow_html=True)
@@ -428,13 +431,10 @@ else:
             else:
                 with st.spinner("Analizando..."):
                     try:
-                        # CREAMOS UNA LISTA INTELIGENTE PARA LA IA (Agrupada por categorías)
+                        # LISTA INTELIGENTE PARA LA IA 
                         inventario_ia = "INVENTARIO DISPONIBLE:\n"
                         for p in prods_medicina:
-                            if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1:
-                                cat_nombre = p['categ_id'][1]
-                            else:
-                                cat_nombre = "Otros"
+                            cat_nombre = p['categ_id'][1] if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "Otros"
                             inventario_ia += f"[{cat_nombre}] - {p['name']}\n"
 
                         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -446,10 +446,10 @@ else:
                         
                         1. DIAGNÓSTICO: Identifica la plaga, hongo o enfermedad.
                         2. RECETA EXACTA: De la lista de abajo, elige los 4 productos más efectivos. 
-                        REGLA VITAL: Si es insecto, elige SOLO de la categoría [Insecticidas]. Si es hongo, SOLO [Fungicidas].
+                        REGLA VITAL: Si es insecto, elige SOLO de la categoría de Insecticidas. Si es hongo, SOLO Fungicidas.
                         {inventario_ia}
-                        Menciona los nombres EXACTOS de los productos en NEGRITAS.
-                        3. APLICACIÓN: Explica brevemente cómo usarlos y labores culturales recomendadas.
+                        Menciona los nombres EXACTOS de los productos recomendados en NEGRITAS.
+                        3. APLICACIÓN: Explica brevemente cómo usarlos y labores culturales.
                         """
                         
                         res = model.generate_content([prompt, Image.open(img)])
@@ -457,18 +457,23 @@ else:
                         sugeridos = []
                         vistos = set()
                         
-                        # Buscamos coincidencias de nombres en la respuesta de la IA
+                        # MEJORA EN LA DETECCIÓN DE RECOMENDACIONES
                         for p in prods_medicina:
-                            palabra_clave = p['name'].split()[0].lower().replace("(", "").replace(")", "").strip()
-                            if len(palabra_clave) > 3 and palabra_clave in texto_ia_lower and palabra_clave not in vistos:
-                                sugeridos.append(p)
-                                vistos.add(palabra_clave)
+                            # Limpia el nombre del producto de Odoo (quita paréntesis y extras)
+                            nombre_limpio = p['name'].split('(')[0].strip().lower()
+                            primera_palabra = nombre_limpio.split()[0]
                             
+                            # Revisa si la IA mencionó la primera palabra o el nombre completo
+                            if (primera_palabra in texto_ia_lower or nombre_limpio in texto_ia_lower) and len(primera_palabra) > 3:
+                                if primera_palabra not in vistos:
+                                    sugeridos.append(p)
+                                    vistos.add(primera_palabra)
+                                
                             if len(sugeridos) >= 4: 
                                 break
                         
                         st.session_state.chat_history = [
-                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar 4 productos EXACTOS de este inventario: \n{inventario_ia}"]},
+                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar 4 productos de este inventario: \n{inventario_ia}"]},
                             {"role": "model", "parts": [res.text]}
                         ]
                         
@@ -531,6 +536,7 @@ else:
         if not lista_productos: 
             st.info("No hay productos en esta categoría por el momento.")
         else:
+            # Para evitar que el celular se ponga lento, mostramos un máximo de 20 por pestaña
             mostrar = lista_productos[:20]
             cols = st.columns(2)
             
