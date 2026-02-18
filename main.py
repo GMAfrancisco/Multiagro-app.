@@ -40,16 +40,7 @@ components.html("""
 """, height=0, width=0)
 
 # =========================================================================
-# FUNCIÓN MAESTRA "ROMPE-BLOQUEOS" PARA WHATSAPP
-# =========================================================================
-def abrir_whatsapp(mensaje):
-    url = f"https://wa.me/18295624653?text={urllib.parse.quote(mensaje)}"
-    # Esto fuerza al sistema operativo a abandonar la app y abrir el enlace
-    js = f"window.top.location.href = '{url}';"
-    components.html(f"<script>{js}</script>", height=0, width=0)
-
-# =========================================================================
-# 2. BLOQUE DE APARIENCIA (CSS)
+# 2. BLOQUE DE APARIENCIA (CSS CON TEXTO BLANCO)
 # =========================================================================
 st.markdown("""
     <style>
@@ -312,6 +303,7 @@ else:
                         for p in prods_medicina:
                             cat_nombre = p['categ_id'][1] if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "OTROS"
                             nota = str(p.get('description') or p.get('description_sale') or "Sin detalles").replace('\n', ' ').strip()
+                            
                             inventario_ia += f"[{cat_nombre.upper()}] - Nombre Comercial: {p['name']} (Ingredientes/Notas: {nota})\n"
 
                         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -373,7 +365,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y BOTÓN WHATSAPP 1 (CON INYECCIÓN JS)
+    # MOSTRAR EL CHAT Y BOTÓN WHATSAPP 1 (DOBLE ESTRATEGIA)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -388,11 +380,14 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # AQUÍ ESTÁ LA MAGIA: Botón nativo que dispara JS invisible
-        if st.button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", use_container_width=True):
-            abrir_whatsapp("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
-
-        st.markdown("<br>", unsafe_allow_html=True)
+        # EL BOTÓN NATIVO RESTAURADO EXACTAMENTE COMO ESTABA
+        mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
+        url_btn_1 = f"https://wa.me/18295624653?text={mensaje_wa}"
+        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", url_btn_1, type="secondary", use_container_width=True)
+        
+        # EL ENLACE DIRECTO (SACA DE APUROS SI LA APP BLOQUEA EL BOTÓN)
+        url_directa_1 = f"whatsapp://send?phone=18295624653&text={mensaje_wa}"
+        st.markdown(f"<div style='text-align:center; padding-top:5px; margin-bottom:30px;'><a href='{url_directa_1}' style='color:#4DA3FF; font-size:0.9rem; text-decoration:underline;'>¿El botón no abre? Toca este enlace directo</a></div>", unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas para este caso:</h4>", unsafe_allow_html=True)
@@ -467,7 +462,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE (BOTÓN 2 CON INYECCIÓN JS)
+    # CARRITO DE WHATSAPP FLOTANTE (DOBLE ESTRATEGIA)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -479,11 +474,16 @@ else:
             texto_ws += f"{idx+1}. {item}\n"
             
         texto_ws += f"\nQuedo atento a disponibilidad y precios. Mi usuario es: {st.session_state.user_email}"
+        mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # AQUÍ ESTÁ LA MAGIA DEL CARRITO
-        if st.button("📲 Enviar Cotización por WhatsApp", type="primary", use_container_width=True):
-            abrir_whatsapp(texto_ws)
+        # EL BOTÓN NATIVO RESTAURADO EXACTAMENTE COMO ESTABA
+        url_btn_2 = f"https://wa.me/18295624653?text={mensaje_codificado}"
+        st.link_button("📲 Enviar Cotización por WhatsApp", url_btn_2, type="primary", use_container_width=True)
         
+        # EL ENLACE DIRECTO (SACA DE APUROS SI LA APP BLOQUEA EL BOTÓN)
+        url_directa_2 = f"whatsapp://send?phone=18295624653&text={mensaje_codificado}"
+        st.markdown(f"<div style='text-align:center; padding-top:5px; padding-bottom:15px;'><a href='{url_directa_2}' style='color:#FFFFFF; font-size:0.9rem; text-decoration:underline;'>¿El botón no abre? Toca este enlace directo</a></div>", unsafe_allow_html=True)
+
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
             st.rerun()
