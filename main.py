@@ -330,7 +330,7 @@ else:
     img = img_cam if img_cam else img_gal
 
     # =========================================================================
-    # LÓGICA DE INTELIGENCIA ARTIFICIAL 
+    # LÓGICA DE INTELIGENCIA ARTIFICIAL (LEYENDO NOTAS)
     # =========================================================================
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
@@ -394,7 +394,7 @@ else:
                         st.error(f"Error: {e}")
 
     # =========================================================================
-    # CHAT Y BOTÓN WHATSAPP DEL TÉCNICO (CLÁSICO NATIVO)
+    # CHAT Y BOTÓN WHATSAPP DEL TÉCNICO (HACK: META-REFRESH REDIRECT)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -407,9 +407,11 @@ else:
 
         st.text_input("💬 Escribe tu duda al asistente IA:", key="input_duda", on_change=enviar_pregunta)
         
-        # Botón Nativo Oficial (Funciona con Enable System User-Agent activo en WebIntoApp)
-        mensaje_tecnico = urllib.parse.quote("Hola, necesito consultar a un técnico sobre un diagnóstico.")
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_tecnico}", type="secondary", use_container_width=True)
+        # HACK: Al presionar este botón, se inyecta un comando de redirección forzosa al navegador interno
+        if st.button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", use_container_width=True):
+            msg_tecnico = urllib.parse.quote("Hola, necesito consultar a un técnico sobre un diagnóstico.")
+            url_w_tec = f"https://wa.me/18295624653?text={msg_tecnico}"
+            st.markdown(f'<meta http-equiv="refresh" content="0; url={url_w_tec}">', unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas:</h4>", unsafe_allow_html=True)
@@ -477,7 +479,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP (BOTÓN + CAJA ELEGANTE DE RESUMEN)
+    # CARRITO DE WHATSAPP (HACK META-REFRESH + CAJA DE RESUMEN ELEGANTE)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -491,11 +493,13 @@ else:
         texto_ws += f"\nUsuario: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # CAJA ELEGANTE DE RESUMEN (Permite copiar el texto visualmente)
+        # CAJA ELEGANTE DE RESUMEN POR SI FALLA LA REDIRECCIÓN
         st.text_area("📋 Resumen de tu pedido (Puedes copiar este texto):", value=texto_ws, height=140)
         
-        # EL BOTÓN NATIVO
-        st.link_button("📲 Abrir WhatsApp y Enviar", f"https://wa.me/18295624653?text={mensaje_codificado}", type="primary", use_container_width=True)
+        # HACK: Botón de Streamlit que inyecta la redirección directa al WebView
+        if st.button("📲 Abrir WhatsApp y Enviar", type="primary", use_container_width=True):
+            url_w_carrito = f"https://wa.me/18295624653?text={mensaje_codificado}"
+            st.markdown(f'<meta http-equiv="refresh" content="0; url={url_w_carrito}">', unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
