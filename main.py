@@ -381,7 +381,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP (ENLACES CORREGIDOS)
+    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP 
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -396,9 +396,9 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Enlace oficial de WhatsApp (Funciona mejor en apps móviles)
+        # Enlace simple y directo de WhatsApp (Botón Nativo Streamlit)
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
-        enlace_wa_general = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_wa}"
+        enlace_wa_general = f"https://wa.me/18295624653?text={mensaje_wa}"
         st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", enlace_wa_general, type="secondary", use_container_width=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -412,7 +412,6 @@ else:
                     nombre_corto = p['name'].split('(')[0].strip()
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
-                    # FUERZA EL TEXTO A COLOR BLANCO DIRECTAMENTE EN LA TARJETA
                     st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
                     
                     if nombre_corto in st.session_state.carrito: 
@@ -459,7 +458,6 @@ else:
                     nombre_corto = p['name'].split('(')[0].strip()
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
-                    # FUERZA EL TEXTO A COLOR BLANCO DIRECTAMENTE EN LA TARJETA
                     st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
                     
                     if nombre_corto in st.session_state.carrito: 
@@ -477,7 +475,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE (ENLACE CORREGIDO)
+    # CARRITO DE WHATSAPP FLOTANTE 
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -491,8 +489,8 @@ else:
         texto_ws += f"\nQuedo atento a disponibilidad y precios. Mi usuario es: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # Enlace profundo de WhatsApp para evitar errores en móviles
-        enlace_wa_carrito = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_codificado}"
+        # Enlace simple y directo de WhatsApp (Botón Nativo Streamlit)
+        enlace_wa_carrito = f"https://wa.me/18295624653?text={mensaje_codificado}"
         st.link_button("📲 Enviar Cotización a un Asesor", enlace_wa_carrito, type="primary", use_container_width=True)
         
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
@@ -502,7 +500,7 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # FORMULARIO DE REGISTRO Y LOGOS
+    # FORMULARIO DE REGISTRO
     # =========================================================================
     st.divider()
     st.markdown("### 👤 Registro de Productor")
@@ -529,6 +527,9 @@ else:
     else: 
         st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
+    # =========================================================================
+    # LOGOS
+    # =========================================================================
     st.divider()
     st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
     
