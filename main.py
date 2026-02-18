@@ -50,7 +50,6 @@ st.markdown("""
     .diag-box p, .diag-box span, .diag-box li, .diag-box div { color: #FFFFFF !important; }
     .diag-box strong, .diag-box b { color: #4DA3FF !important; }
     
-    /* TARJETAS CON TEXTO BLANCO BRILLANTE */
     .product-card { background-color: #1E1E26; border-radius: 25px; padding: 20px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative; color: #FFFFFF !important; }
     .product-card h4 { color: #FFFFFF !important; }
     
@@ -316,7 +315,7 @@ else:
                         
                         1. DIAGNÓSTICO: Identifica la plaga, hongo, bacteria o deficiencia nutricional.
                         2. RECETA EXACTA: ESTÁS OBLIGADO a recomendar EXACTAMENTE 4 productos diferentes de la lista de abajo. 
-                        REGLA VITAL: Lee atentamente los "Ingredientes/Notas" de cada producto en el inventario. Usa tu conocimiento científico para saber qué ingrediente activo de nuestra lista erradica el problema diagnosticado. Fíjate que la categoría entre corchetes coincida (ej. no recetes INSECTICIDA para un hongo).
+                        REGLA VITAL: Lee atentamente los "Ingredientes/Notas" de cada producto en el inventario. Usa tu conocimiento científico para saber qué ingrediente activo de nuestra lista erradica el problema diagnosticado. Fíjate que la categoría entre corchetes coincida.
                         
                         {inventario_ia}
                         
@@ -366,7 +365,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y BOTÓN WHATSAPP (BOTÓN NATIVO RESTAURADO)
+    # MOSTRAR EL CHAT Y BOTÓN WHATSAPP 1 (CON TARGET=_TOP PARA ROMPER EL BLOQUEO)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -381,10 +380,17 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # BOTÓN NATIVO RESTAURADO: Funciona perfectamente en Android
+        # BOTÓN 1: EL TRUCO _TOP
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_wa}", type="secondary", use_container_width=True)
-        st.markdown("<br>", unsafe_allow_html=True)
+        enlace_wa_general = f"https://wa.me/18295624653?text={mensaje_wa}"
+        
+        st.markdown(f"""
+            <a href="{enlace_wa_general}" target="_top" style="text-decoration: none;">
+                <div style="background-color: #3E3E4A; border: 1px solid #4DA3FF; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 25px;">
+                    👨‍🌾 Consultar dudas a un técnico por WhatsApp
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Medicinas recomendadas para este caso:</h4>", unsafe_allow_html=True)
@@ -459,7 +465,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE (BOTÓN NATIVO RESTAURADO)
+    # CARRITO DE WHATSAPP FLOTANTE (BOTÓN 2: EL TRUCO _TOP)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -473,8 +479,16 @@ else:
         texto_ws += f"\nQuedo atento a disponibilidad y precios. Mi usuario es: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        # BOTÓN NATIVO RESTAURADO: Funciona perfectamente en Android
-        st.link_button("📲 Enviar Cotización por WhatsApp", f"https://wa.me/18295624653?text={mensaje_codificado}", type="primary", use_container_width=True)
+        # BOTÓN 2: EL TRUCO _TOP
+        enlace_wa_carrito = f"https://wa.me/18295624653?text={mensaje_codificado}"
+        
+        st.markdown(f"""
+            <a href="{enlace_wa_carrito}" target="_top" style="text-decoration: none;">
+                <div style="background-color: #25D366; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; box-shadow: 0px 4px 10px rgba(0,0,0,0.2);">
+                    📲 Enviar Cotización por WhatsApp
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
         
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
