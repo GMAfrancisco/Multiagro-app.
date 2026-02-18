@@ -78,14 +78,13 @@ if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
 if "todos_los_prods" not in st.session_state: st.session_state.todos_los_prods = [] 
 if "carrito" not in st.session_state: st.session_state.carrito = []
 
-# Raíces de palabras (Así "Cintas de goteo" cuadra con "CINTA" y con "GOTEO")
 kw_fito = ["ACIDO", "AMINOACIDO", "BACTERICIDA", "COADYUVANTE", "ENRAIZADOR", "FERTILIZANTE", "FUNGICIDA", "HERBICIDA", "HORMONA", "INOCULANTE", "INSECTICIDA", "NUTRICION", "FOLIAR"]
 kw_semillas = ["AJI", "AROMATICA", "CALABAZA", "CILANTRO", "MAIZ", "PEPINO", "SANDIA", "TOMATE", "SEMILLA", "CEBOLLA", "LECHUGA", "MELON", "ZANAHORIA", "BERENJENA"]
 kw_riego = ["ACCESORIO", "ASPERSOR", "CINTA", "CONECTOR", "BOMBEO", "FILTRAD", "LAYFLAT", "MICROASPERSOR", "RIEGO", "TUBERIA", "VALVULA", "GOTEO"]
 kw_equipos = ["BANDEJA", "DAEWOO", "EQUIPO", "FUMIGADOR", "GERMINACION", "HERRAMIENTA", "LANZA", "LIQUIDACION", "JARDIN", "MALLA", "MATERIAL", "PIEZA", "PLASTICO", "SARAN", "SIRFRAN", "SUBSTRATO", "SUSTRATO"]
 
 # =========================================================================
-# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO (AHORA TRAE NOTAS)
+# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO (CON NOTAS INTERNAS)
 # =========================================================================
 @st.cache_resource
 def init_supabase():
@@ -129,7 +128,6 @@ def get_odoo_prods():
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 200})
             
-            # ¡MAGIA AQUÍ! Pedimos 'description' (Notas Internas) y 'description_sale' (Notas de Ventas)
             productos = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id', 'priority', 'description', 'description_sale']})
             
             def es_favorito(p):
@@ -239,6 +237,7 @@ else:
     # 6. INICIO DE LA APLICACIÓN PRINCIPAL
     # =========================================================================
     
+    # MENÚ LATERAL: Botón para forzar actualización de Odoo en vivo
     if st.session_state.user_tier == "collaborator": 
         st.sidebar.success(f"👑 Acceso Ilimitado (Staff)\n{st.session_state.user_email}")
     elif st.session_state.user_tier == "vip": 
@@ -247,6 +246,12 @@ else:
         st.sidebar.info(f"✅ Usuario Registrado (5 Consultas)\n{st.session_state.user_email}")
     else: 
         st.sidebar.info(f"👤 Usuario Gratuito (2 Consultas)\n{st.session_state.user_email}")
+        
+    st.sidebar.divider()
+    if st.sidebar.button("🔄 Actualizar Catálogo Odoo"):
+        with st.spinner("Descargando productos y notas internas..."):
+            st.session_state.todos_los_prods = get_odoo_prods() or []
+        st.sidebar.success("¡Catálogo actualizado con éxito!")
 
     _, mid, _ = st.columns([1, 2, 1])
     with mid:
@@ -254,10 +259,10 @@ else:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
                 st.image(f, use_container_width=True)
 
-    if not st.session_state.todos_los_prods:
+    # AUTO-LIMPIADOR: Si la memoria vieja no tiene la palabra 'description' (notas), fuerza la descarga
+    if not st.session_state.todos_los_prods or (st.session_state.todos_los_prods and 'description' not in st.session_state.todos_los_prods[0]):
         st.session_state.todos_los_prods = get_odoo_prods() or []
 
-    # CLASIFICACIÓN CON EL NUEVO SISTEMA INMUNE A PLURALES
     prods_medicina = []
     prods_semillas = []
     prods_riego = []
@@ -286,7 +291,7 @@ else:
     img = img_cam if img_cam else img_gal
 
     # =========================================================================
-    # LÓGICA DE INTELIGENCIA ARTIFICIAL (LEYENDO INGREDIENTES ACTIVOS)
+    # LÓGICA DE INTELIGENCIA ARTIFICIAL (CON NOTAS INTERNAS Y OBLIGACIÓN DE 4 PRODUCTOS)
     # =========================================================================
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
@@ -295,15 +300,12 @@ else:
             else:
                 with st.spinner("Analizando..."):
                     try:
-                        # LE PASAMOS LAS NOTAS INTERNAS (INGREDIENTES) A LA IA
                         inventario_ia = "INVENTARIO DISPONIBLE:\n"
                         for p in prods_medicina:
                             cat_nombre = p['categ_id'][1] if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "OTROS"
-                            # Extraemos la nota y le quitamos los saltos de línea para que la IA la lea de corrido
-                            nota = p.get('description') or p.get('description_sale') or "Sin detalles"
-                            nota = str(nota).replace('\n', ' ').strip()
+                            nota = str(p.get('description') or p.get('description_sale') or "Sin detalles").replace('\n', ' ').strip()
                             
-                            inventario_ia += f"[{cat_nombre.upper()}] - Nombre: {p['name']} (Ingrediente Activo/Nota: {nota})\n"
+                            inventario_ia += f"[{cat_nombre.upper()}] - Nombre Comercial: {p['name']} (Ingredientes/Notas: {nota})\n"
 
                         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                         model = genai.GenerativeModel('gemini-2.0-flash-lite')
@@ -314,12 +316,12 @@ else:
                         
                         1. DIAGNÓSTICO: Identifica la plaga, hongo, bacteria o deficiencia nutricional.
                         2. RECETA EXACTA: ESTÁS OBLIGADO a recomendar EXACTAMENTE 4 productos diferentes de la lista de abajo. 
-                        REGLA VITAL: Lee atentamente los "Ingredientes/Notas" de cada producto en el inventario. Usa tu conocimiento científico global para saber qué ingrediente activo de nuestra lista erradica el problema diagnosticado. No te guíes solo por el nombre, guíate por el Ingrediente Activo.
+                        REGLA VITAL: Lee atentamente los "Ingredientes/Notas" de cada producto en el inventario. Usa tu conocimiento científico para saber qué ingrediente activo de nuestra lista erradica el problema diagnosticado. Fíjate que la categoría entre corchetes coincida (ej. no recetes INSECTICIDA para un hongo).
                         
                         {inventario_ia}
                         
-                        Escribe el nombre comercial de los 4 productos recomendados en NEGRITAS.
-                        3. APLICACIÓN: Explica brevemente cómo el ingrediente activo actúa sobre el problema y labores culturales.
+                        Escribe el Nombre Comercial de los 4 productos recomendados en NEGRITAS.
+                        3. APLICACIÓN: Explica brevemente cómo el ingrediente activo actúa sobre el problema y da labores culturales.
                         """
                         
                         res = model.generate_content([prompt, Image.open(img)])
@@ -351,7 +353,7 @@ else:
                                 break
                         
                         st.session_state.chat_history = [
-                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar 4 productos de este inventario leyendo sus ingredientes activos: \n{inventario_ia}"]},
+                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar 4 productos leyendo sus ingredientes activos: \n{inventario_ia}"]},
                             {"role": "model", "parts": [res.text]}
                         ]
                         
@@ -401,18 +403,18 @@ else:
                         st.button("➕ Agregar a Cotización", key=f"rec_{p['id']}", on_click=agregar_al_carrito, args=(nombre_corto,))
 
     # =========================================================================
-    # CATÁLOGO E-COMMERCE (EL BUSCADOR TODO-TERRENO)
+    # CATÁLOGO E-COMMERCE (BUSCADOR SUPER POTENTE)
     # =========================================================================
     st.divider()
     st.markdown("<h2 style='text-align: center; color: #FFFFFF;'>🏪 Catálogo Multiagro</h2>", unsafe_allow_html=True)
     
-    busqueda_catalogo = st.text_input("🔍 Buscar productos en el catálogo...", placeholder="Ej: Abono, Cinta, Manguera, o Ingrediente...")
+    busqueda_catalogo = st.text_input("🔍 Buscar productos en el catálogo...", placeholder="Ej: Abono, Cinta, Manguera, Tomate, o Ingrediente...")
     st.markdown("<br>", unsafe_allow_html=True)
 
     tab_fito, tab_sem, tab_riego, tab_eq = st.tabs(["🧪 Fito & Nutrición", "🌱 Semillas", "💧 Riego", "🛠️ Equipos"])
     
     def mostrar_catalogo(lista_productos, tab_key, busqueda):
-        # BUSCADOR MEJORADO: Busca en el Nombre, en la Nota Interna y en la Categoría
+        # BUSCADOR MÁS PODEROSO: Busca en el Nombre, Notas Internas, y Categoría Literal
         if busqueda:
             q = busqueda.lower()
             lista_filtrada = [
