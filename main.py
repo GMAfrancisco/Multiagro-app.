@@ -40,7 +40,7 @@ components.html("""
 """, height=0, width=0)
 
 # =========================================================================
-# 2. BLOQUE DE APARIENCIA (CSS)
+# 2. BLOQUE DE APARIENCIA (CSS CORREGIDO PARA TEXTO BLANCO BRILLANTE)
 # =========================================================================
 st.markdown("""
     <style>
@@ -50,7 +50,25 @@ st.markdown("""
     .diag-box p, .diag-box span, .diag-box li, .diag-box div { color: #FFFFFF !important; }
     .diag-box strong, .diag-box b { color: #4DA3FF !important; }
     
-    .product-card { background-color: #1E1E26; border-radius: 25px; padding: 20px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative;}
+    /* TARJETAS DE PRODUCTOS CON TEXTO BLANCO OBLIGATORIO */
+    .product-card { 
+        background-color: #1E1E26; 
+        border-radius: 25px; 
+        padding: 20px; 
+        border: 1px solid #3E3E4A; 
+        text-align: center; 
+        margin-bottom: 20px; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between; 
+        height: 100%; 
+        position: relative;
+        color: #FFFFFF !important; 
+    }
+    .product-card h4 {
+        color: #FFFFFF !important;
+    }
+    
     .product-img { width: 100%; height: 140px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     
     .badge-fav { position: absolute; top: 10px; right: 10px; background-color: #FFD700; color: #000; font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
@@ -68,14 +86,14 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =========================================================================
-# 3. VARIABLES DE SESIÓN (TRUCO DE CAMBIO DE NOMBRE PARA FORZAR CACHÉ)
+# 3. VARIABLES DE SESIÓN
 # =========================================================================
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 if "authenticated" not in st.session_state: st.session_state.authenticated = False
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
-if "inventario_odoo" not in st.session_state: st.session_state.inventario_odoo = []  # NUEVO NOMBRE
+if "inventario_odoo" not in st.session_state: st.session_state.inventario_odoo = []  
 if "carrito" not in st.session_state: st.session_state.carrito = []
 
 kw_fito = ["ACIDO", "AMINOACIDO", "BACTERICIDA", "COADYUVANTE", "ENRAIZADOR", "FERTILIZANTE", "FUNGICIDA", "HERBICIDA", "HORMONA", "INOCULANTE", "INSECTICIDA", "NUTRICION", "FOLIAR"]
@@ -84,7 +102,7 @@ kw_riego = ["ACCESORIO", "ASPERSOR", "CINTA", "CONECTOR", "BOMBEO", "FILTRAD", "
 kw_equipos = ["BANDEJA", "DAEWOO", "EQUIPO", "FUMIGADOR", "GERMINACION", "HERRAMIENTA", "LANZA", "LIQUIDACION", "JARDIN", "MALLA", "MATERIAL", "PIEZA", "PLASTICO", "SARAN", "SIRFRAN", "SUBSTRATO", "SUSTRATO"]
 
 # =========================================================================
-# 4. FUNCIONES DE CONEXIÓN A ODOO (LÍMITE AUMENTADO A 2,000 PRODUCTOS)
+# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO
 # =========================================================================
 @st.cache_resource
 def init_supabase():
@@ -126,7 +144,6 @@ def get_odoo_prods():
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
-            # EL GRAN CAMBIO: Aumentamos el límite de 200 a 2000 para que no deje nada fuera
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 2000})
             
             productos = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id', 'priority', 'description', 'description_sale']})
@@ -258,7 +275,6 @@ else:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
                 st.image(f, use_container_width=True)
 
-    # REVISIÓN DE INVENTARIO CON LA NUEVA MEMORIA
     if not st.session_state.inventario_odoo:
         st.session_state.inventario_odoo = get_odoo_prods() or []
 
@@ -365,7 +381,7 @@ else:
                             st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y LOS BOTONES
+    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP (ENLACES CORREGIDOS)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -380,8 +396,10 @@ else:
         st.text_input("💬 Escribe tu duda sobre el manejo o el diagnóstico y presiona Enter:", key="input_duda", on_change=enviar_pregunta)
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Enlace oficial de WhatsApp (Funciona mejor en apps móviles)
         mensaje_wa = urllib.parse.quote("Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito consultar a un técnico sobre un diagnóstico.")
-        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", f"https://wa.me/18295624653?text={mensaje_wa}", type="secondary", use_container_width=True)
+        enlace_wa_general = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_wa}"
+        st.link_button("👨‍🌾 Consultar dudas a un técnico por WhatsApp", enlace_wa_general, type="secondary", use_container_width=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
         if st.session_state.prods_filtrados:
@@ -394,7 +412,8 @@ else:
                     nombre_corto = p['name'].split('(')[0].strip()
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
-                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
+                    # FUERZA EL TEXTO A COLOR BLANCO DIRECTAMENTE EN LA TARJETA
+                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
                     
                     if nombre_corto in st.session_state.carrito: 
                         st.button("✅ Agregado", key=f"rec_ok_{p['id']}", disabled=True)
@@ -402,7 +421,7 @@ else:
                         st.button("➕ Agregar a Cotización", key=f"rec_{p['id']}", on_click=agregar_al_carrito, args=(nombre_corto,))
 
     # =========================================================================
-    # CATÁLOGO E-COMMERCE (BUSCADOR SUPER POTENTE)
+    # CATÁLOGO E-COMMERCE 
     # =========================================================================
     st.divider()
     st.markdown("<h2 style='text-align: center; color: #FFFFFF;'>🏪 Catálogo Multiagro</h2>", unsafe_allow_html=True)
@@ -413,7 +432,6 @@ else:
     tab_fito, tab_sem, tab_riego, tab_eq = st.tabs(["🧪 Fito & Nutrición", "🌱 Semillas", "💧 Riego", "🛠️ Equipos"])
     
     def mostrar_catalogo(lista_productos, tab_key, busqueda):
-        # BUSCADOR MÁS PODEROSO
         if busqueda:
             q = busqueda.lower()
             lista_filtrada = [
@@ -441,7 +459,8 @@ else:
                     nombre_corto = p['name'].split('(')[0].strip()
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
-                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
+                    # FUERZA EL TEXTO A COLOR BLANCO DIRECTAMENTE EN LA TARJETA
+                    st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='color: #FFFFFF !important; font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
                     
                     if nombre_corto in st.session_state.carrito: 
                         st.button("✅ Agregado", key=f"cat_ok_{tab_key}_{p['id']}", disabled=True)
@@ -458,7 +477,7 @@ else:
         mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP FLOTANTE
+    # CARRITO DE WHATSAPP FLOTANTE (ENLACE CORREGIDO)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown("<br><br><br>", unsafe_allow_html=True) 
@@ -472,7 +491,9 @@ else:
         texto_ws += f"\nQuedo atento a disponibilidad y precios. Mi usuario es: {st.session_state.user_email}"
         mensaje_codificado = urllib.parse.quote(texto_ws)
         
-        st.link_button("📲 Enviar Cotización a un Asesor", f"https://wa.me/18295624653?text={mensaje_codificado}", type="primary", use_container_width=True)
+        # Enlace profundo de WhatsApp para evitar errores en móviles
+        enlace_wa_carrito = f"https://api.whatsapp.com/send?phone=18295624653&text={mensaje_codificado}"
+        st.link_button("📲 Enviar Cotización a un Asesor", enlace_wa_carrito, type="primary", use_container_width=True)
         
         if st.button("🗑️ Vaciar Carrito", use_container_width=True):
             st.session_state.carrito = []
@@ -481,7 +502,7 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # FORMULARIO DE REGISTRO
+    # FORMULARIO DE REGISTRO Y LOGOS
     # =========================================================================
     st.divider()
     st.markdown("### 👤 Registro de Productor")
@@ -508,9 +529,6 @@ else:
     else: 
         st.success(f"Bienvenido, {st.session_state['reg_ok']}! Tienes tus consultas diarias activadas.")
 
-    # =========================================================================
-    # LOGOS
-    # =========================================================================
     st.divider()
     st.markdown("<h4 style='text-align: center; color: #007BFF; margin-bottom: 20px;'>Empresas Grupo Multiagro</h4>", unsafe_allow_html=True)
     
