@@ -68,14 +68,14 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =========================================================================
-# 3. VARIABLES DE SESIÓN Y CLASIFICACIÓN INMUNE A ERRORES
+# 3. VARIABLES DE SESIÓN (TRUCO DE CAMBIO DE NOMBRE PARA FORZAR CACHÉ)
 # =========================================================================
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
 if "authenticated" not in st.session_state: st.session_state.authenticated = False
 if "user_email" not in st.session_state: st.session_state.user_email = ""
 if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
-if "todos_los_prods" not in st.session_state: st.session_state.todos_los_prods = [] 
+if "inventario_odoo" not in st.session_state: st.session_state.inventario_odoo = []  # NUEVO NOMBRE
 if "carrito" not in st.session_state: st.session_state.carrito = []
 
 kw_fito = ["ACIDO", "AMINOACIDO", "BACTERICIDA", "COADYUVANTE", "ENRAIZADOR", "FERTILIZANTE", "FUNGICIDA", "HERBICIDA", "HORMONA", "INOCULANTE", "INSECTICIDA", "NUTRICION", "FOLIAR"]
@@ -84,7 +84,7 @@ kw_riego = ["ACCESORIO", "ASPERSOR", "CINTA", "CONECTOR", "BOMBEO", "FILTRAD", "
 kw_equipos = ["BANDEJA", "DAEWOO", "EQUIPO", "FUMIGADOR", "GERMINACION", "HERRAMIENTA", "LANZA", "LIQUIDACION", "JARDIN", "MALLA", "MATERIAL", "PIEZA", "PLASTICO", "SARAN", "SIRFRAN", "SUBSTRATO", "SUSTRATO"]
 
 # =========================================================================
-# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO (CON NOTAS INTERNAS)
+# 4. FUNCIONES DE CONEXIÓN A ODOO (LÍMITE AUMENTADO A 2,000 PRODUCTOS)
 # =========================================================================
 @st.cache_resource
 def init_supabase():
@@ -126,7 +126,8 @@ def get_odoo_prods():
         uid = common.authenticate(db, user, key, {})
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
-            ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 200})
+            # EL GRAN CAMBIO: Aumentamos el límite de 200 a 2000 para que no deje nada fuera
+            ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 2000})
             
             productos = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id', 'priority', 'description', 'description_sale']})
             
@@ -236,8 +237,6 @@ else:
     # =========================================================================
     # 6. INICIO DE LA APLICACIÓN PRINCIPAL
     # =========================================================================
-    
-    # MENÚ LATERAL: Botón para forzar actualización de Odoo en vivo
     if st.session_state.user_tier == "collaborator": 
         st.sidebar.success(f"👑 Acceso Ilimitado (Staff)\n{st.session_state.user_email}")
     elif st.session_state.user_tier == "vip": 
@@ -249,8 +248,8 @@ else:
         
     st.sidebar.divider()
     if st.sidebar.button("🔄 Actualizar Catálogo Odoo"):
-        with st.spinner("Descargando productos y notas internas..."):
-            st.session_state.todos_los_prods = get_odoo_prods() or []
+        with st.spinner("Descargando el 100% de los productos..."):
+            st.session_state.inventario_odoo = get_odoo_prods() or []
         st.sidebar.success("¡Catálogo actualizado con éxito!")
 
     _, mid, _ = st.columns([1, 2, 1])
@@ -259,16 +258,16 @@ else:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
                 st.image(f, use_container_width=True)
 
-    # AUTO-LIMPIADOR: Si la memoria vieja no tiene la palabra 'description' (notas), fuerza la descarga
-    if not st.session_state.todos_los_prods or (st.session_state.todos_los_prods and 'description' not in st.session_state.todos_los_prods[0]):
-        st.session_state.todos_los_prods = get_odoo_prods() or []
+    # REVISIÓN DE INVENTARIO CON LA NUEVA MEMORIA
+    if not st.session_state.inventario_odoo:
+        st.session_state.inventario_odoo = get_odoo_prods() or []
 
     prods_medicina = []
     prods_semillas = []
     prods_riego = []
     prods_equipos = []
     
-    for p in st.session_state.todos_los_prods:
+    for p in st.session_state.inventario_odoo:
         categoria = p.get('categ_id')
         if isinstance(categoria, list) and len(categoria) > 1:
             cat_name = str(categoria[1]).upper() 
@@ -291,7 +290,7 @@ else:
     img = img_cam if img_cam else img_gal
 
     # =========================================================================
-    # LÓGICA DE INTELIGENCIA ARTIFICIAL (CON NOTAS INTERNAS Y OBLIGACIÓN DE 4 PRODUCTOS)
+    # LÓGICA DE INTELIGENCIA ARTIFICIAL 
     # =========================================================================
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
@@ -414,7 +413,7 @@ else:
     tab_fito, tab_sem, tab_riego, tab_eq = st.tabs(["🧪 Fito & Nutrición", "🌱 Semillas", "💧 Riego", "🛠️ Equipos"])
     
     def mostrar_catalogo(lista_productos, tab_key, busqueda):
-        # BUSCADOR MÁS PODEROSO: Busca en el Nombre, Notas Internas, y Categoría Literal
+        # BUSCADOR MÁS PODEROSO
         if busqueda:
             q = busqueda.lower()
             lista_filtrada = [
