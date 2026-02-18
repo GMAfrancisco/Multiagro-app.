@@ -53,7 +53,6 @@ st.markdown("""
     .product-card { background-color: #1E1E26; border-radius: 25px; padding: 20px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative;}
     .product-img { width: 100%; height: 140px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     
-    /* Etiqueta para productos Favoritos (Opcional, se ve elegante) */
     .badge-fav { position: absolute; top: 10px; right: 10px; background-color: #FFD700; color: #000; font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
     hr { border: 0; height: 1px; background: linear-gradient(to right, transparent, #3E3E4A, transparent); margin: 40px 0; }
@@ -69,7 +68,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =========================================================================
-# 3. VARIABLES DE SESIÓN Y DICCIONARIO EXACTO DE ODOO
+# 3. VARIABLES DE SESIÓN Y CLASIFICACIÓN INMUNE A ERRORES
 # =========================================================================
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
@@ -79,13 +78,14 @@ if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
 if "todos_los_prods" not in st.session_state: st.session_state.todos_los_prods = [] 
 if "carrito" not in st.session_state: st.session_state.carrito = []
 
-cat_fito = ["ACIDOS HUMICOS/AMINOACIDOS", "BACTERICIDAS", "COADYUVANTES", "ENRAIZADOR", "FERTILIZANTE GRANULAR", "FERTILIZANTES HIDROSOLUBLES", "FUNGICIDAS", "HERBICIDAS", "HORMONAS", "INOCULANTES BIOLOGICOS", "INSECTICIDAS"]
-cat_semillas = ["AJIES", "AROMATICAS", "CALABAZAS", "CILANTRO", "MAIZ", "PEPINO", "SANDIA", "TOMATES"]
-cat_riego = ["ACCESORIOS DE RIEGO", "ASPERSORES", "CINTA DE GOTEO", "CONECTORES ALTA PRESION MANGUERA PE", "CONECTORES MANGUERAS PE", "CONECTORES TIPO VALVULAS DE CINTAS DE GOTEO", "EQUIPOS DE BOMBEO DE AGUA", "FILTRADO", "MANGUERA DE LAYFLAT", "MICROASPERSORES", "RIEGO JARDINERIA", "TUBERIA DE GOTERO TURBULENTO", "TUBERIA DE POLIETILENO", "TUBERIA MULTIBAR", "VALVULAS DE RIEGO", "RIEGO"]
-cat_equipos = ["BANDEJA DE SIEMBRA", "DAEWOO", "EQUIPOS MR", "FUMIGADORA A MOTOR", "FUMIGADORA MANUAL", "GERMINACION", "HERRAMIENTAS DE PODA", "LANZA FUMIGACIÓN", "LIQUIDACIONES", "LÍNEA JARDÍN", "MALLAS P/ INVERNADERO", "MATERIALES PARA INVERNADEROS", "MATERIALES PVC", "PIEZAS", "PLASTICO AGRICOLA DE INVERNADERO", "PLASTICO AGRICOLA DE SUELO", "PLASTICO AGRICOLA MR", "SARAN", "SIRFRAN", "SUBSTRATO"]
+# Raíces de palabras (Así "Cintas de goteo" cuadra con "CINTA" y con "GOTEO")
+kw_fito = ["ACIDO", "AMINOACIDO", "BACTERICIDA", "COADYUVANTE", "ENRAIZADOR", "FERTILIZANTE", "FUNGICIDA", "HERBICIDA", "HORMONA", "INOCULANTE", "INSECTICIDA", "NUTRICION", "FOLIAR"]
+kw_semillas = ["AJI", "AROMATICA", "CALABAZA", "CILANTRO", "MAIZ", "PEPINO", "SANDIA", "TOMATE", "SEMILLA", "CEBOLLA", "LECHUGA", "MELON", "ZANAHORIA", "BERENJENA"]
+kw_riego = ["ACCESORIO", "ASPERSOR", "CINTA", "CONECTOR", "BOMBEO", "FILTRAD", "LAYFLAT", "MICROASPERSOR", "RIEGO", "TUBERIA", "VALVULA", "GOTEO"]
+kw_equipos = ["BANDEJA", "DAEWOO", "EQUIPO", "FUMIGADOR", "GERMINACION", "HERRAMIENTA", "LANZA", "LIQUIDACION", "JARDIN", "MALLA", "MATERIAL", "PIEZA", "PLASTICO", "SARAN", "SIRFRAN", "SUBSTRATO", "SUSTRATO"]
 
 # =========================================================================
-# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO
+# 4. FUNCIONES DE BASE DE DATOS Y CONEXIÓN A ODOO (AHORA TRAE NOTAS)
 # =========================================================================
 @st.cache_resource
 def init_supabase():
@@ -129,10 +129,9 @@ def get_odoo_prods():
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 200})
             
-            # ATENCIÓN: Se añadió el campo 'priority' para detectar las ESTRELLAS de Favoritos en Odoo
-            productos = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id', 'priority']})
+            # ¡MAGIA AQUÍ! Pedimos 'description' (Notas Internas) y 'description_sale' (Notas de Ventas)
+            productos = models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id', 'priority', 'description', 'description_sale']})
             
-            # ORDENAR AUTOMÁTICAMENTE: Los que tienen estrella ('1') van primero
             def es_favorito(p):
                 return 1 if str(p.get('priority', '0')) == '1' else 0
                 
@@ -255,11 +254,10 @@ else:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
                 st.image(f, use_container_width=True)
 
-    # TRAER PRODUCTOS DE ODOO (Ya vienen ordenados con los FAVORITOS primero)
     if not st.session_state.todos_los_prods:
         st.session_state.todos_los_prods = get_odoo_prods() or []
 
-    # CLASIFICACIÓN
+    # CLASIFICACIÓN CON EL NUEVO SISTEMA INMUNE A PLURALES
     prods_medicina = []
     prods_semillas = []
     prods_riego = []
@@ -270,10 +268,10 @@ else:
         if isinstance(categoria, list) and len(categoria) > 1:
             cat_name = str(categoria[1]).upper() 
             
-            if any(kw in cat_name for kw in cat_fito): prods_medicina.append(p)
-            elif any(kw in cat_name for kw in cat_semillas): prods_semillas.append(p)
-            elif any(kw in cat_name for kw in cat_riego): prods_riego.append(p)
-            elif any(kw in cat_name for kw in cat_equipos): prods_equipos.append(p)
+            if any(kw in cat_name for kw in kw_fito): prods_medicina.append(p)
+            elif any(kw in cat_name for kw in kw_semillas): prods_semillas.append(p)
+            elif any(kw in cat_name for kw in kw_riego): prods_riego.append(p)
+            elif any(kw in cat_name for kw in kw_equipos): prods_equipos.append(p)
 
     st.markdown("""<div class="hero-banner"><h1 class="hero-title">🔍 Diagnóstico Experto</h1></div>""", unsafe_allow_html=True)
     
@@ -288,7 +286,7 @@ else:
     img = img_cam if img_cam else img_gal
 
     # =========================================================================
-    # LÓGICA DE INTELIGENCIA ARTIFICIAL ("CAMISA DE FUERZA PARA 4 PRODUCTOS")
+    # LÓGICA DE INTELIGENCIA ARTIFICIAL (LEYENDO INGREDIENTES ACTIVOS)
     # =========================================================================
     if img is not None:
         if st.button("🚀 INICIAR ASESORÍA COMPLETA", type="primary", use_container_width=True):
@@ -297,35 +295,31 @@ else:
             else:
                 with st.spinner("Analizando..."):
                     try:
-                        inventario_agrupado = {}
+                        # LE PASAMOS LAS NOTAS INTERNAS (INGREDIENTES) A LA IA
+                        inventario_ia = "INVENTARIO DISPONIBLE:\n"
                         for p in prods_medicina:
-                            cat = p['categ_id'][1].upper() if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "OTROS"
-                            if cat not in inventario_agrupado:
-                                inventario_agrupado[cat] = []
-                            inventario_agrupado[cat].append(p['name'])
-                        
-                        inventario_ia = ""
-                        for cat, prods in inventario_agrupado.items():
-                            inventario_ia += f"Categoría [{cat}]: {', '.join(prods)}\n"
+                            cat_nombre = p['categ_id'][1] if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "OTROS"
+                            # Extraemos la nota y le quitamos los saltos de línea para que la IA la lea de corrido
+                            nota = p.get('description') or p.get('description_sale') or "Sin detalles"
+                            nota = str(nota).replace('\n', ' ').strip()
+                            
+                            inventario_ia += f"[{cat_nombre.upper()}] - Nombre: {p['name']} (Ingrediente Activo/Nota: {nota})\n"
 
                         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                         model = genai.GenerativeModel('gemini-2.0-flash-lite')
                         
-                        # PROMPT MODIFICADO: Obligando a Gemini a dar 4 opciones
                         prompt = f"""
                         RESPONDE 100% EN ESPAÑOL. Eres Ing. Agrónomo y Fitopatólogo de Multiagro. 
                         Analiza la planta: {cultivo_input if cultivo_input else 'No especificado'}.
                         
-                        1. DIAGNÓSTICO: Identifica la plaga, hongo o enfermedad.
-                        2. RECETA EXACTA: ESTÁS OBLIGADO a recomendar EXACTAMENTE 4 productos diferentes de la lista de abajo. Si no hay 4 perfectos, dame los 4 más cercanos o de amplio espectro, pero DEBES listar 4 opciones distintas.
+                        1. DIAGNÓSTICO: Identifica la plaga, hongo, bacteria o deficiencia nutricional.
+                        2. RECETA EXACTA: ESTÁS OBLIGADO a recomendar EXACTAMENTE 4 productos diferentes de la lista de abajo. 
+                        REGLA VITAL: Lee atentamente los "Ingredientes/Notas" de cada producto en el inventario. Usa tu conocimiento científico global para saber qué ingrediente activo de nuestra lista erradica el problema diagnosticado. No te guíes solo por el nombre, guíate por el Ingrediente Activo.
                         
-                        REGLA VITAL: Si identificas un hongo, busca exclusivamente dentro de la Categoría [FUNGICIDAS]. Si es insecto, busca en [INSECTICIDAS].
-                        
-                        INVENTARIO:
                         {inventario_ia}
                         
                         Escribe el nombre comercial de los 4 productos recomendados en NEGRITAS.
-                        3. APLICACIÓN: Explica brevemente cómo usarlos y labores culturales.
+                        3. APLICACIÓN: Explica brevemente cómo el ingrediente activo actúa sobre el problema y labores culturales.
                         """
                         
                         res = model.generate_content([prompt, Image.open(img)])
@@ -357,7 +351,7 @@ else:
                                 break
                         
                         st.session_state.chat_history = [
-                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar 4 productos de este inventario: \n{inventario_ia}"]},
+                            {"role": "user", "parts": [f"Contexto oculto: Analizaste {cultivo_input}. Debes recomendar 4 productos de este inventario leyendo sus ingredientes activos: \n{inventario_ia}"]},
                             {"role": "model", "parts": [res.text]}
                         ]
                         
@@ -397,7 +391,6 @@ else:
                 with cols_ia[i % 2]:
                     img_b64 = f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">' if p.get('image_128') else ""
                     nombre_corto = p['name'].split('(')[0].strip()
-                    # Etiqueta de favorito si aplica
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
                     st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
@@ -408,31 +401,36 @@ else:
                         st.button("➕ Agregar a Cotización", key=f"rec_{p['id']}", on_click=agregar_al_carrito, args=(nombre_corto,))
 
     # =========================================================================
-    # CATÁLOGO E-COMMERCE (BUSCADOR Y LÍMITE DE 4)
+    # CATÁLOGO E-COMMERCE (EL BUSCADOR TODO-TERRENO)
     # =========================================================================
     st.divider()
     st.markdown("<h2 style='text-align: center; color: #FFFFFF;'>🏪 Catálogo Multiagro</h2>", unsafe_allow_html=True)
     
-    # LA NUEVA BARRA DE BÚSQUEDA
-    busqueda_catalogo = st.text_input("🔍 Buscar productos en el catálogo...", placeholder="Ej: Abono, Cebolla, Manguera...")
+    busqueda_catalogo = st.text_input("🔍 Buscar productos en el catálogo...", placeholder="Ej: Abono, Cinta, Manguera, o Ingrediente...")
     st.markdown("<br>", unsafe_allow_html=True)
 
     tab_fito, tab_sem, tab_riego, tab_eq = st.tabs(["🧪 Fito & Nutrición", "🌱 Semillas", "💧 Riego", "🛠️ Equipos"])
     
     def mostrar_catalogo(lista_productos, tab_key, busqueda):
-        # Filtrar si el usuario escribió algo
+        # BUSCADOR MEJORADO: Busca en el Nombre, en la Nota Interna y en la Categoría
         if busqueda:
-            lista_filtrada = [p for p in lista_productos if busqueda.lower() in p['name'].lower()]
+            q = busqueda.lower()
+            lista_filtrada = [
+                p for p in lista_productos 
+                if q in p['name'].lower() 
+                or q in str(p.get('description', '')).lower() 
+                or q in str(p.get('description_sale', '')).lower()
+                or (isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 and q in p['categ_id'][1].lower())
+            ]
         else:
             lista_filtrada = lista_productos
             
         if not lista_filtrada: 
             if busqueda:
-                st.warning(f"No se encontraron productos con '{busqueda}' en esta categoría.")
+                st.warning(f"No se encontraron productos relacionados con '{busqueda}' en esta pestaña.")
             else:
                 st.info("No hay productos en esta categoría por el momento.")
         else:
-            # LÍMITE REDUCIDO A 4 PRODUCTOS (Priorizando los que tienen Estrella)
             mostrar = lista_filtrada[:4]
             cols = st.columns(2)
             
@@ -440,8 +438,6 @@ else:
                 with cols[i % 2]:
                     img_b64 = f'<img src="data:image/png;base64,{p["image_128"]}" class="product-img">' if p.get('image_128') else ""
                     nombre_corto = p['name'].split('(')[0].strip()
-                    
-                    # Etiqueta de Favorito Visual
                     badge = "<div class='badge-fav'>⭐ Destacado</div>" if str(p.get('priority', '0')) == '1' else ""
                     
                     st.markdown(f"<div class='product-card'>{badge}{img_b64}<h4 style='font-size: 0.85rem; margin-bottom: 5px;'>{nombre_corto}</h4></div>", unsafe_allow_html=True)
