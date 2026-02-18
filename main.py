@@ -44,145 +44,40 @@ components.html("""
 # =========================================================================
 st.markdown("""
     <style>
-    /* Ocultar desbordamiento horizontal en Android */
-    [data-testid="stAppViewContainer"], .main, .block-container { 
-        overflow-x: hidden !important; 
-    }
+    [data-testid="stAppViewContainer"], .main, .block-container { overflow-x: hidden !important; }
     
-    /* Caja de Chat de la IA */
-    .diag-box { 
-        background: #161B22; 
-        border-left: 8px solid #007BFF; 
-        padding: 25px; 
-        border-radius: 20px; 
-        margin-bottom: 30px; 
-        color: #FFFFFF !important; 
-        font-size: 1.05rem; 
-        line-height: 1.6; 
-    }
-    .diag-box p, .diag-box span, .diag-box li, .diag-box div { 
-        color: #FFFFFF !important; 
-    }
-    .diag-box strong, .diag-box b { 
-        color: #4DA3FF !important; 
-    }
+    .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; color: #FFFFFF !important; font-size: 1.05rem; line-height: 1.6; }
+    .diag-box p, .diag-box span, .diag-box li, .diag-box div { color: #FFFFFF !important; }
+    .diag-box strong, .diag-box b { color: #4DA3FF !important; }
     
-    /* Tarjetas de Producto */
-    .product-card { 
-        background-color: #1E1E26; 
-        border-radius: 25px; 
-        padding: 20px; 
-        border: 1px solid #3E3E4A; 
-        text-align: center; 
-        margin-bottom: 20px; 
-        display: flex; 
-        flex-direction: column; 
-        justify-content: space-between; 
-        height: 100%; 
-    }
-    .product-img { 
-        width: 100%; 
-        height: 140px; 
-        object-fit: contain; 
-        background-color: white; 
-        border-radius: 20px; 
-        padding: 10px; 
-        margin-bottom: 15px; 
-    }
+    .product-card { background-color: #1E1E26; border-radius: 25px; padding: 20px; border: 1px solid #3E3E4A; text-align: center; margin-bottom: 20px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
+    .product-img { width: 100%; height: 140px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
     
-    /* Globales y Banner */
-    hr { 
-        border: 0; 
-        height: 1px; 
-        background: linear-gradient(to right, transparent, #3E3E4A, transparent); 
-        margin: 40px 0; 
-    }
-    .logo-container { 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        height: 80px; 
-        background: #FFFFFF; 
-        border-radius: 15px; 
-        padding: 10px; 
-        margin-bottom: 15px; 
-    }
-    .logo-container img { 
-        height: 50px; 
-        width: auto; 
-        object-fit: contain; 
-    }
-    .hero-banner { 
-        background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); 
-        background-size: cover; 
-        background-position: center 30%; 
-        width: 100%; 
-        height: 220px; 
-        border-radius: 15px; 
-        margin-top: 15px; 
-        margin-bottom: 30px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-    }
-    .hero-title { 
-        color: #FFFFFF !important; 
-        font-size: 3rem; 
-        font-weight: bold; 
-        margin: 0; 
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.6); 
-        display: flex; 
-        align-items: center; 
-        gap: 15px; 
-    }
-    .login-box { 
-        background-color: #1E1E26; 
-        border-radius: 25px; 
-        padding: 0px; 
-        border: 1px solid #3E3E4A; 
-        text-align: center; 
-        margin-top: 50px; 
-        box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); 
-        overflow: hidden; 
-    }
+    hr { border: 0; height: 1px; background: linear-gradient(to right, transparent, #3E3E4A, transparent); margin: 40px 0; }
+    .logo-container { display: flex; justify-content: center; align-items: center; height: 80px; background: #FFFFFF; border-radius: 15px; padding: 10px; margin-bottom: 15px; }
+    .logo-container img { height: 50px; width: auto; object-fit: contain; }
     
-    /* Carrito Flotante */
-    .cart-box { 
-        background-color: #007BFF; 
-        color: white; 
-        padding: 15px; 
-        border-radius: 15px; 
-        text-align: center; 
-        font-weight: bold; 
-        margin-bottom: 20px; 
-        position: sticky; 
-        bottom: 10px; 
-        z-index: 999; 
-        box-shadow: 0px -5px 15px rgba(0,0,0,0.5); 
-    }
+    .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
+    .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
+    .login-box { background-color: #1E1E26; border-radius: 25px; padding: 0px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
+    
+    .cart-box { background-color: #007BFF; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; margin-bottom: 20px; position: sticky; bottom: 10px; z-index: 999; box-shadow: 0px -5px 15px rgba(0,0,0,0.5); }
     </style>
     """, unsafe_allow_html=True)
 
 # =========================================================================
 # 3. VARIABLES DE SESIÓN Y ESCÁNER DE CATEGORÍAS
 # =========================================================================
-if "chat_history" not in st.session_state: 
-    st.session_state.chat_history = []
-if "prods_filtrados" not in st.session_state: 
-    st.session_state.prods_filtrados = []
-if "authenticated" not in st.session_state: 
-    st.session_state.authenticated = False
-if "user_email" not in st.session_state: 
-    st.session_state.user_email = ""
-if "user_tier" not in st.session_state: 
-    st.session_state.user_tier = "free"
-if "todos_los_prods" not in st.session_state: 
-    st.session_state.todos_los_prods = [] 
-if "carrito" not in st.session_state: 
-    st.session_state.carrito = []
+if "chat_history" not in st.session_state: st.session_state.chat_history = []
+if "prods_filtrados" not in st.session_state: st.session_state.prods_filtrados = []
+if "authenticated" not in st.session_state: st.session_state.authenticated = False
+if "user_email" not in st.session_state: st.session_state.user_email = ""
+if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
+if "todos_los_prods" not in st.session_state: st.session_state.todos_los_prods = [] 
+if "carrito" not in st.session_state: st.session_state.carrito = []
 
-# EL NUEVO ESCÁNER: Busca estas palabras clave dentro de la ruta de Odoo para no fallar nunca
-kw_fito = ["fungicida", "bactericida", "herbicida", "insecticida", "inoculante", "coadyuvante", "regulador", "ácido", "acido", "aminoácido", "aminoacido", "enraizador", "hormona", "fertilizante"]
+# Se agregó "fingicida" para cubrir posibles errores de tipeo en Odoo
+kw_fito = ["fungicida", "fingicida", "bactericida", "herbicida", "insecticida", "inoculante", "coadyuvante", "regulador", "ácido", "acido", "aminoácido", "aminoacido", "enraizador", "hormona", "fertilizante"]
 kw_semillas = ["ajies", "ají", "calabaza", "pepino", "sandia", "sandía", "tomate", "aromatica", "aromática", "berenjena", "cebolla", "cilantro", "lechuga", "maiz", "maíz", "melon", "melón", "zanahoria", "semilla"]
 kw_riego = ["riego", "aspersor", "goteo", "conector", "filtrado", "layflat", "microaspersor", "tuberia", "tubería", "valvula", "válvula"]
 kw_equipos = ["bandeja", "dewoo", "fumigadora", "herramienta", "jardin", "jardín", "lanza", "malla", "invernadero", "plastico", "plástico", "saran", "sirfran", "substrato", "sustrato", "equipo"]
@@ -199,7 +94,6 @@ supabase: Client = init_supabase()
 def puede_consultar(email, tier):
     if tier in ["collaborator", "vip"]: 
         return True 
-        
     hoy = str(date.today())
     try:
         res = supabase.table("uso_diario").select("*").eq("email", email).execute()
@@ -219,14 +113,12 @@ def puede_consultar(email, tier):
         return True
 
 def registrar_uso(email, tier):
-    if tier in ["collaborator", "vip"]: 
-        return
+    if tier in ["collaborator", "vip"]: return
     try:
         res = supabase.table("uso_diario").select("conteo").eq("email", email).execute()
         if res.data:
             supabase.table("uso_diario").update({"conteo": res.data[0]["conteo"] + 1}).eq("email", email).execute()
-    except: 
-        pass
+    except: pass
 
 def get_odoo_prods():
     try:
@@ -234,75 +126,51 @@ def get_odoo_prods():
         db = st.secrets["ODOO_DB"]
         user = st.secrets["ODOO_USER"]
         key = st.secrets["ODOO_API_KEY"]
-        
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
-        
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             ids = models.execute_kw(db, uid, key, 'product.template', 'search', [[['sale_ok','=',True]]], {'limit': 200})
             return models.execute_kw(db, uid, key, 'product.template', 'read', [ids], {'fields': ['name', 'list_price', 'image_128', 'categ_id']})
-    except: 
-        return None
+    except: return None
 
 def registrar_cliente_odoo(nombre, email, telefono, lugar):
     try:
-        url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"]
-        user = st.secrets["ODOO_USER"]
-        key = st.secrets["ODOO_API_KEY"]
-        
+        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common')
         uid = common.authenticate(db, user, key, {})
-        
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
             return models.execute_kw(db, uid, key, 'res.partner', 'create', [{'name': nombre, 'email': email, 'phone': telefono, 'comment': f'App AgroDiagnóstico | Prov: {lugar}'}])
-    except: 
-        return None
+    except: return None
 
 def es_cliente_vip_odoo(email):
     try:
-        url = st.secrets["ODOO_URL"]
-        db = st.secrets["ODOO_DB"]
-        user = st.secrets["ODOO_USER"]
-        key = st.secrets["ODOO_API_KEY"]
-        
+        url, db, user, key = st.secrets["ODOO_URL"], st.secrets["ODOO_DB"], st.secrets["ODOO_USER"], st.secrets["ODOO_API_KEY"]
         common = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/common', allow_none=True)
         uid = common.authenticate(db, user, key, {})
-        
         if uid:
             models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object', allow_none=True)
             partner_ids = models.execute_kw(db, uid, key, 'res.partner', 'search', [[['email', '=', email]]])
-            
-            if not partner_ids: 
-                return False
-                
+            if not partner_ids: return False
             fecha_hace_60_dias = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d %H:%M:%S')
             order_ids = models.execute_kw(db, uid, key, 'sale.order', 'search', [['partner_id', 'in', partner_ids], ['state', 'in', ['sale', 'done']], ['date_order', '>=', fecha_hace_60_dias]])
             return len(order_ids) > 0
-    except: 
-        return False
+    except: return False
 
 def enviar_aviso_email(nombre, email, tel, lugar):
     try:
-        rem = st.secrets["EMAIL_SENDER"]
-        pas = st.secrets["EMAIL_PASSWORD"]
-        
+        rem, pas = st.secrets["EMAIL_SENDER"], st.secrets["EMAIL_PASSWORD"]
         msg = MIMEMultipart()
-        msg['From'] = rem
-        msg['To'] = st.secrets["EMAIL_RECEIVER"]
-        msg['Subject'] = f"🚀 Nuevo Registro: {nombre}"
+        msg['From'], msg['To'], msg['Subject'] = rem, st.secrets["EMAIL_RECEIVER"], f"🚀 Nuevo Registro: {nombre}"
         msg.attach(MIMEText(f"Nombre: {nombre}\nEmail: {email}\nTel: {tel}\nProvincia: {lugar}", 'plain'))
-        
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(rem, pas)
         server.send_message(msg)
         server.quit()
         return True
-    except: 
-        return False
+    except: return False
 
 def agregar_al_carrito(nombre_producto):
     if nombre_producto not in st.session_state.carrito:
@@ -319,7 +187,6 @@ def enviar_pregunta():
             st.session_state.chat_history.append({"role": "model", "parts": [respuesta.text]})
         except Exception as e:
             st.session_state.chat_history.append({"role": "model", "parts": [f"❌ Ocurrió un error al consultar: {str(e)}"]})
-        
         st.session_state.input_duda = ""
 
 # =========================================================================
@@ -357,11 +224,9 @@ if not st.session_state.authenticated:
                         st.session_state.user_tier = "vip"
                     else: 
                         st.session_state.user_tier = "free"
-                
                 st.rerun()
             else: 
                 st.error("Por favor, ingresa un correo válido.")
-        
         st.markdown('</div></div>', unsafe_allow_html=True)
 
 else:
@@ -397,7 +262,6 @@ else:
     for p in st.session_state.todos_los_prods:
         categoria = p.get('categ_id')
         if isinstance(categoria, list) and len(categoria) > 1:
-            # Convierte la categoría de Odoo a minúsculas (ej: "all / agroquímicos / insecticidas")
             cat_name = categoria[1].lower() 
             
             if any(kw in cat_name for kw in kw_fito):
@@ -435,7 +299,7 @@ else:
                         inventario_ia = "INVENTARIO DISPONIBLE:\n"
                         for p in prods_medicina:
                             cat_nombre = p['categ_id'][1] if isinstance(p.get('categ_id'), list) and len(p['categ_id']) > 1 else "Otros"
-                            inventario_ia += f"[{cat_nombre}] - {p['name']}\n"
+                            inventario_ia += f"[{cat_nombre.upper()}] - {p['name']}\n"
 
                         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                         model = genai.GenerativeModel('gemini-2.0-flash-lite')
@@ -446,9 +310,9 @@ else:
                         
                         1. DIAGNÓSTICO: Identifica la plaga, hongo o enfermedad.
                         2. RECETA EXACTA: De la lista de abajo, elige los 4 productos más efectivos. 
-                        REGLA VITAL: Si es insecto, elige SOLO de la categoría de Insecticidas. Si es hongo, SOLO Fungicidas.
+                        REGLA VITAL: Fíjate en la categoría entre corchetes []. Si es hongo o enfermedad fúngica, usa los que digan FUNGICIDA o FUNGICIDAS. Si es insecto, INSECTICIDA.
                         {inventario_ia}
-                        Menciona los nombres EXACTOS de los productos recomendados en NEGRITAS.
+                        Menciona los nombres comerciales EXACTOS de los productos recomendados en NEGRITAS.
                         3. APLICACIÓN: Explica brevemente cómo usarlos y labores culturales.
                         """
                         
@@ -457,18 +321,29 @@ else:
                         sugeridos = []
                         vistos = set()
                         
-                        # MEJORA EN LA DETECCIÓN DE RECOMENDACIONES
+                        # MEJORA EN LA DETECCIÓN DE RECOMENDACIONES (FILTRO DE NOMBRE COMERCIAL)
+                        palabras_ignoradas = ["fungicida", "fungicidas", "insecticida", "insecticidas", "herbicida", "herbicidas", "fertilizante", "bactericida", "bactericidas", "litro", "litros"]
+                        
                         for p in prods_medicina:
-                            # Limpia el nombre del producto de Odoo (quita paréntesis y extras)
                             nombre_limpio = p['name'].split('(')[0].strip().lower()
-                            primera_palabra = nombre_limpio.split()[0]
+                            partes_nombre = nombre_limpio.split()
                             
-                            # Revisa si la IA mencionó la primera palabra o el nombre completo
-                            if (primera_palabra in texto_ia_lower or nombre_limpio in texto_ia_lower) and len(primera_palabra) > 3:
-                                if primera_palabra not in vistos:
-                                    sugeridos.append(p)
-                                    vistos.add(primera_palabra)
+                            # Buscar la primera palabra que sea el verdadero nombre comercial (ej. saltar "Fungicida")
+                            palabra_clave = ""
+                            for palabra in partes_nombre:
+                                if palabra not in palabras_ignoradas and len(palabra) > 2:
+                                    palabra_clave = palabra
+                                    break
+                            
+                            if not palabra_clave and partes_nombre:
+                                palabra_clave = partes_nombre[0]
                                 
+                            # Verifica si la IA mencionó el nombre completo o la palabra clave
+                            if palabra_clave and (palabra_clave in texto_ia_lower or nombre_limpio in texto_ia_lower):
+                                if palabra_clave not in vistos:
+                                    sugeridos.append(p)
+                                    vistos.add(palabra_clave)
+                                    
                             if len(sugeridos) >= 4: 
                                 break
                         
@@ -536,7 +411,6 @@ else:
         if not lista_productos: 
             st.info("No hay productos en esta categoría por el momento.")
         else:
-            # Para evitar que el celular se ponga lento, mostramos un máximo de 20 por pestaña
             mostrar = lista_productos[:20]
             cols = st.columns(2)
             
