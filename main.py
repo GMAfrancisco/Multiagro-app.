@@ -13,6 +13,14 @@ from supabase import create_client, Client
 import streamlit.components.v1 as components
 
 # =========================================================================
+# FUNCIÓN GLOBAL WHATSAPP (LA QUE SÍ FUNCIONA EN TU CELULAR)
+# =========================================================================
+def generar_url_whatsapp(telefono, mensaje):
+    import urllib.parse
+    mensaje_codificado = urllib.parse.quote(mensaje)
+    return f"https://api.whatsapp.com/send?phone={telefono}&text={mensaje_codificado}"
+
+# =========================================================================
 # 1. CONFIGURACIÓN DE PÁGINA Y ANTI-ERROR 500
 # =========================================================================
 st.set_page_config(
@@ -21,45 +29,21 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Script de persistencia para evitar cierres de sesión por inactividad del WebView
-components.html("""
-    <script>
-    let tiempoOculto;
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) { 
-            tiempoOculto = new Date().getTime(); 
-        } else {
-            if (tiempoOculto) {
-                let tiempoFuera = new Date().getTime() - tiempoOculto;
-                if (tiempoFuera > 900000) { 
-                    window.parent.location.reload(); 
-                }
-            }
-        }
-    });
-    </script>
-""", height=0, width=0)
+# Script de persistencia
+components.html("<script>let tiempoOculto; document.addEventListener('visibilitychange', () => { if (document.hidden) { tiempoOculto = new Date().getTime(); } else { if (tiempoOculto) { let tiempoFuera = new Date().getTime() - tiempoOculto; if (tiempoFuera > 900000) { window.parent.location.reload(); } } } });</script>", height=0, width=0)
 
 # =========================================================================
-# 2. BLOQUE DE APARIENCIA (CSS COMPLETO RESTAURADO)
+# 2. BLOQUE DE APARIENCIA (CSS CORREGIDO PARA TEXTO BLANCO BRILLANTE)
 # =========================================================================
 st.markdown("""
     <style>
     [data-testid="stAppViewContainer"], .main, .block-container { overflow-x: hidden !important; }
     
-    .diag-box { 
-        background: #161B22; 
-        border-left: 8px solid #007BFF; 
-        padding: 25px; 
-        border-radius: 20px; 
-        margin-bottom: 30px; 
-        color: #FFFFFF !important; 
-        font-size: 1.05rem; 
-        line-height: 1.6; 
-    }
+    .diag-box { background: #161B22; border-left: 8px solid #007BFF; padding: 25px; border-radius: 20px; margin-bottom: 30px; color: #FFFFFF !important; font-size: 1.05rem; line-height: 1.6; }
     .diag-box p, .diag-box span, .diag-box li, .diag-box div { color: #FFFFFF !important; }
     .diag-box strong, .diag-box b { color: #4DA3FF !important; }
     
+    /* TARJETAS DE PRODUCTOS CON TEXTO BLANCO OBLIGATORIO */
     .product-card { 
         background-color: #1E1E26; 
         border-radius: 25px; 
@@ -74,85 +58,25 @@ st.markdown("""
         position: relative;
         color: #FFFFFF !important; 
     }
-    .product-card h4 { color: #FFFFFF !important; font-size: 0.85rem; margin-top: 10px; }
-    
-    .product-img { 
-        width: 100%; 
-        height: 140px; 
-        object-fit: contain; 
-        background-color: white; 
-        border-radius: 20px; 
-        padding: 10px; 
-        margin-bottom: 15px; 
+    .product-card h4 {
+        color: #FFFFFF !important;
+        font-size: 0.85rem; 
+        margin-top: 10px;
     }
     
-    .badge-fav { 
-        position: absolute; 
-        top: 10px; 
-        right: 10px; 
-        background-color: #FFD700; 
-        color: #000; 
-        font-size: 0.7rem; 
-        font-weight: bold; 
-        padding: 3px 8px; 
-        border-radius: 10px; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
-    }
+    .product-img { width: 100%; height: 140px; object-fit: contain; background-color: white; border-radius: 20px; padding: 10px; margin-bottom: 15px; }
+    
+    .badge-fav { position: absolute; top: 10px; right: 10px; background-color: #FFD700; color: #000; font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
     hr { border: 0; height: 1px; background: linear-gradient(to right, transparent, #3E3E4A, transparent); margin: 40px 0; }
-    
-    .logo-container { 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        height: 80px; 
-        background: #FFFFFF; 
-        border-radius: 15px; 
-        padding: 10px; 
-        margin-bottom: 15px; 
-        border: 1px solid #DDD;
-    }
+    .logo-container { display: flex; justify-content: center; align-items: center; height: 80px; background: #FFFFFF; border-radius: 15px; padding: 10px; margin-bottom: 15px; }
     .logo-container img { height: 50px; width: auto; object-fit: contain; }
     
-    .hero-banner { 
-        background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); 
-        background-size: cover; 
-        background-position: center 30%; 
-        width: 100%; 
-        height: 220px; 
-        border-radius: 15px; 
-        margin-top: 15px; 
-        margin-bottom: 30px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-    }
+    .hero-banner { background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&q=80'); background-size: cover; background-position: center 30%; width: 100%; height: 220px; border-radius: 15px; margin-top: 15px; margin-bottom: 30px; display: flex; align-items: center; justify-content: center; }
     .hero-title { color: #FFFFFF !important; font-size: 3rem; font-weight: bold; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 15px; }
+    .login-box { background-color: #1E1E26; border-radius: 25px; padding: 0px; border: 1px solid #3E3E4A; text-align: center; margin-top: 50px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
     
-    .login-box { 
-        background-color: #1E1E26; 
-        border-radius: 25px; 
-        padding: 0px; 
-        border: 1px solid #3E3E4A; 
-        text-align: center; 
-        margin-top: 50px; 
-        box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5); 
-        overflow: hidden; 
-    }
-    
-    .cart-box { 
-        background-color: #007BFF; 
-        color: white; 
-        padding: 15px; 
-        border-radius: 15px; 
-        text-align: center; 
-        font-weight: bold; 
-        margin-bottom: 20px; 
-        position: sticky; 
-        bottom: 10px; 
-        z-index: 999; 
-        box-shadow: 0px -5px 15px rgba(0,0,0,0.5); 
-    }
+    .cart-box { background-color: #007BFF; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; margin-bottom: 20px; position: sticky; bottom: 10px; z-index: 999; box-shadow: 0px -5px 15px rgba(0,0,0,0.5); }
     </style>
     """, unsafe_allow_html=True)
 
@@ -167,7 +91,6 @@ if "user_tier" not in st.session_state: st.session_state.user_tier = "free"
 if "inventario_odoo" not in st.session_state: st.session_state.inventario_odoo = []  
 if "carrito" not in st.session_state: st.session_state.carrito = []
 
-# Listas de clasificación de Multiagro
 kw_fito = ["ACIDO", "AMINOACIDO", "BACTERICIDA", "COADYUVANTE", "ENRAIZADOR", "FERTILIZANTE", "FUNGICIDA", "HERBICIDA", "HORMONA", "INOCULANTE", "INSECTICIDA", "NUTRICION", "FOLIAR"]
 kw_semillas = ["AJI", "AROMATICA", "CALABAZA", "CILANTRO", "MAIZ", "PEPINO", "SANDIA", "TOMATE", "SEMILLA", "CEBOLLA", "LECHUGA", "MELON", "ZANAHORIA", "BERENJENA"]
 kw_riego = ["ACCESORIO", "ASPERSOR", "CINTA", "CONECTOR", "BOMBEO", "FILTRAD", "LAYFLAT", "MICROASPERSOR", "RIEGO", "TUBERIA", "VALVULA", "GOTEO"]
@@ -289,15 +212,9 @@ if not st.session_state.authenticated:
             if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
                 st.image(f, use_container_width=True)
                 
-        st.markdown('<div class="login-box">', unsafe_allow_html=True)
-        st.markdown("""
-            <div style="text-align: center; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;">
-                <h2 style='text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;'>Bienvenido a AgroDiagnóstico Multiagro</h2>
-                <p style='text-align: center; color: #DDDDDD; margin-top: 10px; margin-bottom: 0; font-size: 1.1rem;'>Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown('<div class="login-box"><div style="text-align: center; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(\'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80\'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;"><h2 style="text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;">Bienvenido a AgroDiagnóstico Multiagro</h2><p style="text-align: center; color: #DDDDDD; margin-top: 10px; margin-bottom: 0; font-size: 1.1rem;">Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p></div></div>', unsafe_allow_html=True)
         st.markdown('<div style="padding: 30px; padding-top: 15px;">', unsafe_allow_html=True)
+        
         email_input = st.text_input("Correo Electrónico", placeholder="ejemplo@correo.com", label_visibility="collapsed")
         
         if st.button("Ingresar a la Plataforma", use_container_width=True):
@@ -317,7 +234,7 @@ if not st.session_state.authenticated:
                 st.rerun()
             else: 
                 st.error("Por favor, ingresa un correo válido.")
-        st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 else:
     # =========================================================================
@@ -361,7 +278,7 @@ else:
             elif any(kw in cat_name for kw in kw_riego): prods_riego.append(p)
             elif any(kw in cat_name for kw in kw_equipos): prods_equipos.append(p)
 
-    st.markdown("""<div class="hero-banner"><h1 class="hero-title">🔍 Diagnóstico Experto</h1></div>""", unsafe_allow_html=True)
+    st.markdown('<div class="hero-banner"><h1 class="hero-title">🔍 Diagnóstico Experto</h1></div>', unsafe_allow_html=True)
     
     cultivo_input = st.text_input("¿Qué cultivo o planta estamos analizando?", placeholder="Ej: Arroz, Tomate, Aguacate...")
 
@@ -392,15 +309,7 @@ else:
                         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                         model = genai.GenerativeModel('gemini-2.0-flash-lite')
                         
-                        prompt = f"""
-                        RESPONDE 100% EN ESPAÑOL. Eres Ing. Agrónomo y Fitopatólogo de Multiagro. 
-                        Analiza la planta: {cultivo_input if cultivo_input else 'No especificado'}.
-                        1. DIAGNÓSTICO: Identifica la plaga, hongo, bacteria o deficiencia nutricional.
-                        2. RECETA EXACTA: ESTÁS OBLIGADO a recomendar EXACTAMENTE 4 productos diferentes de la lista:
-                        {inventario_ia}
-                        Escribe el Nombre Comercial en NEGRITAS.
-                        3. APLICACIÓN: Explica brevemente cómo el ingrediente activo actúa y da labores culturales.
-                        """
+                        prompt = f"RESPONDE 100% EN ESPAÑOL. Eres Ing. Agrónomo y Fitopatólogo de Multiagro. Analiza la planta: {cultivo_input if cultivo_input else 'No especificado'}. 1. DIAGNÓSTICO: Identifica la plaga, hongo, bacteria o deficiencia nutricional. 2. RECETA EXACTA: ESTÁS OBLIGADO a recomendar EXACTAMENTE 4 productos diferentes de la lista: {inventario_ia} Escribe el Nombre Comercial en NEGRITAS. 3. APLICACIÓN: Explica brevemente cómo el ingrediente activo actúa y da labores culturales."
                         
                         res = model.generate_content([prompt, Image.open(img)])
                         texto_ia_lower = res.text.lower()
@@ -424,7 +333,7 @@ else:
                         if "rerun" not in str(e).lower(): st.error(f"Error: {e}")
 
     # =========================================================================
-    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP (ESTILO CÓDIGO VIEJO)
+    # MOSTRAR EL CHAT Y LOS BOTONES DE WHATSAPP (MÉTODO QUE SÍ FUNCIONA)
     # =========================================================================
     if st.session_state.chat_history:
         for i, msj in enumerate(st.session_state.chat_history):
@@ -436,8 +345,11 @@ else:
 
         st.text_input("💬 Pregunta detalles técnicos:", key="input_duda", on_change=enviar_pregunta)
         
-        # EL MÉTODO DEL CÓDIGO VIEJO QUE SÍ FUNCIONABA
-        st.link_button("👨‍🌾 Consultar a un técnico por WhatsApp", "https://wa.me/18295624653?text=Hola, acabo de usar la app AgroDiagnóstico Multiagro y necesito ayuda tecnica.", use_container_width=True)
+        # AQUÍ USAMOS TU FUNCIÓN ORIGINAL EXACTA
+        telefono_multiagro = "18295624653"
+        mensaje_tecnico = "Hola, acabo de usar la app AgroDiagnostico Multiagro y necesito ayuda tecnica."
+        url_wa_tecnico = generar_url_whatsapp(telefono_multiagro, mensaje_tecnico)
+        st.link_button("👨‍🌾 Consultar a un técnico por WhatsApp", url_wa_tecnico, use_container_width=True)
 
         if st.session_state.prods_filtrados:
             st.markdown("<h4 style='color: #4DA3FF;'>🧪 Productos recomendados:</h4>", unsafe_allow_html=True)
@@ -480,14 +392,20 @@ else:
     with tab_eq: mostrar_catalogo(prods_equipos, "eq", busqueda_catalogo)
 
     # =========================================================================
-    # CARRITO DE WHATSAPP (MÉTODO DEL CÓDIGO VIEJO)
+    # CARRITO DE WHATSAPP (MÉTODO QUE SÍ FUNCIONA)
     # =========================================================================
     if st.session_state.carrito:
         st.markdown('<div class="cart-box">', unsafe_allow_html=True)
         st.markdown(f"🛒 **Tu Cotización ({len(st.session_state.carrito)} productos)**")
+        
+        # AQUÍ USAMOS TU FUNCIÓN ORIGINAL EXACTA PARA EL CARRITO
         productos_lista = " - ".join(st.session_state.carrito)
-        url_wa_carrito = f"https://wa.me/18295624653?text=Hola Multiagro, cotizar productos: {productos_lista}"
+        telefono_multiagro = "18295624653"
+        mensaje_carrito = f"Hola Multiagro, Deseo cotizar los siguientes productos: {productos_lista} Gracias."
+        url_wa_carrito = generar_url_whatsapp(telefono_multiagro, mensaje_carrito)
+        
         st.link_button("📲 ENVIAR COTIZACIÓN POR WHATSAPP", url_wa_carrito, type="primary", use_container_width=True)
+        
         if st.button("🗑️ Vaciar Carrito"): st.session_state.carrito = []; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
