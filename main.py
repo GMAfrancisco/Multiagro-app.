@@ -15,9 +15,9 @@ import streamlit.components.v1 as components
 # =========================================================================
 # 1. CONFIGURACIÓN DE PÁGINA, LOGO Y ANTI-ERROR 500
 # =========================================================================
-# Intentamos cargar el logo oficial, si no está en la carpeta usa un emoji
+# Cargamos tu nuevo logo sin espacios
 try:
-    icono_app = Image.open("Grupo_Multiagro_Mesa de trabajo 1.png")
+    icono_app = Image.open("logoGMA.png")
 except:
     icono_app = "🌱"
 
@@ -217,9 +217,9 @@ def enviar_pregunta():
 if not st.session_state.authenticated:
     _, mid, _ = st.columns([1, 1.5, 1])
     with mid:
-        for f in sorted(os.listdir(".")):
-            if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
-                st.image(f, use_container_width=True)
+        # Cargar logo directamente en el Login usando el nombre nuevo
+        if os.path.exists("logoGMA.png"):
+            st.image("logoGMA.png", use_container_width=True)
                 
         st.markdown('<div class="login-box"><div style="text-align: center; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(\'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&q=80\'); background-size: cover; background-position: center; padding: 40px 20px; border-bottom: 1px solid #3E3E4A;"><h2 style="text-align: center; color: #FFFFFF; margin: 0; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); font-weight: bold;">Bienvenido a AgroDiagnóstico Multiagro</h2><p style="text-align: center; color: #DDDDDD; margin-top: 10px; margin-bottom: 0; font-size: 1.1rem;">Ingresa tu correo electrónico para acceder al Diagnóstico Experto con IA.</p></div></div>', unsafe_allow_html=True)
         st.markdown('<div style="padding: 30px; padding-top: 15px;">', unsafe_allow_html=True)
@@ -266,9 +266,9 @@ else:
 
     _, mid, _ = st.columns([1, 2, 1])
     with mid:
-        for f in sorted(os.listdir(".")):
-            if f.lower().startswith("grupo_multiagro") and f.lower().endswith(".png"): 
-                st.image(f, use_container_width=True)
+        # Cargar logo directamente en la app principal
+        if os.path.exists("logoGMA.png"):
+            st.image("logoGMA.png", use_container_width=True)
 
     if not st.session_state.inventario_odoo:
         st.session_state.inventario_odoo = get_odoo_prods() or []
@@ -324,27 +324,12 @@ else:
                         texto_ia_lower = res.text.lower()
                         sugeridos = []
                         vistos = set()
-                        
-                        palabras_ignoradas = ["fungicida", "insecticida", "herbicida", "fertilizante", "bactericida", "litro", "litros", "ml", "kg", "gr", "gramos", "galon", "galones", "sc", "ec", "sl", "wg", "wp", "agroquimico"]
-                        
                         for p in prods_medicina:
                             nombre_limpio = p['name'].split('(')[0].strip().lower()
-                            partes_nombre = nombre_limpio.split()
-                            palabra_clave = ""
-                            for palabra in partes_nombre:
-                                if palabra not in palabras_ignoradas and len(palabra) > 2:
-                                    palabra_clave = palabra
-                                    break
-                            
-                            if not palabra_clave and partes_nombre:
-                                palabra_clave = partes_nombre[0]
-                                
-                            if palabra_clave and (palabra_clave in texto_ia_lower or nombre_limpio in texto_ia_lower):
-                                if palabra_clave not in vistos:
-                                    sugeridos.append(p)
-                                    vistos.add(palabra_clave)
-                            if len(sugeridos) >= 4: 
-                                break
+                            if nombre_limpio in texto_ia_lower and nombre_limpio not in vistos:
+                                sugeridos.append(p)
+                                vistos.add(nombre_limpio)
+                            if len(sugeridos) >= 4: break
                         
                         st.session_state.chat_history = [
                             {"role": "user", "parts": [f"Análisis solicitado para {cultivo_input}"]},
